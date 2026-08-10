@@ -1,1 +1,1447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cobertura Guatemala — Torre de Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#F3F6F9;
+    --panel:#FFFFFF;
+    --ink:#0F1D30;
+    --ink-soft:#57697F;
+    --ink-faint:#8A97A8;
+    --line:#DBE3EC;
+    --line-strong:#B9C6D6;
+    --accent:#1F4E78;
+    --accent-soft:#E7EFF6;
+    --teal:#0E8C82;
+    --violet:#6E5AA8;
+    --zone-red:#D2483F;
+    --zone-red-bg:#FBE7E5;
+    --zone-yellow:#D99A2B;
+    --zone-yellow-bg:#FCF1DD;
+    --zone-green:#2E8B52;
+    --zone-green-bg:#E4F3E9;
+    --zone-over:#3A5FA8;
+    --zone-over-bg:#E6EBF6;
+    --zone-nodata:#9AA6B4;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(15,29,48,.06), 0 8px 24px -12px rgba(15,29,48,.12);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',ui-sans-serif,system-ui,-apple-system,sans-serif;
+    font-size:14px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',ui-monospace,'SF Mono',Consolas,monospace;}
+  h1,h2,h3,h4{font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif; margin:0; letter-spacing:-0.01em;}
 
+  /* ---------- Top band ---------- */
+  .topband{
+    background:linear-gradient(100deg,#0F1D30 0%,#1F4E78 100%);
+    color:#fff;
+    padding:16px 28px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:14px;}
+  .brand-mark{
+    width:40px;height:40px;border-radius:8px;
+    background:repeating-linear-gradient(135deg,var(--zone-red) 0 8px, var(--zone-yellow) 8px 16px, var(--zone-green) 16px 24px);
+    flex:none;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.35);
+  }
+  .brand-text .eyebrow{
+    text-transform:uppercase; font-size:10.5px; letter-spacing:.14em; color:#B7CBE0; font-weight:600;
+  }
+  .brand-text h1{font-size:19px; color:#fff; font-weight:700;}
+  .topband .meta{font-size:12px; color:#C9D8E8; text-align:right;}
+  .topband .meta strong{color:#fff; font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- Tabs ---------- */
+  .tabnav{
+    background:#132840; display:flex; gap:2px; padding:0 24px; overflow-x:auto;
+  }
+  .tabnav button{
+    appearance:none; border:none; background:transparent; color:#9FB4CC;
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:600; padding:12px 18px;
+    cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; transition:all .12s ease;
+  }
+  .tabnav button:hover{color:#fff;}
+  .tabnav button.active{color:#fff; border-bottom-color:var(--zone-yellow);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  /* ---------- Layout ---------- */
+  .wrap{max-width:1440px; margin:0 auto; padding:22px 28px 60px;}
+  .toolbar{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:16px 18px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:18px;
+    align-items:center;
+    margin-bottom:20px;
+  }
+  .tb-group{display:flex; flex-direction:column; gap:5px;}
+  .tb-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-faint); font-weight:600;}
+  .tb-group select, .tb-group input[type=text]{
+    font-family:'Inter',sans-serif; font-size:13px; padding:7px 10px;
+    border:1px solid var(--line-strong); border-radius:7px; background:#fff; color:var(--ink);
+    min-width:150px;
+  }
+  .day-slider-row{display:flex; align-items:center; gap:10px;}
+  .day-slider-row input[type=range]{width:220px; accent-color:var(--accent);}
+  .day-pill{
+    font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px;
+    background:var(--accent-soft); color:var(--accent); padding:5px 10px; border-radius:6px; min-width:74px; text-align:center;
+  }
+  .file-btn{margin-left:auto; display:flex; align-items:center; gap:10px;}
+  .file-btn label{
+    background:var(--accent); color:#fff; font-weight:600; font-size:13px;
+    padding:9px 16px; border-radius:7px; cursor:pointer; border:1px solid var(--accent);
+    transition:background .15s ease;
+  }
+  .file-btn label:hover{background:#173e60;}
+  .file-btn input[type=file]{display:none;}
+  .file-status{font-size:12px; color:var(--ink-soft);}
+  .file-status.ok{color:var(--zone-green); font-weight:600;}
+
+  .chip-group{display:flex; gap:6px; flex-wrap:wrap;}
+  .chip{
+    font-size:11.5px; font-weight:600; padding:5px 11px; border-radius:20px;
+    border:1px solid var(--line-strong); background:#fff; color:var(--ink-soft); cursor:pointer;
+    user-select:none; transition:all .12s ease;
+  }
+  .chip.active{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .chip.zone-active-rojo{background:var(--zone-red); border-color:var(--zone-red); color:#fff;}
+  .chip.zone-active-amarillo{background:var(--zone-yellow); border-color:var(--zone-yellow); color:#fff;}
+  .chip.zone-active-verde{background:var(--zone-green); border-color:var(--zone-green); color:#fff;}
+  .chip.zone-active-exceso{background:var(--zone-over); border-color:var(--zone-over); color:#fff;}
+  .chip:hover{border-color:var(--accent);}
+
+  /* ---------- Empty state ---------- */
+  .empty-state{
+    background:var(--panel); border:1px dashed var(--line-strong); border-radius:var(--radius);
+    padding:70px 30px; text-align:center; color:var(--ink-soft);
+  }
+  .empty-state h2{font-size:22px; color:var(--ink); margin-bottom:10px;}
+  .empty-state p{max-width:480px; margin:0 auto 6px; font-size:13.5px;}
+  .empty-state .drop-target{
+    border:2px dashed var(--line-strong); border-radius:12px; padding:34px; margin:22px auto 0; max-width:420px;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .empty-state .drop-target.drag{border-color:var(--accent); background:var(--accent-soft);}
+
+  #appShell{display:none;}
+  #appShell.show{display:block;}
+
+  /* ---------- KPI row ---------- */
+  .kpi-row{display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:20px;}
+  @media (max-width:1100px){.kpi-row{grid-template-columns:repeat(2,1fr);}}
+  .kpi{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 16px; box-shadow:var(--shadow); border-top:3px solid var(--accent); position:relative;
+  }
+  .kpi.red{border-top-color:var(--zone-red);}
+  .kpi.yellow{border-top-color:var(--zone-yellow);}
+  .kpi.green{border-top-color:var(--zone-green);}
+  .kpi.teal{border-top-color:var(--teal);}
+  .kpi.accent{border-top-color:var(--accent);}
+  .kpi .kpi-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); font-weight:600; margin-bottom:8px;}
+  .kpi .kpi-value{font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:600; color:var(--ink); line-height:1;}
+  .kpi .kpi-value small{font-size:13px; font-weight:500; color:var(--ink-soft);}
+  .kpi .kpi-sub{font-size:11.5px; color:var(--ink-soft); margin-top:6px;}
+
+  /* ---------- Panels ---------- */
+  .panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:18px 20px; margin-bottom:20px;
+  }
+  .panel-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:4px; flex-wrap:wrap;}
+  .panel-head h3{font-size:15px; font-weight:700;}
+  .panel-head .panel-note{font-size:11.5px; color:var(--ink-faint);}
+  .legend-row{display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:11.5px; color:var(--ink-soft);}
+  .legend-row span{display:inline-flex; align-items:center; gap:5px;}
+  .legend-dot{width:9px; height:9px; border-radius:2px; display:inline-block;}
+  .legend-line{width:14px; height:2px; display:inline-block;}
+
+  .chart-box{position:relative; height:290px; margin-top:10px;}
+  .chart-box.tall{height:360px;}
+  .chart-box.short{height:200px;}
+
+  .grid-2{display:grid; grid-template-columns:1.35fr 1fr; gap:20px;}
+  @media (max-width:1000px){.grid-2{grid-template-columns:1fr;}}
+
+  /* ---------- Insights panel ---------- */
+  .insights-panel{
+    background:linear-gradient(135deg,#0F1D30,#1F4E78); color:#fff; border-radius:var(--radius);
+    padding:18px 20px; margin-bottom:20px; box-shadow:var(--shadow);
+  }
+  .insights-panel .panel-head h3{color:#fff;}
+  .insights-panel .panel-head .panel-note{color:#B7CBE0;}
+  .insight-list{list-style:none; margin:12px 0 0; padding:0; display:grid; gap:8px;}
+  .insight-item{
+    display:flex; gap:10px; align-items:flex-start; background:rgba(255,255,255,.06);
+    border-left:3px solid var(--zone-yellow); border-radius:6px; padding:9px 12px; font-size:12.5px; line-height:1.5;
+  }
+  .insight-item.severity-alta{border-left-color:var(--zone-red);}
+  .insight-item.severity-media{border-left-color:var(--zone-yellow);}
+  .insight-item.severity-baja{border-left-color:var(--zone-green);}
+  .insight-item.severity-info{border-left-color:#7FA8D9;}
+  .insight-icon{font-size:15px; line-height:1.4;}
+  .insight-empty{font-size:12.5px; color:#B7CBE0; padding:6px 0;}
+
+  /* ---------- Table ---------- */
+  .table-scroll{max-height:560px; overflow:auto; border:1px solid var(--line); border-radius:8px; margin-top:12px;}
+  table.data{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.data thead th{
+    position:sticky; top:0; background:#EEF3F8; color:var(--ink); text-align:left;
+    padding:8px 9px; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em;
+    border-bottom:1px solid var(--line-strong); cursor:pointer; white-space:nowrap; z-index:2;
+  }
+  table.data thead th:hover{background:#E3EBF3;}
+  table.data thead th .arrow{opacity:.4; font-size:9px; margin-left:3px;}
+  table.data tbody td{padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:middle; white-space:nowrap;}
+  table.data tbody tr:hover{background:#F7FAFD; cursor:pointer;}
+  .num{font-family:'IBM Plex Mono',monospace; text-align:right;}
+  .desc-cell{max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .code-cell{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);}
+
+  .zone-chip{
+    display:inline-block; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.03em;
+  }
+  .zone-chip.rojo{background:var(--zone-red-bg); color:var(--zone-red);}
+  .zone-chip.amarillo{background:var(--zone-yellow-bg); color:var(--zone-yellow);}
+  .zone-chip.verde{background:var(--zone-green-bg); color:var(--zone-green);}
+  .zone-chip.exceso{background:var(--zone-over-bg); color:var(--zone-over);}
+  .zone-chip.sindatos{background:#EEF1F5; color:var(--zone-nodata);}
+
+  .abc-chip{
+    display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:6px;
+    font-size:11px; font-weight:700; font-family:'IBM Plex Mono',monospace;
+  }
+  .abc-chip.A{background:#DCEBFB; color:#1F5FA8;}
+  .abc-chip.B{background:#E7EFF6; color:#4C6480;}
+  .abc-chip.C{background:#F1F3F5; color:#8A97A8;}
+
+  /* ---------- Buffer gauge ---------- */
+  .gauge{position:relative; width:130px; height:18px; border-radius:4px; overflow:visible; display:flex; background:#EEF1F5;}
+  .gauge .seg{height:100%;}
+  .gauge .seg.rojo{background:var(--zone-red);}
+  .gauge .seg.amarillo{background:var(--zone-yellow);}
+  .gauge .seg.verde{background:var(--zone-green);}
+  .gauge .seg.exceso{background:var(--zone-over); opacity:.55;}
+  .gauge .marker{
+    position:absolute; top:-4px; width:0; height:0;
+    border-left:5px solid transparent; border-right:5px solid transparent;
+    transform:translateX(-50%);
+  }
+  .gauge .marker.real{border-top:8px solid var(--ink);}
+  .gauge .marker.cuota{top:auto; bottom:-4px; border-bottom:8px solid var(--teal); border-top:none;}
+  .gauge-legend{display:flex; gap:12px; align-items:center; font-size:10.5px; color:var(--ink-soft); margin-top:8px; flex-wrap:wrap;}
+  .tri{display:inline-block; width:0; height:0; margin-right:4px;}
+  .tri.real{border-left:5px solid transparent; border-right:5px solid transparent; border-top:7px solid var(--ink); vertical-align:middle;}
+  .tri.cuota{border-left:5px solid transparent; border-right:5px solid transparent; border-bottom:7px solid var(--teal); vertical-align:middle;}
+
+  .search-row{display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap;}
+  .search-row input[type=text]{flex:1; min-width:200px;}
+  .count-pill{font-size:11.5px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+
+  /* ---------- SKU detail tab ---------- */
+  .sku-picker{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .sku-picker select{min-width:420px; max-width:100%;}
+  .sku-header{display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-top:14px;}
+  @media (max-width:1000px){.sku-header{grid-template-columns:repeat(3,1fr);}}
+  @media (max-width:600px){.sku-header{grid-template-columns:repeat(2,1fr);}}
+  .sku-stat{background:#F7FAFD; border:1px solid var(--line); border-radius:8px; padding:10px 12px;}
+  .sku-stat .lbl{font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); font-weight:600;}
+  .sku-stat .val{font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:600; margin-top:3px;}
+
+  /* ---------- Methodology tab ---------- */
+  .accordion{border:1px solid var(--line); border-radius:8px; margin-bottom:10px; overflow:hidden;}
+  .accordion-head{
+    background:#F7FAFD; padding:11px 14px; font-weight:700; font-size:13px; cursor:pointer;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .accordion-head:hover{background:#EEF3F8;}
+  .accordion-body{padding:12px 16px; font-size:12.5px; color:var(--ink-soft); display:none; line-height:1.6;}
+  .accordion.open .accordion-body{display:block;}
+  .accordion-head .caret{transition:transform .15s ease; color:var(--ink-faint);}
+  .accordion.open .accordion-head .caret{transform:rotate(90deg);}
+  .formula-block{
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; background:#0F1D30; color:#DCE8F5;
+    padding:9px 12px; border-radius:6px; margin:6px 0; overflow-x:auto; white-space:pre;
+  }
+  .sheet-table{width:100%; border-collapse:collapse; font-size:12px; margin-top:6px;}
+  .sheet-table th{text-align:left; padding:6px 8px; background:#EEF3F8; font-size:10.5px; text-transform:uppercase; color:var(--ink-faint);}
+  .sheet-table td{padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top;}
+
+  .check-row{display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid var(--line); font-size:12.5px;}
+  .check-row:last-child{border-bottom:none;}
+  .check-icon{width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex:none; color:#fff;}
+  .check-icon.ok{background:var(--zone-green);}
+  .check-icon.warn{background:var(--zone-yellow);}
+  .check-icon.fail{background:var(--zone-red);}
+  .check-text strong{font-family:'IBM Plex Mono',monospace;}
+
+  footer{max-width:1440px; margin:0 auto; padding:0 28px 40px; color:var(--ink-faint); font-size:11.5px;}
+</style>
+</head>
+<body>
+
+<div class="topband">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div class="brand-text">
+      <div class="eyebrow">Planeamiento &middot; Supply Chain</div>
+      <h1 id="brandTitle">Cobertura Guatemala — Agosto 2026</h1>
+    </div>
+  </div>
+  <div class="meta">
+    Horizonte<br><strong id="horizonLabel">01–31 ago 2026</strong>
+  </div>
+</div>
+
+<div class="tabnav" id="tabNav" style="display:none;">
+  <button data-tab="resumen" class="active">Resumen General</button>
+  <button data-tab="sku">Detalle por SKU</button>
+  <button data-tab="metodologia">Metodología &amp; Validación</button>
+</div>
+
+<div class="wrap">
+
+  <div id="emptyState" class="empty-state">
+    <h2>Carga el archivo de Cobertura del mes</h2>
+    <p>Sube el Excel <strong>Cobertura_Guatemala_Agosto2026.xlsx</strong> (el mismo archivo que llena el equipo día a día) para ver la proyección de cobertura, la comparativa Cuota vs. Real y el estado de cada combinación SKU × CD.</p>
+    <p style="font-size:12px;color:var(--ink-faint);">Los datos se procesan localmente en tu navegador — el archivo no se envía a ningún servidor.</p>
+    <div class="drop-target" id="dropTarget">
+      <div style="font-size:13px; margin-bottom:10px; color:var(--ink-soft);">Arrastra el archivo aquí, o</div>
+      <label for="fileInputEmpty" style="background:var(--accent); color:#fff; font-weight:600; font-size:13px; padding:9px 18px; border-radius:7px; cursor:pointer; display:inline-block;">Elegir archivo .xlsx</label>
+      <input type="file" id="fileInputEmpty" accept=".xlsx,.xls">
+    </div>
+  </div>
+
+  <div id="appShell">
+    <div class="toolbar">
+      <div class="tb-group">
+        <span class="tb-label">Día del mes</span>
+        <div class="day-slider-row">
+          <input type="range" id="daySlider" min="1" max="31" value="1">
+          <span class="day-pill mono" id="dayPillLabel">01 ago</span>
+        </div>
+      </div>
+      <div class="tb-group" style="flex:1; min-width:220px;">
+        <span class="tb-label">Centro de distribución</span>
+        <div class="chip-group" id="cdChips"></div>
+      </div>
+      <div class="tb-group">
+        <span class="tb-label">Formato</span>
+        <select id="formatoFilter"><option value="">Todos</option></select>
+      </div>
+      <div class="tb-group">
+        <span class="tb-label">Zona (cobertura real)</span>
+        <div class="chip-group" id="zoneChips">
+          <span class="chip" data-zone="rojo">Rojo</span>
+          <span class="chip" data-zone="amarillo">Amarillo</span>
+          <span class="chip" data-zone="verde">Verde</span>
+          <span class="chip" data-zone="exceso">Exceso</span>
+        </div>
+      </div>
+      <div class="file-btn">
+        <span class="file-status" id="fileStatus">Sin archivo cargado</span>
+        <label for="fileInputToolbar">Cargar / actualizar archivo</label>
+        <input type="file" id="fileInputToolbar" accept=".xlsx,.xls">
+      </div>
+    </div>
+
+    <!-- ======================= TAB: RESUMEN GENERAL ======================= -->
+    <div class="tab-panel active" id="tab-resumen">
+      <div class="insights-panel">
+        <div class="panel-head">
+          <h3>Insights automáticos — Comercial vs. Supply</h3>
+          <span class="panel-note">Generados a partir de la data cargada, día seleccionado y filtros activos</span>
+        </div>
+        <ul class="insight-list" id="insightsGlobal"></ul>
+      </div>
+
+      <div class="kpi-row" id="kpiRow"></div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Evolución de cobertura — Cuota vs. Real</h3>
+            <span class="panel-note">Promedio de la selección actual, días 1–31, con límites de política</span>
+          </div>
+          <div class="chart-box"><canvas id="coverageChart"></canvas></div>
+          <div class="legend-row">
+            <span><span class="legend-line" style="background:var(--teal)"></span>Cobertura Cuota (Cuota)</span>
+            <span><span class="legend-line" style="background:var(--ink)"></span>Cobertura Real (Histórico)</span>
+            <span><span class="legend-dot" style="background:#F0D9B5"></span>Brecha (área sombreada)</span>
+            <span><span class="legend-line" style="background:var(--zone-red); opacity:.6"></span>ROP (límite inferior)</span>
+            <span><span class="legend-line" style="background:var(--zone-green); opacity:.6"></span>TOG (límite superior)</span>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h3>SKU × CD por zona — día seleccionado</h3>
+            <span class="panel-note">Base: cobertura real (histórico)</span>
+          </div>
+          <div class="chart-box"><canvas id="zoneChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Detalle por combinación SKU × CD</h3>
+          <span class="panel-note">Barra = perfil de buffer (rojo / amarillo / verde / exceso) · ▲ real · ▼ cuota · clic en fila para ver el detalle del SKU</span>
+        </div>
+        <div class="search-row">
+          <input type="text" id="searchBox" placeholder="Buscar SKU, código, CD o formato…">
+          <span class="count-pill" id="rowCount"></span>
+        </div>
+        <div class="gauge-legend">
+          <span><span class="tri real"></span>Cobertura real</span>
+          <span><span class="tri cuota"></span>Cobertura cuota</span>
+          <span><span class="legend-dot" style="background:var(--zone-red)"></span>Zona roja</span>
+          <span><span class="legend-dot" style="background:var(--zone-yellow)"></span>Zona amarilla</span>
+          <span><span class="legend-dot" style="background:var(--zone-green)"></span>Zona verde</span>
+          <span><span class="legend-dot" style="background:var(--zone-over);opacity:.55"></span>Exceso</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data" id="detailTable">
+            <thead>
+              <tr>
+                <th data-key="cd">CD</th>
+                <th data-key="codigo">Código</th>
+                <th data-key="desc">Descripción</th>
+                <th data-key="formato">Formato</th>
+                <th data-key="covReal" class="num">Cob. Real (d)</th>
+                <th data-key="covCuota" class="num">Cob. Cuota (d)</th>
+                <th data-key="brecha" class="num">Brecha (d)</th>
+                <th data-key="zona">Zona</th>
+                <th data-key="buffer">Perfil de buffer</th>
+                <th data-key="demanda" class="num">Cuota día</th>
+                <th data-key="salida" class="num">Salida real día</th>
+                <th data-key="sugerido" class="num">Sugerido abast.</th>
+              </tr>
+            </thead>
+            <tbody id="detailBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================= TAB: DETALLE POR SKU ======================= -->
+    <div class="tab-panel" id="tab-sku">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Selecciona una combinación SKU × CD</h3>
+          <span class="panel-note">La lista respeta los segmentadores (CD, formato, zona, búsqueda) del panel superior</span>
+        </div>
+        <div class="sku-picker">
+          <select id="skuPicker"></select>
+        </div>
+        <div class="sku-header" id="skuHeader"></div>
+      </div>
+
+      <div class="insights-panel">
+        <div class="panel-head">
+          <h3>Insights del SKU seleccionado</h3>
+          <span class="panel-note">Comercial vs. Supply — específico de esta combinación</span>
+        </div>
+        <ul class="insight-list" id="insightsSku"></ul>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Evolutivo diario — todo en paquetes</h3>
+          <span class="panel-note">Banda de política (mín–máx) · stock en piso · stock + tránsito · salidas reales · cuota diaria</span>
+        </div>
+        <div class="chart-box tall"><canvas id="skuEvolChart"></canvas></div>
+        <div class="legend-row">
+          <span><span class="legend-dot" style="background:#DCE8F5"></span>Banda política (ROP–TOG)</span>
+          <span><span class="legend-line" style="background:var(--ink-faint); border-top:2px dashed var(--ink-faint);"></span>Política promedio</span>
+          <span><span class="legend-line" style="background:var(--accent)"></span>Stock en piso</span>
+          <span><span class="legend-line" style="background:var(--violet)"></span>Stock piso + tránsito</span>
+          <span><span class="legend-line" style="background:var(--zone-red)"></span>Salidas reales diarias</span>
+          <span><span class="legend-line" style="background:var(--teal)"></span>Cuota diaria</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Evolución de tasas diarias</h3>
+          <span class="panel-note">Tasa de salida real (últimos 2 meses) vs. tasa de cuota futura</span>
+        </div>
+        <div class="chart-box short"><canvas id="skuRateChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ======================= TAB: METODOLOGÍA ======================= -->
+    <div class="tab-panel" id="tab-metodologia">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Validación de congruencia de la data cargada</h3>
+          <span class="panel-note">Chequeos automáticos sobre el archivo que subiste</span>
+        </div>
+        <div id="validationChecks"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Lógica de cálculo, fórmulas y supuestos</h3>
+          <span class="panel-note">Haz clic en cada sección para expandirla</span>
+        </div>
+        <div id="methodologyAccordion"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  Modelo de cobertura SKU × CD — uso interno de Planeamiento Supply Chain Guatemala. Los cálculos replican exactamente las fórmulas del archivo Excel; este panel solo lee y visualiza los valores ya calculados en el libro.
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+if(typeof XLSX === 'undefined' || typeof Chart === 'undefined'){
+  const missing = [];
+  if(typeof XLSX === 'undefined') missing.push('SheetJS (lectura de Excel)');
+  if(typeof Chart === 'undefined') missing.push('Chart.js (gráficos)');
+  const box = document.getElementById('emptyState');
+  if(box){
+    box.innerHTML = `<h2>No se pudo cargar una librería necesaria</h2>
+      <p>Falta: <strong>${missing.join(', ')}</strong>. Esto suele pasar por falta de conexión a internet o porque la red bloquea cdnjs.cloudflare.com.</p>
+      <p>Verifica tu conexión y vuelve a abrir el archivo. Si el problema persiste desde una red corporativa, prueba abrirlo desde otra red.</p>`;
+  }
+  return;
+}
+
+/* ============================================================
+   Mapeo de filas/columnas del archivo (0-indexado). 5 columnas
+   identificadoras (CD, Centro, Código SKU, Descripción, Formato),
+   luego 31 columnas de día (F:AJ).
+   ============================================================ */
+const N_DAYS = 31;
+const DAY_COL_START = 5;
+const MONTHS_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+const SHEETS = {
+  demanda: 'Demanda_Cuota', salidas: 'Salidas_Reales', invInicial: 'Inventario_Inicial',
+  transito: 'Transito_En_Curso', politica: 'Politica_Inventarios',
+  abastSugerido: 'Abastecimiento_Sugerido', planAbast: 'Plan_Abastecimiento',
+  invFinal: 'Inventario_Final', cobertura: 'Cobertura_Proyectada',
+  tasaSalida: 'Aux_TasaSalidaReal', tasaCuota: 'Aux_TasaCuotaFutura'
+};
+const COB_A_START = 5;    // Cobertura Cuota (Cuota) - fila 0-idx donde empieza
+const COB_B_START = 414;  // Cobertura Real (Histórico)
+
+let DATA = { combos: [], dates: [], rowCounts: {}, loaded: false };
+let VIEW = { day: 1, cds: new Set(), formato: '', zones: new Set(), search: '',
+             sortKey: 'covReal', sortDir: 'asc', selectedIdx: null, activeTab: 'resumen' };
+let CHARTS = {};
+
+/* ---------------------------------------------------------- utils --- */
+function numOrNull(v){ if(v===null||v===undefined||v==='') return null; const n=Number(v); return isNaN(n)?null:n; }
+function fmtDays(v){ return (v===null||v===undefined||isNaN(v)) ? '—' : v.toFixed(1); }
+function fmtPkg(v){ return (v===null||v===undefined||isNaN(v)) ? '—' : Math.round(v).toLocaleString('es-GT'); }
+function fmtPct(v){ return (v===null||v===undefined||isNaN(v)) ? '—' : (v>=0?'+':'')+v.toFixed(1)+'%'; }
+function sheetAOA(wb, name){
+  const ws = wb.Sheets[name];
+  if(!ws) return null;
+  return XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null, blankrows:true});
+}
+function readRowBlock(aoa, startIdx, maxRows){
+  const out = []; const cap = maxRows || 1000;
+  for(let i=0;i<cap;i++){
+    const row = aoa[startIdx+i];
+    if(!row || row[0]===null || row[0]===undefined || row[0]==='') break;
+    out.push(row);
+  }
+  return out;
+}
+function rowDays(row){
+  const arr = [];
+  for(let c=0;c<N_DAYS;c++) arr.push(numOrNull(row[DAY_COL_START+c]));
+  return arr;
+}
+function dateLabel(d, short){
+  if(!(d instanceof Date) || isNaN(d)) return '';
+  const day = String(d.getDate()).padStart(2,'0');
+  return short ? `${day} ${MONTHS_ES[d.getMonth()]}` : `${day}-${MONTHS_ES[d.getMonth()]}`;
+}
+function avg(arr){
+  const vals = arr.filter(v=>v!==null && v!==undefined && !isNaN(v));
+  if(!vals.length) return null;
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+function sum(arr){ return arr.reduce((a,b)=> a + (b!==null && b!==undefined && !isNaN(b) ? b : 0), 0); }
+function stddev(arr){
+  const vals = arr.filter(v=>v!==null && v!==undefined && !isNaN(v));
+  if(vals.length < 2) return null;
+  const m = avg(vals);
+  const variance = vals.reduce((s,v)=> s + Math.pow(v-m,2), 0) / vals.length;
+  return Math.sqrt(variance);
+}
+
+/* ------------------------------------------------------- parsing --- */
+function findCobBlockStart(aoa, marker){
+  for(let i=0;i<aoa.length;i++){
+    const row = aoa[i];
+    if(row && typeof row[0] === 'string' && row[0].indexOf(marker) !== -1){
+      return i + 2; // fila de título -> fila de encabezado (+1) -> inicio de datos (+1)
+    }
+  }
+  return null;
+}
+
+function parseWorkbook(wb){
+  const need = [SHEETS.politica, SHEETS.demanda, SHEETS.cobertura];
+  for(const n of need){ if(!wb.Sheets[n]) throw new Error(`Falta la hoja "${n}" en el archivo.`); }
+
+  const aoaPol = sheetAOA(wb, SHEETS.politica);
+  const aoaDem = sheetAOA(wb, SHEETS.demanda);
+  const aoaSal = sheetAOA(wb, SHEETS.salidas);
+  const aoaAbast = sheetAOA(wb, SHEETS.abastSugerido);
+  const aoaPlan = sheetAOA(wb, SHEETS.planAbast);
+  const aoaInvIni = sheetAOA(wb, SHEETS.invInicial);
+  const aoaTransito = sheetAOA(wb, SHEETS.transito);
+  const aoaInvFinal = sheetAOA(wb, SHEETS.invFinal);
+  const aoaTasaSal = sheetAOA(wb, SHEETS.tasaSalida);
+  const aoaTasaCuo = sheetAOA(wb, SHEETS.tasaCuota);
+  const aoaCob = sheetAOA(wb, SHEETS.cobertura);
+
+  const polRows = readRowBlock(aoaPol, 1);
+  const demRows = readRowBlock(aoaDem, 1);
+  const salRows = aoaSal ? readRowBlock(aoaSal, 1) : [];
+  const abastRows = aoaAbast ? readRowBlock(aoaAbast, 1) : [];
+  const planRows = aoaPlan ? readRowBlock(aoaPlan, 1) : [];
+  const invIniRows = aoaInvIni ? readRowBlock(aoaInvIni, 1) : [];
+  const transitoRows = aoaTransito ? readRowBlock(aoaTransito, 1) : [];
+  const invFinalRows = aoaInvFinal ? readRowBlock(aoaInvFinal, 1) : [];
+  const tasaSalRows = aoaTasaSal ? readRowBlock(aoaTasaSal, 1) : [];
+  const tasaCuoRows = aoaTasaCuo ? readRowBlock(aoaTasaCuo, 1) : [];
+
+  // Los bloques de Cobertura_Proyectada se ubican buscando su título en vez de
+  // asumir una fila fija — así el dashboard sigue funcionando aunque el número
+  // de filas de combinaciones cambie de un mes a otro.
+  const cobAStart = findCobBlockStart(aoaCob, 'COBERTURA CUOTA') ?? COB_A_START;
+  const cobBStart = findCobBlockStart(aoaCob, 'COBERTURA REAL') ?? COB_B_START;
+  const covCuotaRows = readRowBlock(aoaCob, cobAStart);
+  const covRealRows = readRowBlock(aoaCob, cobBStart);
+
+  const rowCounts = {
+    'Politica_Inventarios': polRows.length,
+    'Demanda_Cuota': demRows.length,
+    'Salidas_Reales': salRows.length,
+    'Abastecimiento_Sugerido': abastRows.length,
+    'Plan_Abastecimiento': planRows.length,
+    'Inventario_Inicial': invIniRows.length,
+    'Transito_En_Curso': transitoRows.length,
+    'Inventario_Final': invFinalRows.length,
+    'Aux_TasaSalidaReal': tasaSalRows.length,
+    'Aux_TasaCuotaFutura': tasaCuoRows.length,
+    'Cobertura_Proyectada (Cuota)': covCuotaRows.length,
+    'Cobertura_Proyectada (Real)': covRealRows.length
+  };
+
+  const headerRow = aoaDem[0] || [];
+  const dates = [];
+  for(let c=0;c<N_DAYS;c++) dates.push(headerRow[DAY_COL_START+c] instanceof Date ? headerRow[DAY_COL_START+c] : null);
+
+  const n = polRows.length;
+  const combos = [];
+  const zeros = ()=> new Array(N_DAYS).fill(null);
+  for(let i=0;i<n;i++){
+    const p = polRows[i];
+    combos.push({
+      idx: i,
+      cd: p[0], centro: p[1], codigo: p[2], desc: p[3], formato: p[4],
+      zr: numOrNull(p[5]), za: numOrNull(p[6]), zv: numOrNull(p[7]),
+      tog: numOrNull(p[8]), rop: numOrNull(p[9]),
+      demanda: demRows[i] ? rowDays(demRows[i]) : zeros(),
+      salidaReal: salRows[i] ? rowDays(salRows[i]) : zeros(),
+      abastSugerido: abastRows[i] ? rowDays(abastRows[i]) : zeros(),
+      planAbast: planRows[i] ? rowDays(planRows[i]) : zeros(),
+      invInicial: invIniRows[i] ? rowDays(invIniRows[i]) : zeros(),
+      transito: transitoRows[i] ? rowDays(transitoRows[i]) : zeros(),
+      invFinal: invFinalRows[i] ? rowDays(invFinalRows[i]) : zeros(),
+      tasaSalida: tasaSalRows[i] ? rowDays(tasaSalRows[i]) : zeros(),
+      tasaCuota: tasaCuoRows[i] ? rowDays(tasaCuoRows[i]) : zeros(),
+      covCuota: covCuotaRows[i] ? rowDays(covCuotaRows[i]) : zeros(),
+      covReal: covRealRows[i] ? rowDays(covRealRows[i]) : zeros()
+    });
+  }
+
+  // Clasificación ABC por volumen mensual de cuota (Pareto 80/95)
+  const withVolume = combos.map(c=> ({idx:c.idx, vol: sum(c.demanda)}));
+  withVolume.sort((a,b)=> b.vol - a.vol);
+  const totalVol = withVolume.reduce((s,x)=> s+x.vol, 0) || 1;
+  let cum = 0;
+  const abcByIdx = {};
+  withVolume.forEach(x=>{
+    cum += x.vol;
+    const pct = cum/totalVol;
+    abcByIdx[x.idx] = pct <= 0.80 ? 'A' : (pct <= 0.95 ? 'B' : 'C');
+  });
+  combos.forEach(c=>{ c.abc = abcByIdx[c.idx] || 'C'; });
+
+  return { combos, dates, rowCounts };
+}
+
+function classify(cov, c){
+  if(cov===null || cov===undefined || isNaN(cov)) return 'sindatos';
+  if(c.zr===null || c.za===null || c.zv===null || c.tog===null) return 'sindatos';
+  const rop = c.zr + c.za;
+  if(cov <= c.zr) return 'rojo';
+  if(cov <= rop) return 'amarillo';
+  if(cov <= c.tog) return 'verde';
+  return 'exceso';
+}
+const ZONE_LABEL = {rojo:'Rojo', amarillo:'Amarillo', verde:'Verde', exceso:'Exceso', sindatos:'Sin datos'};
+
+/* ---------------------------------------------------------- filter --- */
+function getFiltered(){
+  const term = VIEW.search.trim().toLowerCase();
+  return DATA.combos.filter(c=>{
+    if(VIEW.cds.size && !VIEW.cds.has(c.cd)) return false;
+    if(VIEW.formato && c.formato !== VIEW.formato) return false;
+    if(VIEW.zones.size){
+      const z = classify(c.covReal[VIEW.day-1], c);
+      if(!VIEW.zones.has(z)) return false;
+    }
+    if(term){
+      const hay = `${c.cd} ${c.centro} ${c.codigo} ${c.desc} ${c.formato}`.toLowerCase();
+      if(!hay.includes(term)) return false;
+    }
+    return true;
+  });
+}
+
+/* ------------------------------------------------------ insights --- */
+function gapStats(combos, uptoDayIdx){
+  // Compara cuota (Demanda_Cuota) vs salida real SOLO en los días donde hay
+  // dato de salida real cargado (comparación justa comercial vs. supply).
+  let sumCuota=0, sumReal=0, nPts=0;
+  combos.forEach(c=>{
+    for(let d=0; d<=uptoDayIdx; d++){
+      if(c.salidaReal[d]!==null){
+        sumReal += c.salidaReal[d];
+        sumCuota += (c.demanda[d]!==null ? c.demanda[d] : 0);
+        nPts++;
+      }
+    }
+  });
+  const gapPct = sumCuota>0 ? ((sumReal-sumCuota)/sumCuota)*100 : null;
+  return {sumCuota, sumReal, nPts, gapPct};
+}
+function comboGapPct(c, uptoDayIdx){
+  let sc=0, sr=0, n=0;
+  for(let d=0; d<=uptoDayIdx; d++){
+    if(c.salidaReal[d]!==null){ sr+=c.salidaReal[d]; sc+=(c.demanda[d]!==null?c.demanda[d]:0); n++; }
+  }
+  if(n<2 || sc<=0) return null;
+  return {gapPct: ((sr-sc)/sc)*100, n, sr, sc};
+}
+
+function insightItem(text, severity, icon){
+  return `<li class="insight-item severity-${severity}"><span class="insight-icon">${icon||'•'}</span><span>${text}</span></li>`;
+}
+
+function renderGlobalInsights(filtered){
+  const di = VIEW.day - 1;
+  const list = [];
+  const g = gapStats(filtered, di);
+
+  if(g.nPts < 3){
+    list.push(insightItem('Aún no hay suficientes días de salidas reales cargados para comparar contra la cuota comercial de forma confiable.', 'info', 'ℹ'));
+  } else if(g.gapPct !== null){
+    if(g.gapPct > 8){
+      list.push(insightItem(`Las <strong>salidas reales superan la cuota comercial en ${fmtPct(g.gapPct)}</strong> (acumulado a la fecha sobre ${filtered.length} combinaciones) — la demanda real está corriendo por encima de lo que comercial planificó.`, g.gapPct>20?'alta':'media', '⚠'));
+    } else if(g.gapPct < -8){
+      list.push(insightItem(`Las salidas reales están <strong>${fmtPct(Math.abs(g.gapPct)*-1)} por debajo</strong> de la cuota comercial — el avance de ventas real no está alcanzando el plan de comercial.`, 'media', '⚠'));
+    } else {
+      list.push(insightItem(`Las salidas reales están alineadas con la cuota comercial (brecha de ${fmtPct(g.gapPct)} acumulada a la fecha).`, 'baja', '✓'));
+    }
+  }
+
+  // Top brechas por combinación
+  const combosWithGap = filtered.map(c=> ({c, g: comboGapPct(c, di)})).filter(x=> x.g && x.g.n>=3);
+  combosWithGap.sort((a,b)=> Math.abs(b.g.gapPct) - Math.abs(a.g.gapPct));
+  combosWithGap.slice(0,3).forEach(x=>{
+    const dir = x.g.gapPct>=0 ? 'por encima de' : 'por debajo de';
+    list.push(insightItem(`<strong>${x.c.codigo} · ${x.c.cd}</strong> (${x.c.desc}): salida real ${fmtPct(Math.abs(x.g.gapPct))} ${dir} la cuota.`, Math.abs(x.g.gapPct)>30?'alta':'media', '↕'));
+  });
+
+  // Riesgo: zona roja + demanda real superando la cuota (comercial subestimando mientras hay quiebre)
+  const riskCombos = filtered.filter(c=>{
+    const z = classify(c.covReal[di], c);
+    const gp = comboGapPct(c, di);
+    return (z==='rojo') && gp && gp.gapPct > 10;
+  });
+  if(riskCombos.length){
+    list.push(insightItem(`<strong>${riskCombos.length} combinación(es) en zona roja</strong> muestran salidas reales por encima de la cuota planeada — la demanda real está presionando un stock ya crítico.`, 'alta', '🔴'));
+  }
+
+  const nRojo = filtered.filter(c=> classify(c.covReal[di],c)==='rojo').length;
+  const nExceso = filtered.filter(c=> classify(c.covReal[di],c)==='exceso').length;
+  if(nExceso >= Math.max(3, Math.round(filtered.length*0.1))){
+    list.push(insightItem(`${nExceso} combinaciones están en zona de exceso — vale revisar si la cuota comercial se está quedando corta frente al abastecimiento real, generando sobre-stock.`, 'info', 'ℹ'));
+  }
+
+  const box = document.getElementById('insightsGlobal');
+  box.innerHTML = list.length ? list.join('') : `<div class="insight-empty">No hay suficiente información cargada todavía para generar insights (carga Demanda_Cuota y Salidas_Reales).</div>`;
+}
+
+/* ------------------------------------------------------------ KPIs --- */
+function renderKPIs(filtered){
+  const di = VIEW.day - 1;
+  const avgReal = avg(filtered.map(c=>c.covReal[di]));
+  const avgCuota = avg(filtered.map(c=>c.covCuota[di]));
+  const brecha = (avgReal!==null && avgCuota!==null) ? (avgCuota - avgReal) : null;
+
+  let nRojo=0, nAmarillo=0, nVerde=0, nExceso=0, nSinDatos=0;
+  filtered.forEach(c=>{
+    const z = classify(c.covReal[di], c);
+    if(z==='rojo') nRojo++; else if(z==='amarillo') nAmarillo++;
+    else if(z==='verde') nVerde++; else if(z==='exceso') nExceso++; else nSinDatos++;
+  });
+  const sugerido = filtered.reduce((s,c)=> s + (c.abastSugerido[di]||0), 0);
+
+  const cards = [
+    {cls:'teal', label:'Cobertura real (histórico) — promedio', value: fmtDays(avgReal), unit:'días',
+     sub:`Base: salida real de los últimos 2 meses · ${filtered.length} combinaciones`},
+    {cls:'teal', label:'Cobertura cuota (cuota) — promedio', value: fmtDays(avgCuota), unit:'días',
+     sub:'Base: cuota diaria de los días restantes del mes'},
+    {cls:'accent', label:'Brecha cuota − real', value: (brecha===null?'—':(brecha>=0?'+':'')+brecha.toFixed(1)), unit:'días',
+     sub: brecha!==null && brecha>0.05 ? 'La cuota comercial proyecta más cobertura que la real' :
+          (brecha!==null && brecha<-0.05 ? 'La cobertura real supera a la proyectada por cuota' : 'Bases alineadas')},
+    {cls: (nRojo>0?'red':(nAmarillo>0?'yellow':'green')), label:'SKU × CD en zona roja / amarilla',
+     value:`${nRojo} <small>/ ${nAmarillo}</small>`, unit:'',
+     sub:`${nVerde} en verde · ${nExceso} en exceso · ${nSinDatos} sin datos`},
+    {cls:'accent', label:'Abastecimiento sugerido del día', value: fmtPkg(sugerido), unit:'paq.',
+     sub:'Suma sobre la selección actual, hoja Abastecimiento_Sugerido'}
+  ];
+  const row = document.getElementById('kpiRow');
+  row.innerHTML = cards.map(k=>`
+    <div class="kpi ${k.cls}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value} <small>${k.unit}</small></div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+}
+
+/* ------------------------------------------------------- gráficos --- */
+function buildDateLabels(){ return DATA.dates.map((d,i)=> d ? dateLabel(d, true) : `Día ${i+1}`); }
+
+const vLinePlugin = {
+  id: 'vLine',
+  afterDraw(chart){
+    const idx = VIEW.day - 1;
+    const meta = chart.getDatasetMeta(0);
+    if(!meta || !meta.data || !meta.data[idx]) return;
+    const x = meta.data[idx].x;
+    const {top, bottom} = chart.chartArea;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x, top); ctx.lineTo(x, bottom);
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(15,29,48,0.35)'; ctx.setLineDash([4,3]);
+    ctx.stroke(); ctx.restore();
+  }
+};
+
+function renderCoverageChart(filtered){
+  const labels = buildDateLabels();
+  const realSeries = [], cuotaSeries = [];
+  for(let d=0; d<N_DAYS; d++){
+    realSeries.push(avg(filtered.map(c=>c.covReal[d])));
+    cuotaSeries.push(avg(filtered.map(c=>c.covCuota[d])));
+  }
+  const avgRop = avg(filtered.map(c=>c.rop));
+  const avgTog = avg(filtered.map(c=>c.tog));
+  const ropSeries = new Array(N_DAYS).fill(avgRop);
+  const togSeries = new Array(N_DAYS).fill(avgTog);
+
+  const ctx = document.getElementById('coverageChart').getContext('2d');
+  if(CHARTS.coverage) CHARTS.coverage.destroy();
+  CHARTS.coverage = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[
+      { label:'Cobertura Real (Histórico)', data:realSeries, borderColor:'#0F1D30',
+        backgroundColor:'rgba(15,29,48,0.06)', borderWidth:2, pointRadius:0, tension:.25, fill:false },
+      { label:'Cobertura Cuota (Cuota)', data:cuotaSeries, borderColor:'#0E8C82',
+        backgroundColor:'rgba(240,217,181,0.55)', borderWidth:2, pointRadius:0, tension:.25, fill:'-1' },
+      { label:'ROP (límite inferior política)', data:ropSeries, borderColor:'rgba(210,72,63,0.55)',
+        borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false },
+      { label:'TOG (límite superior política)', data:togSeries, borderColor:'rgba(46,139,82,0.55)',
+        borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false }
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{ label:(c)=> `${c.dataset.label}: ${c.parsed.y===null?'—':c.parsed.y.toFixed(1)} d` } } },
+      scales:{
+        x:{ grid:{display:false}, ticks:{maxTicksLimit:11, font:{family:"'IBM Plex Mono', monospace", size:10}} },
+        y:{ grid:{color:'#EAEFF4'}, title:{display:true, text:'días de cobertura'},
+            ticks:{font:{family:"'IBM Plex Mono', monospace", size:10}} }
+      }
+    },
+    plugins:[vLinePlugin]
+  });
+}
+
+function renderZoneChart(filtered){
+  const di = VIEW.day - 1;
+  const counts = {rojo:0, amarillo:0, verde:0, exceso:0, sindatos:0};
+  filtered.forEach(c=> counts[classify(c.covReal[di], c)]++ );
+  const order = ['rojo','amarillo','verde','exceso','sindatos'];
+  const colors = {rojo:'#D2483F', amarillo:'#D99A2B', verde:'#2E8B52', exceso:'#3A5FA8', sindatos:'#9AA6B4'};
+  const ctx = document.getElementById('zoneChart').getContext('2d');
+  if(CHARTS.zone) CHARTS.zone.destroy();
+  CHARTS.zone = new Chart(ctx, {
+    type:'bar',
+    data:{ labels: order.map(o=>ZONE_LABEL[o]),
+      datasets:[{ data: order.map(o=>counts[o]), backgroundColor: order.map(o=>colors[o]), borderRadius:4, maxBarThickness:46 }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:(c)=>`${c.parsed.y} combinaciones`}} },
+      scales:{ x:{grid:{display:false}}, y:{grid:{color:'#EAEFF4'}, beginAtZero:true, ticks:{precision:0}} }
+    }
+  });
+}
+
+
+/* -------------------------------------------------------- tabla --- */
+function bufferGaugeHTML(c, di){
+  if(c.zr===null || c.za===null || c.zv===null){
+    return `<div class="gauge" style="background:#F2F4F7;"></div>`;
+  }
+  const scale = c.zr + c.za + (2*c.zv) || 1;
+  const pRojo = (c.zr/scale)*100;
+  const pAmarillo = (c.za/scale)*100;
+  const pVerde = (c.zv/scale)*100;
+  const pExceso = 100 - pRojo - pAmarillo - pVerde;
+  const clip = v => Math.max(0, Math.min(100, (v/scale)*100));
+  const markers = [];
+  if(c.covReal[di]!==null) markers.push(`<div class="marker real" style="left:${clip(c.covReal[di])}%"></div>`);
+  if(c.covCuota[di]!==null) markers.push(`<div class="marker cuota" style="left:${clip(c.covCuota[di])}%"></div>`);
+  return `<div class="gauge">
+    <div class="seg rojo" style="width:${pRojo}%"></div>
+    <div class="seg amarillo" style="width:${pAmarillo}%"></div>
+    <div class="seg verde" style="width:${pVerde}%"></div>
+    <div class="seg exceso" style="width:${pExceso}%"></div>
+    ${markers.join('')}
+  </div>`;
+}
+
+function renderTable(filtered){
+  const di = VIEW.day - 1;
+  const rows = filtered.map(c=>{
+    const z = classify(c.covReal[di], c);
+    return {
+      c, zone: z,
+      covReal: c.covReal[di], covCuota: c.covCuota[di],
+      brecha: (c.covCuota[di]!==null && c.covReal[di]!==null) ? (c.covCuota[di]-c.covReal[di]) : null,
+      demanda: c.demanda[di], salida: c.salidaReal[di], sugerido: c.abastSugerido[di]
+    };
+  });
+
+  const key = VIEW.sortKey, dir = VIEW.sortDir === 'asc' ? 1 : -1;
+  rows.sort((a,b)=>{
+    let va, vb;
+    if(key==='cd'){ va=a.c.cd||''; vb=b.c.cd||''; }
+    else if(key==='codigo'){ va=a.c.codigo||''; vb=b.c.codigo||''; }
+    else if(key==='desc'){ va=a.c.desc||''; vb=b.c.desc||''; }
+    else if(key==='formato'){ va=a.c.formato||''; vb=b.c.formato||''; }
+    else if(key==='zona'){ va=a.zone; vb=b.zone; }
+    else { va = a[key]; vb = b[key]; }
+    if(va===null||va===undefined) va = (typeof vb==='number') ? -Infinity : '';
+    if(vb===null||vb===undefined) vb = (typeof va==='number') ? -Infinity : '';
+    if(va<vb) return -1*dir; if(va>vb) return 1*dir; return 0;
+  });
+
+  const body = document.getElementById('detailBody');
+  body.innerHTML = rows.map(r=>`
+    <tr data-idx="${r.c.idx}">
+      <td>${r.c.cd||''}</td>
+      <td class="code-cell">${r.c.codigo||''}</td>
+      <td class="desc-cell" title="${r.c.desc||''}">${r.c.desc||''}</td>
+      <td>${r.c.formato||''}</td>
+      <td class="num">${fmtDays(r.covReal)}</td>
+      <td class="num">${fmtDays(r.covCuota)}</td>
+      <td class="num">${r.brecha===null?'—':(r.brecha>=0?'+':'')+r.brecha.toFixed(1)}</td>
+      <td><span class="zone-chip ${r.zone}">${ZONE_LABEL[r.zone]}</span></td>
+      <td>${bufferGaugeHTML(r.c, di)}</td>
+      <td class="num">${fmtPkg(r.demanda)}</td>
+      <td class="num">${fmtPkg(r.salida)}</td>
+      <td class="num">${fmtPkg(r.sugerido)}</td>
+    </tr>`).join('');
+
+  document.getElementById('rowCount').textContent = `${rows.length} combinaciones`;
+
+  body.querySelectorAll('tr').forEach(tr=>{
+    tr.addEventListener('click', ()=>{
+      VIEW.selectedIdx = Number(tr.dataset.idx);
+      switchTab('sku');
+      renderSkuTab();
+    });
+  });
+
+  document.querySelectorAll('#detailTable thead th').forEach(th=>{
+    th.querySelector('.arrow')?.remove();
+    if(th.dataset.key===VIEW.sortKey){
+      const arrow = document.createElement('span');
+      arrow.className='arrow';
+      arrow.textContent = VIEW.sortDir==='asc' ? '▲' : '▼';
+      th.appendChild(arrow);
+    }
+  });
+}
+
+/* ======================================================= TAB SKU ==== */
+function populateSkuPicker(filtered){
+  const sel = document.getElementById('skuPicker');
+  const prev = VIEW.selectedIdx;
+  const sorted = filtered.slice().sort((a,b)=> (a.cd+a.codigo).localeCompare(b.cd+b.codigo));
+  sel.innerHTML = sorted.map(c=>
+    `<option value="${c.idx}">${c.cd} · ${c.codigo} · ${c.desc} (${c.formato})</option>`).join('');
+  const stillValid = sorted.some(c=> c.idx === prev);
+  if(prev!==null && stillValid){ sel.value = String(prev); }
+  else if(sorted.length){ VIEW.selectedIdx = sorted[0].idx; sel.value = String(sorted[0].idx); }
+  else { VIEW.selectedIdx = null; }
+}
+
+function abcNote(abc){
+  if(abc==='A') return 'Clase A — alto volumen, concentra ~80% de la cuota acumulada. Prioridad de servicio.';
+  if(abc==='B') return 'Clase B — volumen medio (siguiente ~15% de la cuota acumulada).';
+  return 'Clase C — bajo volumen (resto ~5% de la cuota acumulada).';
+}
+
+function renderSkuHeader(c, di){
+  const cv = (()=>{ const m = avg(c.salidaReal); const sd = stddev(c.salidaReal);
+    return (m && sd!==null && m>0) ? (sd/m)*100 : null; })();
+  const stats = [
+    {lbl:'Código SKU', val: c.codigo||'—'},
+    {lbl:'CD', val: `${c.cd||''} (${c.centro||''})`},
+    {lbl:'Formato', val: c.formato||'—'},
+    {lbl:'Clasificación', val: `<span class="abc-chip ${c.abc}">${c.abc}</span>`},
+    {lbl:'Política ROP / TOG (días)', val: `${fmtDays(c.rop)} / ${fmtDays(c.tog)}`},
+    {lbl:'Variabilidad salida real (CV)', val: cv===null ? 'N/D' : cv.toFixed(0)+'%'},
+    {lbl:'Cobertura real hoy', val: fmtDays(c.covReal[di])+' d'},
+    {lbl:'Cobertura cuota hoy', val: fmtDays(c.covCuota[di])+' d'},
+    {lbl:'Zona hoy', val: `<span class="zone-chip ${classify(c.covReal[di],c)}">${ZONE_LABEL[classify(c.covReal[di],c)]}</span>`},
+    {lbl:'Abastecimiento sugerido hoy', val: fmtPkg(c.abastSugerido[di])+' paq.'},
+    {lbl:'Stock en piso hoy', val: fmtPkg(c.invInicial[di])+' paq.'},
+    {lbl:'Cuota diaria hoy', val: fmtPkg(c.demanda[di])+' paq.'}
+  ];
+  document.getElementById('skuHeader').innerHTML = stats.map(s=>
+    `<div class="sku-stat"><div class="lbl">${s.lbl}</div><div class="val">${s.val}</div></div>`).join('')
+    + `<div class="sku-stat" style="grid-column:1/-1;"><div class="lbl">Nota ABC</div><div class="val" style="font-size:12px;font-weight:500;">${abcNote(c.abc)}</div></div>`;
+}
+
+function renderSkuInsights(c, di){
+  const list = [];
+  const gp = comboGapPct(c, di);
+  if(!gp){
+    list.push(insightItem('Todavía no hay suficientes días de salida real cargados para este SKU para comparar contra la cuota.', 'info', 'ℹ'));
+  } else if(gp.gapPct > 8){
+    list.push(insightItem(`La salida real acumulada de este SKU está <strong>${fmtPct(gp.gapPct)}</strong> por encima de la cuota comercial — comercial podría estar subestimando la demanda real de este producto.`, gp.gapPct>25?'alta':'media', '⚠'));
+  } else if(gp.gapPct < -8){
+    list.push(insightItem(`La salida real acumulada está <strong>${fmtPct(gp.gapPct)}</strong> vs. la cuota — el avance de venta de este SKU va por debajo de lo planeado por comercial.`, 'media', '⚠'));
+  } else {
+    list.push(insightItem(`La salida real de este SKU está alineada con su cuota comercial (brecha de ${fmtPct(gp.gapPct)}).`, 'baja', '✓'));
+  }
+  const z = classify(c.covReal[di], c);
+  if(z==='rojo') list.push(insightItem('Este SKU × CD está en <strong>zona roja</strong> hoy — cobertura por debajo del mínimo de política (ROP).', 'alta', '🔴'));
+  if(z==='exceso') list.push(insightItem('Este SKU × CD está en <strong>zona de exceso</strong> — por encima del tope de política (TOG).', 'info', 'ℹ'));
+  const cv = (()=>{ const m = avg(c.salidaReal); const sd = stddev(c.salidaReal); return (m && sd!==null && m>0) ? (sd/m)*100 : null; })();
+  if(cv!==null && cv>40){
+    list.push(insightItem(`Alta variabilidad en la demanda real (CV ${cv.toFixed(0)}%) — la política de este SKU podría necesitar un colchón mayor si la variabilidad se mantiene.`, 'media', '📊'));
+  }
+  document.getElementById('insightsSku').innerHTML = list.length ? list.join('') : `<div class="insight-empty">Sin insights adicionales para este SKU.</div>`;
+}
+
+function renderSkuEvolChart(c){
+  const labels = buildDateLabels();
+  const minPkg=[], maxPkg=[], promPkg=[], stockPiso=[], stockTransito=[], salidaR=[], cuotaD=[];
+  for(let d=0; d<N_DAYS; d++){
+    const tasa = c.tasaSalida[d];
+    minPkg.push(tasa!==null && c.rop!==null ? c.rop*tasa : null);
+    maxPkg.push(tasa!==null && c.tog!==null ? c.tog*tasa : null);
+    promPkg.push(tasa!==null && c.rop!==null && c.tog!==null ? ((c.rop+c.tog)/2)*tasa : null);
+    stockPiso.push(c.invInicial[d]);
+    stockTransito.push((c.invInicial[d]!==null||c.transito[d]!==null) ? (c.invInicial[d]||0)+(c.transito[d]||0) : null);
+    salidaR.push(c.salidaReal[d]);
+    cuotaD.push(c.demanda[d]);
+  }
+  const ctx = document.getElementById('skuEvolChart').getContext('2d');
+  if(CHARTS.skuEvol) CHARTS.skuEvol.destroy();
+  CHARTS.skuEvol = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[
+      { label:'Política mínimo (ROP)', data:minPkg, borderColor:'rgba(31,78,120,0.0)',
+        backgroundColor:'rgba(31,78,120,0.10)', borderWidth:0, pointRadius:0, fill:false, order:5 },
+      { label:'Política máximo (TOG)', data:maxPkg, borderColor:'rgba(31,78,120,0.25)',
+        backgroundColor:'rgba(31,78,120,0.10)', borderWidth:1, pointRadius:0, fill:'-1', order:5 },
+      { label:'Política promedio', data:promPkg, borderColor:'#8A97A8', borderDash:[5,4],
+        borderWidth:1.5, pointRadius:0, fill:false, order:4 },
+      { label:'Stock en piso', data:stockPiso, borderColor:'#1F4E78', borderWidth:2.2, pointRadius:0, tension:.2, fill:false, order:1 },
+      { label:'Stock piso + tránsito', data:stockTransito, borderColor:'#6E5AA8', borderWidth:1.6, borderDash:[2,2], pointRadius:0, tension:.2, fill:false, order:2 },
+      { label:'Salidas reales diarias', data:salidaR, borderColor:'#D2483F', borderWidth:1.8, pointRadius:2, tension:.15, fill:false, order:3 },
+      { label:'Cuota diaria', data:cuotaD, borderColor:'#0E8C82', borderWidth:1.8, pointRadius:0, borderDash:[3,3], tension:.15, fill:false, order:3 }
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{ label:(cc)=> `${cc.dataset.label}: ${cc.parsed.y===null?'—':Math.round(cc.parsed.y).toLocaleString('es-GT')} paq.` } } },
+      scales:{
+        x:{ grid:{display:false}, ticks:{maxTicksLimit:11, font:{family:"'IBM Plex Mono', monospace", size:10}} },
+        y:{ grid:{color:'#EAEFF4'}, title:{display:true, text:'paquetes'},
+            ticks:{font:{family:"'IBM Plex Mono', monospace", size:10}} }
+      }
+    }
+  });
+}
+
+function renderSkuRateChart(c){
+  const labels = buildDateLabels();
+  const ctx = document.getElementById('skuRateChart').getContext('2d');
+  if(CHARTS.skuRate) CHARTS.skuRate.destroy();
+  CHARTS.skuRate = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[
+      { label:'Tasa salida real (últ. 2 meses)', data:c.tasaSalida, borderColor:'#0F1D30', borderWidth:2, pointRadius:0, tension:.2 },
+      { label:'Tasa cuota futura', data:c.tasaCuota, borderColor:'#0E8C82', borderWidth:2, pointRadius:0, tension:.2 }
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:10, font:{size:11}}},
+        tooltip:{callbacks:{label:(cc)=>`${cc.dataset.label}: ${cc.parsed.y===null?'—':cc.parsed.y.toFixed(1)} paq/día`}} },
+      scales:{
+        x:{ grid:{display:false}, ticks:{maxTicksLimit:11, font:{family:"'IBM Plex Mono', monospace", size:10}} },
+        y:{ grid:{color:'#EAEFF4'}, ticks:{font:{family:"'IBM Plex Mono', monospace", size:10}} }
+      }
+    }
+  });
+}
+
+function renderSkuTab(){
+  if(!DATA.loaded) return;
+  const filtered = getFiltered();
+  populateSkuPicker(filtered);
+  if(VIEW.selectedIdx===null) return;
+  const c = DATA.combos[VIEW.selectedIdx];
+  const di = VIEW.day - 1;
+  renderSkuHeader(c, di);
+  renderSkuInsights(c, di);
+  renderSkuEvolChart(c);
+  renderSkuRateChart(c);
+}
+
+/* =============================================== TAB METODOLOGÍA ==== */
+function checkRow(status, text){
+  const icon = status==='ok' ? '✓' : (status==='warn' ? '!' : '✕');
+  return `<div class="check-row"><span class="check-icon ${status}">${icon}</span><span class="check-text">${text}</span></div>`;
+}
+
+function renderValidation(){
+  const combos = DATA.combos;
+  const n = combos.length;
+  const checks = [];
+
+  // Consistencia de filas entre hojas: si alguna hoja tiene un número distinto
+  // de combinaciones, hay desalineación (p. ej. se agregó/eliminó un SKU en
+  // una hoja pero no en las demás) y los datos de ese punto en adelante
+  // corresponderían a la fila equivocada.
+  const rc = DATA.rowCounts || {};
+  const counts = Object.entries(rc);
+  const mismatched = counts.filter(([,c])=> c !== n);
+  if(mismatched.length){
+    checks.push(checkRow('fail',
+      `<strong>Desalineación de filas detectada.</strong> Politica_Inventarios tiene ${n} combinaciones, pero: ` +
+      mismatched.map(([name,c])=>`${name} = ${c}`).join(', ') +
+      `. Si agregaste o quitaste SKUs, revisa que TODAS las hojas tengan exactamente las mismas filas, en el mismo orden — de lo contrario los cálculos de esas filas corresponden a otra combinación.`));
+  } else {
+    checks.push(checkRow('ok', `Las ${n} combinaciones están alineadas de forma consistente en todas las hojas revisadas.`));
+  }
+
+  checks.push(checkRow(n>0 ? 'ok':'fail', `<strong>${n}</strong> combinaciones SKU × CD cargadas.`));
+
+  const noPolitica = combos.filter(c=> c.zr===null||c.za===null||c.zv===null).length;
+  checks.push(checkRow(noPolitica===0?'ok':(noPolitica<n*0.05?'warn':'fail'),
+    `<strong>${noPolitica}</strong> combinaciones sin política de inventarios (ZR/ZA/ZV) cargada.`));
+
+  const validDates = DATA.dates.filter(d=> d instanceof Date && !isNaN(d)).length;
+  checks.push(checkRow(validDates===N_DAYS?'ok':'warn',
+    `<strong>${validDates}</strong> de ${N_DAYS} columnas de fecha reconocidas en el encabezado.`));
+
+  let cellsDemanda=0, cellsFilled=0;
+  combos.forEach(c=> c.demanda.forEach(v=>{ cellsDemanda++; if(v!==null) cellsFilled++; }));
+  const pctDemanda = cellsDemanda? (cellsFilled/cellsDemanda*100):0;
+  checks.push(checkRow(pctDemanda>90?'ok':(pctDemanda>40?'warn':'fail'),
+    `<strong>${pctDemanda.toFixed(0)}%</strong> de las celdas de Demanda_Cuota tienen dato cargado.`));
+
+  let cellsSalida=0, cellsSalidaFilled=0;
+  combos.forEach(c=> c.salidaReal.forEach(v=>{ cellsSalida++; if(v!==null) cellsSalidaFilled++; }));
+  const pctSalida = cellsSalida? (cellsSalidaFilled/cellsSalida*100):0;
+  checks.push(checkRow(pctSalida>3?'ok':'warn',
+    `<strong>${pctSalida.toFixed(0)}%</strong> de las celdas de Salidas_Reales tienen dato cargado (esperado: crece día a día durante el mes).`));
+
+  const negativos = combos.filter(c=> c.invFinal.some(v=> v!==null && v<0)).length;
+  checks.push(checkRow(negativos===0?'ok':'fail',
+    `<strong>${negativos}</strong> combinaciones con Inventario_Final negativo en algún día (posible quiebre no cubierto o error de carga).`));
+
+  const sinCodigo = combos.filter(c=> !c.codigo).length;
+  checks.push(checkRow(sinCodigo===0?'ok':'warn',
+    `<strong>${sinCodigo}</strong> combinaciones sin Código SKU. Recuerda reemplazar los códigos placeholder (SKU-XXX) por los códigos reales de SAP.`));
+
+  const zeroTasa = combos.filter(c=> (c.tasaSalida[VIEW.day-1]||0)===0).length;
+  checks.push(checkRow(zeroTasa < n*0.3 ? 'ok':'warn',
+    `<strong>${zeroTasa}</strong> combinaciones con tasa de salida real en 0 para el día seleccionado (sin data histórica de los últimos 2 meses todavía).`));
+
+  document.getElementById('validationChecks').innerHTML = checks.join('');
+}
+
+function renderMethodology(){
+  const sections = [
+    {
+      title: 'Estructura de columnas',
+      body: `Todas las hojas matriz siguen el mismo layout: columnas A–E son identificadoras
+        (CD, Centro, Código SKU, Descripción, Formato) y F:AJ son los 31 días del mes. La hoja
+        Política de Inventarios agrega las columnas F–J (Zona Roja, Zona Amarilla, Zona Verde,
+        TOG, ROP) — no tiene columnas de día porque la política es fija para el mes.`
+    },
+    {
+      title: 'Tasa de salida real (últimos 2 meses)',
+      body: `Se calcula como el promedio simple de dos ventanas combinadas: el mes anterior
+        COMPLETO (hoja Salidas_Reales_MesAnterior) y los días transcurridos del mes actual
+        (Salidas_Reales, día 1 al d−1). Para el día 1 del mes, la tasa es simplemente el
+        promedio del mes anterior.`,
+      formula: `Tasa_real(d) = PROMEDIO( Salidas_Reales_MesAnterior[todos los días] ,\n                          Salidas_Reales[día 1 .. día d-1] )`
+    },
+    {
+      title: 'Tasa de cuota futura',
+      body: `Promedio de la cuota diaria de los días futuros respecto al día evaluado (día d+1
+        en adelante hasta fin de mes). El día 31 usa la cuota del propio día 31 al no existir
+        días futuros dentro del mes.`,
+      formula: `Tasa_cuota(d) = PROMEDIO( Demanda_Cuota[día d+1 .. día 31] )`
+    },
+    {
+      title: 'Cobertura Real (Histórico) y Cobertura Cuota (Cuota)',
+      body: `Ambas coberturas dividen el mismo Inventario_Final proyectado del día entre una
+        tasa diaria distinta — por eso se pueden comparar directamente.`,
+      formula: `Cobertura Real (Histórico)(d) = Inventario_Final(d) / Tasa_real(d)\nCobertura Cuota (Cuota)(d)     = Inventario_Final(d) / Tasa_cuota(d)`
+    },
+    {
+      title: 'Abastecimiento sugerido (NFP)',
+      body: `La posición de flujo neto (NFP) se expresa en días usando la tasa de salida real
+        (no la cuota, para que la sugerencia refleje el consumo real). Si el NFP ya está en o
+        por encima del ROP, no hay sugerencia; si está por debajo, se sugiere completar hasta el TOG.`,
+      formula: `NFP(d) = ( Inventario_Inicial(d) + Transito_En_Curso(d) - Demanda_Cuota(d) ) / Tasa_real(d)\nSi NFP(d) >= ROP  ->  Sugerido = 0\nSi NFP(d) <  ROP  ->  Sugerido = ( TOG - NFP(d) ) * Tasa_real(d)`
+    },
+    {
+      title: 'Inventario Final y rollover',
+      body: `El inventario final del día alimenta el inventario inicial del día siguiente. El
+        equipo debe reemplazar esa fórmula por el stock real (SAP/físico) el día que corresponda.`,
+      formula: `Inventario_Final(d) = Inventario_Inicial(d) + Transito_En_Curso(d) + Plan_Abastecimiento(d) - Demanda_Cuota(d)\nInventario_Inicial(d+1) = Inventario_Final(d)   [reemplazar por stock real al llegar ese día]`
+    },
+    {
+      title: 'Zonas de buffer (rojo / amarillo / verde / exceso)',
+      body: `La zona de un día se determina comparando la cobertura real contra los umbrales de
+        política de esa combinación (en días).`,
+      formula: `cobertura <= ZR                  -> Rojo\nZR < cobertura <= ZR+ZA (ROP)    -> Amarillo\nROP < cobertura <= TOG           -> Verde\ncobertura > TOG                  -> Exceso`
+    },
+    {
+      title: 'Clasificación ABC',
+      body: `Se calcula en el dashboard (no en Excel) ordenando todas las combinaciones por su
+        volumen total de cuota del mes, de mayor a menor, y acumulando el porcentaje del total:
+        las que acumulan hasta el 80% son Clase A, hasta el 95% Clase B, y el resto Clase C.
+        Es una clasificación de referencia rápida — no reemplaza un análisis ABC formal.`
+    },
+    {
+      title: 'Supuestos clave',
+      body: `Lead Time: 0.5 días para todos los CDs salvo Cobán y Huehuetenango (1 día) — con LT
+        ≤1 día se asume que el Plan_Abastecimiento del día llega el mismo día. Código SKU: los
+        códigos SKU-001..SKU-059 son placeholders generados automáticamente (uno por descripción
+        única); reemplazar por el código real de SAP.`
+    }
+  ];
+  const html = sections.map((s,i)=>`
+    <div class="accordion ${i===0?'open':''}" data-i="${i}">
+      <div class="accordion-head"><span>${s.title}</span><span class="caret">▶</span></div>
+      <div class="accordion-body">
+        <div>${s.body}</div>
+        ${s.formula ? `<div class="formula-block">${s.formula}</div>` : ''}
+      </div>
+    </div>`).join('');
+  const box = document.getElementById('methodologyAccordion');
+  box.innerHTML = html;
+  box.querySelectorAll('.accordion-head').forEach(h=>{
+    h.addEventListener('click', ()=> h.closest('.accordion').classList.toggle('open'));
+  });
+}
+
+/* ---------------------------------------------------------- tabs --- */
+function switchTab(tab){
+  VIEW.activeTab = tab;
+  document.querySelectorAll('.tabnav button').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.tab-panel').forEach(p=> p.classList.toggle('active', p.id===`tab-${tab}`));
+  renderActiveTab();
+}
+function renderActiveTab(){
+  if(!DATA.loaded) return;
+  if(VIEW.activeTab==='resumen') renderResumenTab();
+  else if(VIEW.activeTab==='sku') renderSkuTab();
+  else if(VIEW.activeTab==='metodologia'){ renderValidation(); renderMethodology(); }
+}
+document.querySelectorAll('.tabnav button').forEach(b=>{
+  b.addEventListener('click', ()=> switchTab(b.dataset.tab));
+});
+
+/* --------------------------------------------------------- render --- */
+function renderResumenTab(){
+  const filtered = getFiltered();
+  renderGlobalInsights(filtered);
+  renderKPIs(filtered);
+  renderCoverageChart(filtered);
+  renderZoneChart(filtered);
+  renderTable(filtered);
+}
+
+function populateFilters(){
+  const cds = Array.from(new Set(DATA.combos.map(c=>c.cd).filter(Boolean))).sort();
+  VIEW.cds = new Set();
+  const chipWrap = document.getElementById('cdChips');
+  chipWrap.innerHTML = cds.map(cd=>`<span class="chip" data-cd="${cd}">${cd}</span>`).join('');
+  chipWrap.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const cd = chip.dataset.cd;
+      if(VIEW.cds.has(cd)){ VIEW.cds.delete(cd); chip.classList.remove('active'); }
+      else { VIEW.cds.add(cd); chip.classList.add('active'); }
+      renderActiveTab();
+    });
+  });
+
+  const formatos = Array.from(new Set(DATA.combos.map(c=>c.formato).filter(Boolean))).sort();
+  const sel = document.getElementById('formatoFilter');
+  sel.innerHTML = '<option value="">Todos</option>' + formatos.map(f=>`<option value="${f}">${f}</option>`).join('');
+  sel.value = '';
+
+  VIEW.zones = new Set();
+  document.querySelectorAll('#zoneChips .chip').forEach(chip=>{
+    chip.classList.remove('active','zone-active-rojo','zone-active-amarillo','zone-active-verde','zone-active-exceso');
+    chip.onclick = () => {
+      const z = chip.dataset.zone;
+      if(VIEW.zones.has(z)){
+        VIEW.zones.delete(z); chip.classList.remove('active', `zone-active-${z}`);
+      } else {
+        VIEW.zones.add(z); chip.classList.add('active', `zone-active-${z}`);
+      }
+      renderActiveTab();
+    };
+  });
+}
+
+/* ------------------------------------------------------- eventos --- */
+document.getElementById('daySlider').addEventListener('input', (e)=>{
+  VIEW.day = Number(e.target.value);
+  const d = DATA.dates[VIEW.day-1];
+  document.getElementById('dayPillLabel').textContent = d ? dateLabel(d,true) : `Día ${String(VIEW.day).padStart(2,'0')}`;
+  renderActiveTab();
+});
+document.getElementById('formatoFilter').addEventListener('change', (e)=>{ VIEW.formato = e.target.value; renderActiveTab(); });
+document.getElementById('searchBox').addEventListener('input', (e)=>{ VIEW.search = e.target.value; renderActiveTab(); });
+document.querySelectorAll('#detailTable thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(VIEW.sortKey===key){ VIEW.sortDir = VIEW.sortDir==='asc'?'desc':'asc'; }
+    else { VIEW.sortKey = key; VIEW.sortDir = 'asc'; }
+    renderActiveTab();
+  });
+});
+document.getElementById('skuPicker').addEventListener('change', (e)=>{
+  VIEW.selectedIdx = Number(e.target.value);
+  renderSkuTab();
+});
+
+/* --------------------------------------------------- carga de archivo --- */
+function handleFile(file){
+  if(!file) return;
+  const statusEls = [document.getElementById('fileStatus')];
+  statusEls.forEach(el=>{ el.textContent='Leyendo archivo…'; el.classList.remove('ok'); });
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array', cellDates:true});
+      const parsed = parseWorkbook(wb);
+      DATA = { combos: parsed.combos, dates: parsed.dates, rowCounts: parsed.rowCounts, loaded: true };
+      VIEW.selectedIdx = null;
+      populateFilters();
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('appShell').classList.add('show');
+      document.getElementById('tabNav').style.display = 'flex';
+      statusEls.forEach(el=>{ el.textContent = `Cargado: ${file.name} (${DATA.combos.length} combinaciones)`; el.classList.add('ok'); });
+
+      const validDates = DATA.dates.filter(d=> d instanceof Date && !isNaN(d));
+      if(validDates.length){
+        const first = validDates[0], last = validDates[validDates.length-1];
+        const monthYear = `${MONTHS_ES[first.getMonth()].charAt(0).toUpperCase()}${MONTHS_ES[first.getMonth()].slice(1)} ${first.getFullYear()}`;
+        document.getElementById('horizonLabel').textContent = `${dateLabel(first)} – ${dateLabel(last)}`;
+        document.getElementById('brandTitle').textContent = `Cobertura Guatemala — ${monthYear}`;
+        document.title = `Cobertura Guatemala — ${monthYear}`;
+      }
+
+      const slider = document.getElementById('daySlider');
+      slider.max = DATA.dates.length || N_DAYS;
+      VIEW.day = 1; slider.value = 1;
+      document.getElementById('dayPillLabel').textContent = validDates.length ? dateLabel(validDates[0], true) : 'Día 01';
+
+      switchTab('resumen');
+    }catch(err){
+      console.error(err);
+      statusEls.forEach(el=>{ el.textContent = 'Error al leer el archivo: ' + err.message; el.classList.remove('ok'); });
+      alert('No se pudo leer el archivo. Verifica que sea el Excel de Cobertura generado por el modelo.\n\n' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('fileInputEmpty').addEventListener('change', (e)=> handleFile(e.target.files[0]));
+document.getElementById('fileInputToolbar').addEventListener('change', (e)=> handleFile(e.target.files[0]));
+
+const dropTarget = document.getElementById('dropTarget');
+['dragenter','dragover'].forEach(evt=> dropTarget.addEventListener(evt, (e)=>{ e.preventDefault(); dropTarget.classList.add('drag'); }));
+['dragleave','drop'].forEach(evt=> dropTarget.addEventListener(evt, (e)=>{ e.preventDefault(); dropTarget.classList.remove('drag'); }));
+dropTarget.addEventListener('drop', (e)=>{
+  const file = e.dataTransfer.files && e.dataTransfer.files[0];
+  if(file) handleFile(file);
+});
+
+})();
+</script>
+</body>
+</html>
