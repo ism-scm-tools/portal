@@ -23,11 +23,14 @@
                    "proceso".
 
    "manager"     Supply Chain Manager (Gerentes)
-                 → campo "categoria" (ej. "Almacenes"): ve las apps
-                   cuya categoria incluya esa etiqueta, O las de
-                   categoría "Estratégico" — en AMBOS casos SOLO si
-                   el estado es "nuevo" o "actualizado".
-                 → Nunca ve "Restringido".
+                 → ve TODAS las apps, de cualquier categoría (incluido
+                   "Estratégico") y cualquier estado. Es el único rol,
+                   junto con admin, que ve todos los procesos por
+                   igual. No se filtra por el campo "categoria" del
+                   usuario — ese campo queda solo como referencia de
+                   a qué área pertenece la persona.
+                 → Nunca ve "Restringido" (esa es la única diferencia
+                   real frente a admin).
 
    "lead"        Supply Chain Lead
                  → ve TODAS las apps en estado "nuevo" o "actualizado",
