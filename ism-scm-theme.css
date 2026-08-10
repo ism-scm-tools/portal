@@ -1,33 +1,65 @@
 /* ============================================================
-   ism-scm-theme.css — v1.2
+   ism-scm-theme.css — v1.2 (ARCHIVO COMPLETO)
    Ecosistema de Herramientas IA & Analytics — SCM
-   Industrias San Miguel — Jefatura Corporativa de Supply Chain
-   Novedades v1.2: Sistema de Movimiento, componentes faltantes
-   (popover, tooltip, skeleton, vacío, confirmación), colores de
-   gráfico validados por contraste WCAG AA, foco de teclado,
-   jerarquía de texto de header sin opacidades fallidas.
+   Industrias San Miguel — Jefatura Corporativa de Supply Chain (SC-CORP)
+
+   Basado en: Manual de Identidad Visual ISM-SCM v1.2 (Agosto 2026)
+   Incluye base v1.0/v1.1 + novedades v1.2: Sistema de Movimiento,
+   popover/tooltip, skeleton, estado vacío, confirmación destructiva,
+   colores de gráfico validados por contraste WCAG AA, foco de
+   teclado dedicado, jerarquía de texto de header sin opacidades,
+   excepción de sidebar reducido, y modo oscuro completo.
+
+   Índice:
+   01. Variables — paleta primaria y semántica
+   02. Variables — colores de gráfico (validados on-light/on-dark)
+   03. Variables — tipografía
+   04. Variables — superficies, header y foco (light + dark)
+   05. Variables — layout
+   06. Variables — Sistema de Movimiento
+   07. Modo oscuro — [data-theme="dark"]
+   08. Reset base
+   09. Reducción de movimiento (prefers-reduced-motion)
+   10. Header de aplicación (.ism-header)
+   11. Sidebar lateral (.ism-sidebar)
+   12. Botones (.ism-btn)
+   13. Badges de estado (.ism-badge--*)
+   14. Tabla de datos (.ism-table)
+   15. KPI Card (.ism-kpi-card)
+   16. Formularios (inputs, select, textarea)
+   17. Sección 01 — Cargar Archivos (upload zone, file list, progress)
+   18. Sección 02 — Insights Automáticos
+   19. Sección 03 — Análisis IA (chat, typing indicator, prompts)
+   20. Sección 04 — Lógica de Análisis (accordion, fórmulas)
+   21. Sección 05 — Exportar Resultados
+   22. Popover / Tooltip / Modal
+   23. Skeleton (estado de carga)
+   24. Estado vacío (.ism-empty)
+   25. Confirmación de acción destructiva (.ism-confirm-dialog)
+   26. Footer (.ism-footer)
+   27. Utilidades
    ============================================================ */
 
 :root {
-  /* ---------- 1. Paleta primaria (sin cambios v1.0/v1.1) ---------- */
+  /* ---------- 01. Paleta primaria ---------- */
   --ism-green: #00953B;
   --ism-green-dark: #006B2B;
   --ism-green-10: #E8F5EE;
   --ism-red: #EE3124;
   --ism-black: #302A1B;
 
-  /* ---------- 2. Semáforo (light) ---------- */
-  --ism-ok-bg: #E8F5EE;      --ism-ok-text: #004D1E;      --ism-ok-border: #99D4B1;
-  --ism-warning-bg: #FFF8E1; --ism-warning-text: #7A5A00; --ism-warning-border: #FFBC36;
+  /* Semáforo (light) */
+  --ism-ok-bg: #E8F5EE;       --ism-ok-text: #004D1E;       --ism-ok-border: #99D4B1;
+  --ism-warning-bg: #FFF8E1;  --ism-warning-text: #7A5A00;  --ism-warning-border: #FFBC36;
   --ism-critical-bg: #FDEDEC; --ism-critical-text: #9B1A10; --ism-critical-border: #F89C95;
-  --ism-nd-bg: #F3F4F6;      --ism-nd-text: #374151;      --ism-nd-border: #D1D5DB;
+  --ism-nd-bg: #F3F4F6;       --ism-nd-text: #374151;       --ism-nd-border: #D1D5DB;
 
-  /* ---------- 3. Colores de gráfico (Chart.js) ----------
+  /* ---------- 02. Colores de gráfico (Chart.js) ----------
      Uso por defecto: rellenos de barra/área grandes, donde el
      requisito de contraste 3:1 aplica al BORDE del objeto, no
      al color de relleno completo. Para LÍNEAS, ejes, texto de
      dataset o cualquier uso donde el color mismo porta info,
-     usar las variantes "-on-light" / "-on-dark" de abajo. */
+     usar siempre las variantes "-on-light" / "-on-dark". */
   --chart-1: #00953B; /* Verde ISM */
   --chart-2: #EE3124; /* Rojo ISM */
   --chart-3: #0624BA; /* Azul complementario */
@@ -36,28 +68,21 @@
   --chart-6: #7CD7FC; /* Celeste ISM */
   --chart-7: #F47E67; /* Salmón ISM */
 
-  /* NUEVO v1.2 — validado con WCAG contrast ratio real (ver Manual v1.2, Sec. 03.1):
-     #FFBC36 sobre blanco = 1.68:1 (falla) → usar #C58300 (3.17:1)
-     #7CD7FC sobre blanco = 1.62:1 (falla) → usar #059CDA (3.10:1)
-     #F47E67 sobre blanco = 2.62:1 (falla) → usar #F2664A (3.10:1)
-     El resto (#0624BA, #EC6B00, #00953B, #EE3124) ya cumplen ≥3:1 sobre blanco. */
-  --chart-4-on-light: #C58300;
-  --chart-6-on-light: #059CDA;
-  --chart-7-on-light: #F2664A;
+  /* Validado WCAG 2.1 — mínimo 3:1 (Manual v1.2, Sec. 03.1) */
+  --chart-4-on-light: #C58300; /* #FFBC36 sobre blanco = 1.68:1 → falla */
+  --chart-6-on-light: #059CDA; /* #7CD7FC sobre blanco = 1.62:1 → falla */
+  --chart-7-on-light: #F2664A; /* #F47E67 sobre blanco = 2.62:1 → falla */
+  --chart-3-on-dark:  #4260F9; /* #0624BA sobre --ism-surface-dark = 1.49:1 → falla */
+  /* El resto de colores ya cumple ≥3:1 en su fondo respectivo, sin variante alterna */
 
-  /* NUEVO v1.2 — sobre --ism-surface-dark (#1B2420):
-     #0624BA = 1.49:1 (falla) → usar #4260F9 (3.24:1)
-     El resto ya cumple ≥3:1 sobre superficie oscura. */
-  --chart-3-on-dark: #4260F9;
-
-  /* ---------- 4. Tipografía (sin cambios) ---------- */
+  /* ---------- 03. Tipografía ---------- */
   --font-display: 'Work Sans', 'Segoe UI', Arial, sans-serif;
   --font-body: 'Nunito', 'Segoe UI', Arial, sans-serif;
   --text-4xl: 2.875rem; --text-3xl: 2.25rem; --text-2xl: 1.75rem;
-  --text-xl: 1.375rem; --text-md: 1rem; --text-base: 0.9375rem;
+  --text-xl: 1.375rem;  --text-md: 1rem;     --text-base: 0.9375rem;
   --text-sm: 0.8125rem; --text-xs: 0.6875rem;
 
-  /* ---------- 5. Superficies y bordes (light) ---------- */
+  /* ---------- 04. Superficies y bordes (light) ---------- */
   --ism-bg: #FFFFFF;
   --ism-surface: #FFFFFF;
   --ism-surface-2: #F9FAFB;
@@ -67,48 +92,40 @@
   --ism-green-on-surface: #006B2B;
   --ism-red-on-surface: #9B1A10;
 
-  /* ---------- 6. Jerarquía de texto de HEADER — NUEVO v1.2 ----------
-     v1.1 usaba opacidad (75%/60%) sobre blanco para atenuar texto
-     secundario del header. Medido: blanco 100% sobre Verde ISM ya es
-     solo 3.92:1 (no llega a 4.5:1 de texto normal); al 75%/60% cae a
-     2.85:1 / 2.32:1 — ambos por debajo del mínimo de 3:1. Ya no se usa
-     opacidad para jerarquía; el texto secundario va en un chip con
-     fondo propio (mismo patrón que el badge de país). */
-  --ism-header-text: #FFFFFF;                       /* único texto directo sobre verde, ≥14px bold o dentro de chip */
-  --ism-header-chip-bg: rgba(255, 255, 255, 0.16);  /* fondo del chip, no el texto */
-  --ism-header-chip-text: #FFFFFF;                  /* texto SIEMPRE 100% opaco dentro del chip */
+  /* Jerarquía de texto de HEADER (v1.2) — nunca opacidad, siempre chip */
+  --ism-header-text: #FFFFFF;
+  --ism-header-chip-bg: rgba(255, 255, 255, 0.16);
+  --ism-header-chip-text: #FFFFFF;
 
-  /* ---------- 7. Foco de teclado — NUEVO v1.2 ----------
-     Nunca Verde ISM ni Rojo ISM sólidos como anillo de foco: pierden
-     contraste sobre sus propios fondos de uso más común (botones,
-     badges). Se usa el Azul complementario, reservado para este único
-     propósito en toda la app. */
+  /* Foco de teclado (v1.2) — reservado, nunca Verde/Rojo ISM sólidos */
   --ism-focus-ring: #0624BA;
   --ism-focus-ring-width: 2px;
   --ism-focus-ring-offset: 2px;
 
-  /* ---------- 8. Layout (sin cambios) ---------- */
+  /* ---------- 05. Layout ---------- */
   --header-height: 56px;
   --sidebar-width: 240px;
   --sidebar-collapsed: 56px;
-  --sidebar-reduced-width: 200px; /* NUEVO v1.2 — ver 5.3 excepción de sidebar reducido */
+  --sidebar-reduced-width: 200px; /* excepción Sec. 05.1 */
   --radius-sm: 6px; --radius-md: 10px; --radius-full: 9999px;
 
-  /* ---------- 9. Sistema de Movimiento — NUEVO v1.2 ----------
-     Curvas propias (nunca las de CSS por defecto: 'ease-in' se
-     percibe lento y no se usa jamás en UI de esta app). */
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);      /* elementos que entran/salen, feedback de botón */
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);  /* movimiento en pantalla (sidebar, acordeón) */
-  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);   /* paneles tipo drawer / bottom sheet */
+  /* ---------- 06. Sistema de Movimiento (v1.2) ---------- */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Prohibido: ease-in en cualquier elemento de interfaz (Sec. 7.2) */
 
-  --duration-instant: 100ms;  /* feedback de presión de botón */
-  --duration-fast: 160ms;     /* tooltips, popovers pequeños */
-  --duration-base: 200ms;     /* dropdowns, selects, crossfade */
-  --duration-moderate: 250ms; /* acordeones, expandir tarjeta */
-  --duration-modal: 300ms;    /* modales, drawers grandes */
-  --theme-transition: 180ms;  /* alternar claro/oscuro */
+  --duration-instant: 100ms;
+  --duration-fast: 160ms;
+  --duration-base: 200ms;
+  --duration-moderate: 250ms;
+  --duration-modal: 300ms;
+  --theme-transition: 180ms;
 }
 
+/* ============================================================
+   07. MODO OSCURO — [data-theme="dark"]
+   ============================================================ */
 [data-theme="dark"] {
   --ism-bg: #0E1210;
   --ism-surface: #1B2420;
@@ -119,16 +136,35 @@
   --ism-green-on-surface: #3DDB84;
   --ism-red-on-surface: #FF6B5E;
 
-  --ism-ok-bg: rgba(0,149,59,0.18);       --ism-ok-text: #4ADE80;      --ism-ok-border: rgba(74,222,128,0.35);
+  --ism-ok-bg: rgba(0,149,59,0.18);        --ism-ok-text: #4ADE80;      --ism-ok-border: rgba(74,222,128,0.35);
   --ism-warning-bg: rgba(255,188,54,0.16); --ism-warning-text: #FFC94D; --ism-warning-border: rgba(255,201,77,0.35);
   --ism-critical-bg: rgba(238,49,36,0.18); --ism-critical-text: #FF8A80; --ism-critical-border: rgba(255,138,128,0.35);
   --ism-nd-bg: rgba(255,255,255,0.06);     --ism-nd-text: #9CA3AF;      --ism-nd-border: rgba(255,255,255,0.14);
-
-  /* foco: el azul base ya cumple ≥3:1 sobre superficie oscura, sin cambio */
+  /* Foco: el azul base ya cumple ≥3:1 sobre superficie oscura, sin cambio */
 }
 
 /* ============================================================
-   10. Reducción de movimiento — obligatorio en TODA animación
+   08. RESET BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html {
+  transition: background-color var(--theme-transition) ease, color var(--theme-transition) ease;
+}
+body {
+  margin: 0;
+  background: var(--ism-bg);
+  color: var(--ism-text);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); margin: 0; color: var(--ism-text); }
+a { color: var(--ism-green-on-surface); }
+img { max-width: 100%; display: block; }
+
+/* ============================================================
+   09. REDUCCIÓN DE MOVIMIENTO — obligatorio en TODA animación
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -137,8 +173,8 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  /* Excepción explícita: mantener crossfade de opacidad en toggle de tema,
-     nunca el "salto" instantáneo de color, que puede resultar brusco. */
+  /* Excepción explícita: mantener crossfade de tema en 200ms para
+     evitar un parpadeo brusco de contraste completo (Sec. 7.7) */
   [data-theme] .ism-theme-toggle,
   html {
     transition: background-color 200ms ease, color 200ms ease !important;
@@ -146,107 +182,435 @@
 }
 
 /* ============================================================
-   11. Feedback de botones — NUEVO v1.2
+   10. HEADER DE APLICACIÓN (.ism-header) — Manual Sec. 4.1
+   Barra fija, 56px, Verde ISM, IGUAL en ambos temas.
+   ============================================================ */
+.ism-header {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: var(--header-height);
+  z-index: 1000;
+  background: var(--ism-green);
+  color: var(--ism-header-text);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  font-family: var(--font-display);
+}
+.ism-header__logo-img { height: 32px; width: auto; }
+.ism-header__app-name {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--ism-header-text);
+  white-space: nowrap;
+}
+.ism-header__spacer { flex: 1; }
+
+/* Texto secundario del header SIEMPRE en chip — nunca opacidad (v1.2) */
+.ism-header__chip,
+.ism-header__area,
+.ism-header__country-badge,
+.ism-header__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--ism-header-chip-bg);
+  color: var(--ism-header-chip-text);
+  opacity: 1; /* nunca atenuar: la jerarquía la da el chip, no la opacidad */
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  line-height: 1;
+}
+.ism-header__area { text-transform: uppercase; }
+.ism-header__meta { text-transform: none; font-weight: 500; }
+
+.ism-header__avatar {
+  width: 32px; height: 32px; border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.22);
+  color: #FFFFFF;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 700; font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+
+/* Toggle de tema (v1.2) — botón circular en el header, entre país/alcance y avatar */
+.ism-theme-toggle {
+  width: 32px; height: 32px; border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.16);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #FFFFFF; font-size: 16px; line-height: 1;
+  flex-shrink: 0;
+  transition: transform var(--duration-instant) var(--ease-out);
+}
+.ism-theme-toggle:hover { background: rgba(255,255,255,0.26); }
+.ism-theme-toggle:active { transform: scale(0.9) rotate(-8deg); }
+
+/* ============================================================
+   11. SIDEBAR LATERAL (.ism-sidebar) — Manual Sec. 4.2 / 05.1
+   ============================================================ */
+.ism-sidebar {
+  position: fixed; top: var(--header-height); left: 0; bottom: 0;
+  width: var(--sidebar-width);
+  background: var(--ism-surface);
+  border-right: 1px solid var(--ism-border);
+  overflow-y: auto;
+  transition: width var(--duration-moderate) var(--ease-in-out);
+}
+.ism-sidebar--collapsed { width: var(--sidebar-collapsed); }
+
+/* Excepción v1.2 (Sec. 05.1) — solo apps de propósito único, aprobadas
+   puntualmente por la Jefatura SCM. Mínimo 2 de las 5 secciones deben
+   permanecer visibles; la reducción se documenta en Lógica de Análisis. */
+.ism-sidebar--reduced { width: var(--sidebar-reduced-width); }
+
+.ism-sidebar__group-label {
+  font-family: var(--font-display); font-size: var(--text-xs); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--ism-text-secondary);
+  padding: 16px 16px 6px;
+}
+.ism-sidebar--collapsed .ism-sidebar__group-label,
+.ism-sidebar--reduced .ism-sidebar__group-label { display: none; }
+
+.ism-nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px;
+  color: var(--ism-text);
+  font-family: var(--font-display); font-size: var(--text-base); font-weight: 500;
+  text-decoration: none; cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background-color var(--duration-fast) var(--ease-out),
+              transform var(--duration-instant) var(--ease-out);
+  position: relative;
+}
+.ism-nav-item:hover { background: var(--ism-green-10); }
+[data-theme="dark"] .ism-nav-item:hover { background: rgba(0,149,59,0.14); }
+.ism-nav-item:active { transform: scale(0.99); }
+.ism-nav-item.is-active {
+  border-left-color: var(--ism-green);
+  background: var(--ism-green-10);
+  color: var(--ism-green-on-surface);
+  font-weight: 700;
+}
+[data-theme="dark"] .ism-nav-item.is-active { background: rgba(0,149,59,0.16); }
+.ism-nav-item__icon { width: 20px; height: 20px; flex-shrink: 0; }
+.ism-nav-item__label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ism-sidebar--collapsed .ism-nav-item__label { display: none; }
+
+.ism-nav-item__badge {
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--ism-red);
+  color: #FFFFFF;
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Tooltip de sección en sidebar colapsado */
+.ism-sidebar--collapsed .ism-nav-item:hover::after {
+  content: attr(data-label);
+  position: absolute; left: 100%; top: 50%; transform: translateY(-50%);
+  margin-left: 8px;
+  background: var(--ism-black); color: #FFFFFF;
+  font-size: var(--text-xs); font-family: var(--font-body);
+  padding: 4px 8px; border-radius: var(--radius-sm);
+  white-space: nowrap; z-index: 1100;
+}
+
+/* Responsive — mobile: sidebar se convierte en barra horizontal */
+@media (max-width: 768px) {
+  .ism-sidebar {
+    position: static; width: 100%; height: auto;
+    display: flex; overflow-x: auto; border-right: none;
+    border-bottom: 1px solid var(--ism-border);
+  }
+  .ism-nav-item { border-left: none; border-bottom: 3px solid transparent; }
+  .ism-nav-item.is-active { border-bottom-color: var(--ism-green); }
+}
+
+/* ============================================================
+   12. BOTONES (.ism-btn) — Manual Sec. 7.4 (feedback de movimiento)
    ============================================================ */
 .ism-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-family: var(--font-display); font-weight: 600; font-size: var(--text-base);
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
   transition: transform var(--duration-instant) var(--ease-out),
-              filter var(--duration-fast) var(--ease-out);
+              filter var(--duration-fast) var(--ease-out),
+              background-color var(--duration-fast) var(--ease-out);
 }
-.ism-btn:active {
-  transform: scale(0.97);
-}
+.ism-btn:active { transform: scale(0.97); }
+.ism-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ism-btn--primary { background: var(--ism-green); color: #FFFFFF; }
+.ism-btn--primary:hover:not(:disabled) { background: var(--ism-green-dark); }
+
+.ism-btn--secondary { background: var(--ism-surface); color: var(--ism-text); border-color: var(--ism-border); }
+.ism-btn--secondary:hover:not(:disabled) { background: var(--ism-surface-2); }
+
+.ism-btn--danger { background: var(--ism-red); color: #FFFFFF; }
+.ism-btn--danger:hover:not(:disabled) { filter: brightness(0.92); }
+
+.ism-btn--ghost { background: transparent; color: var(--ism-green-on-surface); }
+.ism-btn--ghost:hover:not(:disabled) { background: var(--ism-green-10); }
+
+/* Foco de teclado — v1.2, único uso reservado del azul complementario */
 .ism-btn:focus-visible,
 .ism-nav-item:focus-visible,
+.ism-theme-toggle:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
-.ism-theme-toggle:focus-visible {
+[tabindex]:focus-visible {
   outline: var(--ism-focus-ring-width) solid var(--ism-focus-ring);
   outline-offset: var(--ism-focus-ring-offset);
 }
 
 /* ============================================================
-   12. Popover / Tooltip — NUEVO v1.2
-   Anclados a su disparador, nunca centrados (excepción: modales).
+   13. BADGES DE ESTADO (.ism-badge--*) — Manual paleta semántica
    ============================================================ */
-.ism-popover {
-  transform-origin: var(--transform-origin, top left);
-  transition: transform var(--duration-fast) var(--ease-out),
-              opacity var(--duration-fast) var(--ease-out);
+.ism-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-display); font-weight: 700; font-size: var(--text-xs);
+  text-transform: uppercase; letter-spacing: 0.02em;
+  border: 1px solid transparent;
+  white-space: nowrap;
 }
-.ism-popover[data-starting-style],
-.ism-popover[data-ending-style] {
-  opacity: 0;
-  transform: scale(0.95);
-}
+.ism-badge--ok        { background: var(--ism-ok-bg);       color: var(--ism-ok-text);       border-color: var(--ism-ok-border); }
+.ism-badge--warning   { background: var(--ism-warning-bg);  color: var(--ism-warning-text);   border-color: var(--ism-warning-border); }
+.ism-badge--critical  { background: var(--ism-critical-bg); color: var(--ism-critical-text);  border-color: var(--ism-critical-border); }
+.ism-badge--nd        { background: var(--ism-nd-bg);       color: var(--ism-nd-text);        border-color: var(--ism-nd-border); }
 
-.ism-tooltip {
-  transform-origin: var(--transform-origin, bottom center);
-  transition: transform var(--duration-fast) var(--ease-out),
-              opacity var(--duration-fast) var(--ease-out);
-  transition-delay: 400ms; /* retardo solo en el primer tooltip */
-}
-.ism-tooltip[data-instant] {
-  transition-delay: 0ms; /* tooltips consecutivos: instantáneo */
-}
-.ism-tooltip[data-starting-style],
-.ism-tooltip[data-ending-style] {
-  opacity: 0;
-  transform: scale(0.97);
-}
-
-/* Modales SIEMPRE centrados — nunca origin-aware */
-.ism-modal {
-  transform-origin: center;
-  transition: transform var(--duration-modal) var(--ease-out),
-              opacity var(--duration-modal) var(--ease-out);
-}
-.ism-modal[data-starting-style] { opacity: 0; transform: scale(0.96); }
-
-/* ============================================================
-   13. Estado de carga / Skeleton — NUEVO v1.2
-   ============================================================ */
-.ism-skeleton {
-  background: linear-gradient(90deg, var(--ism-surface-2) 25%, var(--ism-border) 50%, var(--ism-surface-2) 75%);
-  background-size: 200% 100%;
-  border-radius: var(--radius-sm);
-  animation: ism-shimmer 1.4s ease-in-out infinite;
-}
-@keyframes ism-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+.ism-badge__dot {
+  width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0;
 }
 
 /* ============================================================
-   14. Estado vacío — NUEVO v1.2
+   14. TABLA DE DATOS (.ism-table) — Manual Sec. 4.3
+   Cabecera SIEMPRE Verde ISM / texto blanco, igual en ambos temas.
    ============================================================ */
-.ism-empty {
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 40px 24px; text-align: center;
-  color: var(--ism-text-secondary);
-  font-family: var(--font-body); font-size: var(--text-base);
-}
-.ism-empty__action { margin-top: 4px; }
+.ism-table-wrap { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--ism-border); }
 
-/* ============================================================
-   15. Confirmación de acción destructiva — NUEVO v1.2
-   Obligatorio antes de: eliminar archivo cargado, limpiar sesión,
-   descartar conversación de Análisis IA, borrar exportación.
-   ============================================================ */
-.ism-confirm-dialog {
-  transform-origin: center;
-  transition: transform var(--duration-base) var(--ease-out),
-              opacity var(--duration-base) var(--ease-out);
-}
-.ism-confirm-dialog__danger-btn {
-  background: var(--ism-red);
+.ism-table { width: 100%; border-collapse: collapse; font-family: var(--font-body); font-size: var(--text-sm); }
+
+.ism-table thead th {
+  background: var(--ism-green);
   color: #FFFFFF;
+  font-family: var(--font-display); font-weight: 600; font-size: var(--text-xs);
+  text-transform: uppercase; letter-spacing: 0.03em;
+  text-align: left;
+  padding: 10px 14px;
+  position: sticky; top: 0; z-index: 1;
 }
 
+.ism-table tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ism-border);
+  color: var(--ism-text);
+}
+.ism-table tbody tr:nth-child(even) td { background: var(--ism-surface-2); }
+.ism-table tbody tr:hover td { background: var(--ism-green-10); }
+[data-theme="dark"] .ism-table tbody tr:hover td { background: rgba(0,149,59,0.12); }
+
+.ism-table td.is-numeric { font-family: var(--font-display); font-variant-numeric: tabular-nums; text-align: right; }
+
+.ism-table tr.ism-table__row--total td {
+  background: var(--ism-green-10);
+  border-top: 2px solid var(--ism-green-10);
+  font-weight: 700;
+}
+[data-theme="dark"] .ism-table tr.ism-table__row--total td { background: rgba(0,149,59,0.16); }
+
+.ism-table tr.ism-table__row--critical td { background: var(--ism-critical-bg); }
+.ism-table tr.ism-table__row--warning td  { background: var(--ism-warning-bg); }
+
 /* ============================================================
-   16. Indicador de escritura — Panel de Análisis IA — NUEVO v1.2
+   15. KPI CARD (.ism-kpi-card)
    ============================================================ */
-.ism-ai-typing { display: inline-flex; gap: 4px; align-items: center; }
+.ism-kpi-card {
+  background: var(--ism-surface);
+  border: 1px solid var(--ism-border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+}
+.ism-kpi-card__label {
+  font-family: var(--font-display); font-size: var(--text-sm); font-weight: 600;
+  color: var(--ism-text-secondary);
+  text-transform: uppercase; letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+.ism-kpi-card__value {
+  font-family: var(--font-display); font-weight: 700; font-size: var(--text-3xl);
+  color: var(--ism-text);
+  display: flex; align-items: baseline; gap: 8px;
+}
+.ism-kpi-card__value.is-ok       { color: var(--ism-green-on-surface); }
+.ism-kpi-card__value.is-critical { color: var(--ism-red-on-surface); }
+.ism-kpi-card__trend { font-size: var(--text-sm); font-weight: 600; }
+.ism-kpi-card__trend.is-up   { color: var(--ism-green-on-surface); }
+.ism-kpi-card__trend.is-down { color: var(--ism-red-on-surface); }
+
+/* ============================================================
+   16. FORMULARIOS — inputs, select, textarea
+   ============================================================ */
+.ism-input, .ism-select, .ism-textarea {
+  width: 100%;
+  background: var(--ism-surface);
+  color: var(--ism-text);
+  border: 1px solid var(--ism-border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-family: var(--font-body); font-size: var(--text-base);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+.ism-input::placeholder, .ism-textarea::placeholder { color: var(--ism-text-secondary); }
+.ism-input:hover, .ism-select:hover, .ism-textarea:hover { border-color: var(--ism-green); }
+.ism-checkbox-group { display: flex; flex-direction: column; gap: 8px; }
+.ism-checkbox-group label { display: flex; align-items: center; gap: 8px; font-size: var(--text-base); }
+
+/* ============================================================
+   17. SECCIÓN 01 — CARGAR ARCHIVOS
+   ============================================================ */
+.ism-upload-zone {
+  border: 2px dashed var(--ism-border);
+  border-radius: var(--radius-md);
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--ism-text-secondary);
+  background: var(--ism-surface-2);
+  transition: border-color var(--duration-fast) var(--ease-out),
+              background-color var(--duration-fast) var(--ease-out);
+  cursor: pointer;
+}
+.ism-upload-zone.is-dragover {
+  border-color: var(--ism-green);
+  background: var(--ism-green-10);
+}
+.ism-file-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.ism-file-list__item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--ism-border);
+  border-radius: var(--radius-sm);
+  background: var(--ism-surface);
+  font-size: var(--text-sm);
+}
+.ism-progress {
+  width: 100%; height: 6px; border-radius: var(--radius-full);
+  background: var(--ism-border); overflow: hidden;
+}
+.ism-progress__bar {
+  height: 100%; background: var(--ism-green);
+  border-radius: var(--radius-full);
+  transition: width var(--duration-base) var(--ease-out);
+}
+.ism-alert {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+.ism-alert--ok { background: var(--ism-ok-bg); color: var(--ism-ok-text); border: 1px solid var(--ism-ok-border); }
+.ism-alert--warning { background: var(--ism-warning-bg); color: var(--ism-warning-text); border: 1px solid var(--ism-warning-border); }
+.ism-alert--critical { background: var(--ism-critical-bg); color: var(--ism-critical-text); border: 1px solid var(--ism-critical-border); }
+
+/* ============================================================
+   18. SECCIÓN 02 — INSIGHTS AUTOMÁTICOS
+   ============================================================ */
+.ism-insights-summary {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.ism-insights-summary__chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: var(--radius-full);
+  font-family: var(--font-display); font-size: var(--text-sm); font-weight: 600;
+}
+.ism-insights-summary__chip.is-ok       { background: var(--ism-ok-bg);       color: var(--ism-ok-text); }
+.ism-insights-summary__chip.is-warning  { background: var(--ism-warning-bg);  color: var(--ism-warning-text); }
+.ism-insights-summary__chip.is-critical { background: var(--ism-critical-bg); color: var(--ism-critical-text); }
+
+.ism-insight-card {
+  background: var(--ism-surface);
+  border: 1px solid var(--ism-border);
+  border-left: 4px solid var(--ism-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  /* Entrada escalonada — Manual Sec. 7.9 */
+  opacity: 0; transform: translateY(8px);
+  animation: ism-fade-in var(--duration-moderate) var(--ease-out) forwards;
+}
+.ism-insight-card.is-ok       { border-left-color: var(--ism-green); }
+.ism-insight-card.is-warning  { border-left-color: var(--ism-warning-border); }
+.ism-insight-card.is-critical { border-left-color: var(--ism-red); }
+.ism-insight-card:nth-child(1) { animation-delay: 0ms; }
+.ism-insight-card:nth-child(2) { animation-delay: 40ms; }
+.ism-insight-card:nth-child(3) { animation-delay: 80ms; }
+.ism-insight-card:nth-child(4) { animation-delay: 120ms; }
+.ism-insight-card:nth-child(n+5) { animation-delay: 160ms; }
+@keyframes ism-fade-in { to { opacity: 1; transform: translateY(0); } }
+
+/* ============================================================
+   19. SECCIÓN 03 — ANÁLISIS IA
+   ============================================================ */
+.ism-ai-chat {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--ism-border);
+  border-radius: var(--radius-md);
+  background: var(--ism-surface);
+  overflow: hidden;
+}
+.ism-ai-chat__header {
+  padding: 12px 16px;
+  background: var(--ism-surface-2);
+  border-bottom: 1px solid var(--ism-border);
+  font-family: var(--font-display); font-weight: 600; font-size: var(--text-sm);
+}
+.ism-ai-chat__messages { flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.ism-ai-message {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+.ism-ai-message--user {
+  align-self: flex-end;
+  background: var(--ism-green-10);
+  color: var(--ism-text);
+}
+[data-theme="dark"] .ism-ai-message--user { background: rgba(0,149,59,0.16); }
+.ism-ai-message--assistant {
+  align-self: flex-start;
+  background: var(--ism-surface-2);
+  color: var(--ism-text);
+}
+.ism-ai-chat__input-row {
+  display: flex; gap: 8px; padding: 12px 16px;
+  border-top: 1px solid var(--ism-border);
+}
+.ism-ai-prompts { display: flex; flex-direction: column; gap: 6px; }
+.ism-ai-prompts__item {
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  background: var(--ism-surface-2); border: 1px solid var(--ism-border);
+  font-size: var(--text-sm); cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+.ism-ai-prompts__item:hover { background: var(--ism-green-10); }
+
+/* Indicador de escritura — Manual Sec. 7.8 */
+.ism-ai-typing { display: inline-flex; gap: 4px; align-items: center; padding: 4px 0; }
 .ism-ai-typing span {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--ism-text-secondary);
@@ -261,39 +625,161 @@ textarea:focus-visible,
 }
 
 /* ============================================================
-   17. Entrada escalonada de tarjetas (insights, KPIs) — NUEVO v1.2
+   20. SECCIÓN 04 — LÓGICA DE ANÁLISIS
    ============================================================ */
-.ism-insight-card {
-  opacity: 0; transform: translateY(8px);
-  animation: ism-fade-in var(--duration-moderate) var(--ease-out) forwards;
+.ism-logic-accordion { border: 1px solid var(--ism-border); border-radius: var(--radius-md); overflow: hidden; }
+.ism-logic-accordion__item { border-bottom: 1px solid var(--ism-border); }
+.ism-logic-accordion__item:last-child { border-bottom: none; }
+.ism-logic-accordion__trigger {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--ism-surface-2);
+  font-family: var(--font-display); font-weight: 600; font-size: var(--text-base);
+  cursor: pointer; border: none; color: var(--ism-text);
 }
-.ism-insight-card:nth-child(1) { animation-delay: 0ms; }
-.ism-insight-card:nth-child(2) { animation-delay: 40ms; }
-.ism-insight-card:nth-child(3) { animation-delay: 80ms; }
-.ism-insight-card:nth-child(4) { animation-delay: 120ms; }
-.ism-insight-card:nth-child(n+5) { animation-delay: 160ms; }
-@keyframes ism-fade-in {
-  to { opacity: 1; transform: translateY(0); }
+.ism-logic-accordion__panel {
+  padding: 14px 16px; font-size: var(--text-base); background: var(--ism-surface);
+  overflow: hidden;
+  transition: height var(--duration-moderate) var(--ease-in-out);
+}
+.ism-formula {
+  font-family: 'Courier New', monospace;
+  background: var(--ism-surface-2);
+  border: 1px solid var(--ism-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: var(--text-sm);
+  color: var(--ism-text);
 }
 
 /* ============================================================
-   18. Sidebar — expandido / colapsado / reducido (excepción v1.2)
+   21. SECCIÓN 05 — EXPORTAR RESULTADOS
    ============================================================ */
-.ism-sidebar { transition: width var(--duration-moderate) var(--ease-in-out); }
-.ism-sidebar--collapsed { width: var(--sidebar-collapsed); }
-
-/* NUEVO v1.2 — solo para apps de un único propósito, aprobadas
-   puntualmente por la Jefatura SCM (ver Manual v1.2, Sec. 05.1).
-   Reduce, nunca oculta por completo: mínimo 2 de las 5 secciones
-   estándar deben permanecer (Cargar Archivos + Análisis IA, o
-   Cargar Archivos + Exportar Resultados, según el caso). */
-.ism-sidebar--reduced { width: var(--sidebar-reduced-width); }
+.ism-export-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.ism-export-card {
+  border: 1px solid var(--ism-border);
+  border-radius: var(--radius-md);
+  padding: 14px; text-align: center; cursor: pointer;
+  background: var(--ism-surface);
+  transition: border-color var(--duration-fast) var(--ease-out),
+              transform var(--duration-instant) var(--ease-out);
+}
+.ism-export-card:active { transform: scale(0.97); }
+.ism-export-card.is-selected { border-color: var(--ism-green); background: var(--ism-green-10); }
+[data-theme="dark"] .ism-export-card.is-selected { background: rgba(0,149,59,0.14); }
+.ism-export-history { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.ism-export-history__item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  background: var(--ism-surface-2); font-size: var(--text-sm);
+}
 
 /* ============================================================
-   19. Toggle de tema — transición sin parpadeo (sin cambios de fondo)
+   22. POPOVER / TOOLTIP / MODAL — Manual Sec. 4.2 / 7.5
+   Anclados a su disparador, nunca centrados (excepción: modales).
    ============================================================ */
-.ism-theme-toggle {
-  transition: transform var(--duration-instant) var(--ease-out);
+.ism-popover {
+  background: var(--ism-surface);
+  border: 1px solid var(--ism-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  transform-origin: var(--transform-origin, top left);
+  transition: transform var(--duration-fast) var(--ease-out),
+              opacity var(--duration-fast) var(--ease-out);
 }
-.ism-theme-toggle:active { transform: scale(0.9) rotate(-8deg); }
-html { transition: background-color var(--theme-transition) ease, color var(--theme-transition) ease; }
+.ism-popover[data-starting-style],
+.ism-popover[data-ending-style] { opacity: 0; transform: scale(0.95); }
+
+.ism-tooltip {
+  background: var(--ism-black); color: #FFFFFF;
+  font-size: var(--text-xs); padding: 4px 8px; border-radius: var(--radius-sm);
+  transform-origin: var(--transform-origin, bottom center);
+  transition: transform var(--duration-fast) var(--ease-out),
+              opacity var(--duration-fast) var(--ease-out);
+  transition-delay: 400ms; /* retardo solo en la primera aparición */
+}
+.ism-tooltip[data-instant] { transition-delay: 0ms; } /* hovers consecutivos: instantáneo */
+.ism-tooltip[data-starting-style],
+.ism-tooltip[data-ending-style] { opacity: 0; transform: scale(0.97); }
+
+/* Modales SIEMPRE centrados — nunca origin-aware (única excepción) */
+.ism-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center; z-index: 1200;
+}
+.ism-modal {
+  background: var(--ism-surface);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  max-width: 480px; width: 90%;
+  transform-origin: center;
+  transition: transform var(--duration-modal) var(--ease-out),
+              opacity var(--duration-modal) var(--ease-out);
+}
+.ism-modal[data-starting-style] { opacity: 0; transform: scale(0.96); }
+
+/* ============================================================
+   23. SKELETON — Manual Sec. 4.3
+   Nunca un spinner genérico para bloques de contenido.
+   ============================================================ */
+.ism-skeleton {
+  background: linear-gradient(90deg, var(--ism-surface-2) 25%, var(--ism-border) 50%, var(--ism-surface-2) 75%);
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: ism-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes ism-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================================
+   24. ESTADO VACÍO — Manual Sec. 4.4
+   Mensaje en lenguaje llano + acción sugerida (nunca "No data")
+   ============================================================ */
+.ism-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 40px 24px; text-align: center;
+  color: var(--ism-text-secondary);
+  font-family: var(--font-body); font-size: var(--text-base);
+}
+.ism-empty__icon { width: 40px; height: 40px; opacity: 0.6; }
+.ism-empty__action { margin-top: 4px; }
+
+/* ============================================================
+   25. CONFIRMACIÓN DE ACCIÓN DESTRUCTIVA — Manual Sec. 4.5
+   Obligatoria antes de: eliminar archivo, limpiar sesión,
+   descartar conversación de Análisis IA, borrar exportación.
+   ============================================================ */
+.ism-confirm-dialog {
+  background: var(--ism-surface);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  max-width: 420px;
+  transform-origin: center;
+  transition: transform var(--duration-base) var(--ease-out),
+              opacity var(--duration-base) var(--ease-out);
+}
+.ism-confirm-dialog__title { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xl); margin-bottom: 8px; }
+.ism-confirm-dialog__body { font-size: var(--text-base); color: var(--ism-text-secondary); margin-bottom: 18px; }
+.ism-confirm-dialog__actions { display: flex; justify-content: flex-end; gap: 10px; }
+.ism-confirm-dialog__danger-btn { background: var(--ism-red); color: #FFFFFF; }
+
+/* ============================================================
+   26. FOOTER (.ism-footer)
+   ============================================================ */
+.ism-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 20px;
+  border-top: 1px solid var(--ism-border);
+  color: var(--ism-text-secondary);
+  font-size: var(--text-xs);
+}
+
+/* ============================================================
+   27. UTILIDADES
+   ============================================================ */
+.ism-visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap;
+}
+.ism-chart-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
