@@ -112,4 +112,13 @@ const ISM_APPS = [
     estado: "nuevo",
     url: "#",
   },
+  {
+    nombre: "Portafolio de Proyectos",
+    categoria: "Restringido",
+    proceso: "Gestión de Proyectos",
+    sensibilidad: "alta",
+    paises: ["Todos"],
+    estado: "nuevo",
+    url: "apps/portafolio-proyectos/index.html",
+  },
 ];
