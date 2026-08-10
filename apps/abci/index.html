@@ -1,1 +1,1224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABCI · Dashboard de Capacidades — Cap. 1 Producción → Abastecimiento</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EFF2F1;--panel:#FFF;--ink:#16262E;--steel:#5A7A8A;--line:#C9D5D9;
+  --petrol:#145C74;--deep:#0C3B4C;--soft:#DCE8EC;
+  --amber:#D98E04;--ambersoft:#FBF0D8;--red:#B3402A;--redsoft:#F7E3DE;
+  --green:#3E7C4F;--greensoft:#E2EFE5;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;--sans:'IBM Plex Sans',system-ui,sans-serif;
+  --disp:'Barlow Condensed','Arial Narrow',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14.5px;line-height:1.5}
+header{background:var(--deep);color:#fff;border-bottom:4px solid var(--amber)}
+.hwrap{max-width:1280px;margin:0 auto;padding:20px 26px 16px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+h1{font-family:var(--disp);font-weight:700;font-size:clamp(26px,3.6vw,38px);letter-spacing:.5px;text-transform:uppercase;line-height:1.05}
+h1 span{display:block;font-size:.44em;font-weight:600;letter-spacing:2.5px;color:#8FC1D4}
+.src{font-family:var(--mono);font-size:11px;color:#8FC1D4;text-align:right}
+.src b{color:#fff;display:block;font-size:12px}
+nav{position:sticky;top:0;z-index:50;background:var(--panel);border-bottom:1px solid var(--line);box-shadow:0 1px 4px rgba(22,38,46,.06)}
+.tabs{max-width:1280px;margin:0 auto;display:flex;overflow-x:auto}
+.tabs button{appearance:none;border:none;background:none;cursor:pointer;font-family:var(--disp);font-size:16.5px;font-weight:600;letter-spacing:1.1px;text-transform:uppercase;color:var(--steel);padding:13px 16px;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--petrol);border-bottom-color:var(--amber)}
+.tabs button:focus-visible{outline:2px solid var(--petrol);outline-offset:-2px}
+main{max-width:1280px;margin:0 auto;padding:26px 26px 80px}
+section.view{display:none}section.view.on{display:block}
+h2{font-family:var(--disp);font-weight:700;font-size:26px;letter-spacing:.8px;text-transform:uppercase;color:var(--deep);margin-bottom:2px}
+h3{font-family:var(--disp);font-weight:600;font-size:19px;letter-spacing:.8px;text-transform:uppercase;color:var(--petrol);margin:26px 0 10px}
+.sub{color:var(--steel);margin-bottom:20px;max-width:900px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:8px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--petrol);border-radius:6px;padding:12px 14px}
+.kpi .v{font-family:var(--disp);font-weight:700;font-size:30px;color:var(--deep);line-height:1.05}
+.kpi .l{font-family:var(--mono);font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--steel)}
+.kpi.warn{border-left-color:var(--amber)}.kpi.bad{border-left-color:var(--red)}.kpi.bad .v{color:var(--red)}
+.kpi.ok{border-left-color:var(--green)}.kpi.ok .v{color:var(--green)}
+.verdict{border-radius:6px;padding:14px 18px;font-family:var(--disp);font-size:22px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;margin:14px 0}
+.verdict.ok{background:var(--greensoft);color:var(--green);border:1px solid var(--green)}
+.verdict.bad{background:var(--redsoft);color:var(--red);border:1px solid var(--red)}
+.verdict small{display:block;font-family:var(--sans);font-size:13px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink);margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:12.8px;background:var(--panel)}
+th{background:var(--petrol);color:#fff;font-family:var(--disp);font-size:13.5px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;text-align:left;padding:7px 10px;position:sticky;top:0}
+td{border-bottom:1px solid var(--line);padding:6px 10px;vertical-align:top}
+tr:last-child td{border-bottom:none}
+.twrap{border:1px solid var(--line);border-radius:6px;overflow:auto;margin:10px 0 18px;max-height:480px}
+.num{text-align:right;font-family:var(--mono);font-size:12px;white-space:nowrap}
+.mono{font-family:var(--mono);font-size:.93em}
+.hm td{text-align:center;font-family:var(--mono);font-size:11.5px;padding:6px 4px;min-width:52px}
+.hm td:first-child,.hm th:first-child{text-align:left;font-family:var(--sans);white-space:nowrap}
+.note{background:var(--ambersoft);border-left:4px solid var(--amber);padding:10px 14px;border-radius:0 5px 5px 0;margin:12px 0;font-size:13.5px}
+.note.red{background:var(--redsoft);border-left-color:var(--red)}
+.note.green{background:var(--greensoft);border-left-color:var(--green)}
+select,input[type=file]{font-family:var(--sans);font-size:14px;padding:7px 10px;border:1px solid var(--line);border-radius:5px;background:#fff;color:var(--ink)}
+label.f{font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--steel);margin-right:6px}
+#gbar{position:sticky;top:47px;z-index:45;background:var(--paper);border-bottom:1px solid var(--line);box-shadow:0 2px 5px rgba(22,38,46,.05)}
+.gwrap{max-width:1280px;margin:0 auto;padding:9px 26px;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.gwrap select{font-size:13px;padding:5px 8px}
+.gwrap input[type=text]{font-family:var(--sans);font-size:13px;padding:5px 9px;border:1px solid var(--line);border-radius:5px;width:150px}
+#fClear{appearance:none;border:1px solid var(--line);background:#fff;color:var(--steel);font-family:var(--mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;padding:6px 10px;border-radius:5px;cursor:pointer}
+#fClear:hover{color:var(--red);border-color:var(--red)}
+#fInfo{font-family:var(--mono);font-size:10.5px;color:var(--steel)}
+.bar{display:flex;height:20px;border-radius:3px;overflow:hidden;background:var(--soft)}
+.bar div{height:100%}
+.leg{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--steel);margin:8px 0}
+.leg span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:11px;height:11px;border-radius:2px;display:inline-block}
+.stack{display:grid;grid-template-columns:70px 1fr 92px;gap:8px;align-items:center;margin-bottom:6px;font-family:var(--mono);font-size:11.5px}
+.tag{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:1px 7px;border-radius:3px}
+.tag.p{background:var(--redsoft);color:var(--red)}.tag.h{background:var(--ambersoft);color:#8A5B03}
+.upload{border:2px dashed var(--line);border-radius:6px;padding:18px;background:var(--panel);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.formula{background:var(--deep);color:#D7E8EF;font-family:var(--mono);font-size:12.5px;line-height:1.7;padding:12px 16px;border-radius:5px;overflow-x:auto;margin:8px 0;border-left:4px solid var(--amber)}
+.formula .c{color:#7FA8B8}
+#log{font-family:var(--mono);font-size:12px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+footer{border-top:1px solid var(--line);color:var(--steel);font-size:12px;padding:16px 26px;max-width:1280px;margin:0 auto}
+@media(max-width:700px){.hwrap{flex-direction:column;align-items:flex-start}.src{text-align:left}}
+</style>
+</head>
+<body>
 
+<header><div class="hwrap">
+  <h1><span>ABCI · Capítulo 1 · Producción &rarr; Abastecimiento</span>Dashboard de Capacidades</h1>
+  <div class="src"><b id="srcName">DATA DEMO (RD · 3 líneas · 5 SKUs · 3 CDs)</b>Motor v1.0 · loop mensual · 2 pasadas · umbral 95%</div>
+</div></header>
+
+<nav><div class="tabs" role="tablist">
+  <button class="on" data-v="v1">1 · Resumen</button>
+  <button data-v="v2">2 · Capacidad por línea</button>
+  <button data-v="v8">3 · Utilización por categoría</button>
+  <button data-v="v7">4 · MPS mensualizado</button>
+  <button data-v="v9">5 · Detalle horas/capacidad</button>
+  <button data-v="v4">6 · Abastecimiento por CD</button>
+  <button data-v="v5">7 · Stock vs política</button>
+  <button data-v="v6">8 · Datos & estructura Excel</button>
+  <button data-v="v3">9 · Cascada de resolución</button>
+</div></nav>
+
+<div id="gbar"><div class="gwrap">
+  <span><label class="f">Planta</label><select id="fPlanta"><option value="">Todas</option></select></span>
+  <span><label class="f">Línea</label><select id="fLinea"><option value="">Todas</option></select></span>
+  <span><label class="f">Categoría</label><select id="fCat"><option value="">Todas</option></select></span>
+  <span><label class="f">Formato</label><select id="fFormato"><option value="">Todos</option></select></span>
+  <span><label class="f">CD</label><select id="fCd"><option value="">Todos</option></select></span>
+  <span><label class="f">Buscar SKU</label><input id="fSku" type="text" placeholder="código o descripción"></span>
+  <button id="fClear">Limpiar</button>
+  <span id="fInfo"></span>
+</div></div>
+
+<main>
+
+<section class="view on" id="v1">
+  <h2>Resumen ejecutivo</h2>
+  <p class="sub">Resultado de la corrida completa (pasada 2, con pre-build). Todos los volúmenes en litros.</p>
+  <div id="verdict"></div>
+  <div class="kpis" id="kpis"></div>
+  <h3>Semáforo de utilización — línea × mes</h3>
+  <div class="leg"><span><span class="dot" style="background:#CFE6D6"></span>&lt; 85%</span><span><span class="dot" style="background:#F6E2AE"></span>85–95%</span><span><span class="dot" style="background:#F0B9AC"></span>&gt; 95% (satura)</span><span><span class="dot" style="background:#B3402A"></span>&gt; 100%</span></div>
+  <div class="twrap" id="hmResumen"></div>
+  <h3>% Utilización de capacidad por categoría</h3>
+  <div class="twrap" id="hmResumenCat"></div>
+  <h3>Demanda vs producción factible vs restricción — total mensual</h3>
+  <div id="totBars"></div>
+</section>
+
+<section class="view" id="v2">
+  <h2>Capacidad por línea</h2>
+  <p class="sub">Plan de producción (post-cascada) contra capacidad disponible. La capacidad varía por mes según días disponibles y OEE.</p>
+  <div class="card"><label class="f">Línea</label><select id="selLinea"></select></div>
+  <div id="lineaDetail"></div>
+</section>
+
+<section class="view" id="v3">
+  <h2>Cascada de resolución</h2>
+  <p class="sub">Para cada línea-mes que superó el 95%: cuánto exceso hubo y cómo se resolvió — rebalanceo &rarr; pre-build &rarr; soporte países &rarr; maquila (LOZ) &rarr; restricción. Volúmenes en litros equivalentes de la línea saturada.</p>
+  <div class="leg">
+    <span><span class="dot" style="background:#2E7D5B"></span>1 Rebalanceo</span>
+    <span><span class="dot" style="background:#5B8A46"></span>2 Pre-build</span>
+    <span><span class="dot" style="background:#B08903"></span>3 Soporte países</span>
+    <span><span class="dot" style="background:#C4661F"></span>4 Maquila LOZ</span>
+    <span><span class="dot" style="background:#B3402A"></span>5 Restricción</span>
+  </div>
+  <div id="cascada"></div>
+  <h3>Bitácora del motor</h3>
+  <div class="twrap" id="bitacora"></div>
+</section>
+
+<section class="view" id="v4">
+  <h2>Abastecimiento por CD</h2>
+  <p class="sub">Redistribución de la producción factible hacia cada CD, proporcional al % de participación de la demanda de cada CD por SKU — sin niveles de prioridad, para que ningún CD activo se quede sin nada de stock. Demanda restringida trazada hasta el CD. Este es el input del plan de inventarios PT y del plan T1.</p>
+  <h3>% de cumplimiento por CD</h3>
+  <div class="twrap" id="cdCumpl"></div>
+  <h3>Demanda restringida por SKU × CD</h3>
+  <div class="twrap" id="restrictoTbl"></div>
+  <div class="note" id="restrictoNote"></div>
+</section>
+
+<section class="view" id="v5">
+  <h2>Stock vs política</h2>
+  <p class="sub">Cobertura real resultante (días de venta del mes siguiente cubiertos por el stock de cierre) contra la política objetivo. Celdas rojas = el sistema quedó por debajo de política — semilla de restricción heredada.</p>
+  <div class="twrap" id="stockTbl"></div>
+</section>
+
+<section class="view" id="v6">
+  <h2>Datos & estructura del Excel</h2>
+  <p class="sub">El dashboard se alimenta de <b>Plantilla_ABCI_Cap1_Captura.xlsx</b>. Carga aquí tu archivo completado; el motor valida, recalcula y refresca todas las vistas. Sin archivo, corre con la data demo.</p>
+  <div class="upload">
+    <input type="file" id="fileIn" accept=".xlsx" aria-label="Cargar plantilla Excel">
+    <span style="font-size:13px;color:var(--steel)">Requisitos: nombres de pestañas y encabezados exactos · filas de ejemplo (azules) eliminadas · meses como columnas de fecha.</span>
+  </div>
+  <h3>Registro de carga y validación</h3>
+  <div id="log">Corrida con data demo embebida. Carga tu Excel para reemplazarla.</div>
+  <h3>Estructura del archivo que alimenta este dashboard</h3>
+  <div class="twrap"><table>
+    <tr><th>Pestaña</th><th>Grano (1 fila =)</th><th>Columnas</th><th>Rol en el motor</th></tr>
+    <tr><td class="mono">0.1_M_SKU</td><td>1 SKU</td><td class="mono">COD_PAIS · COD_SKU · DES_SKU · CATEGORIA · SUBCATEGORIA · MARCA · SABOR · FORMATO_ML · TIPO_ENVASE · MARCA_FORMATO · UND_CF · LTS_CF · CF_PALETA · BATCH_MIN_LTS · VIDA_UTIL_DIAS · MAQUILABLE_SN · ACTIVO_SN</td><td>País de origen del SKU (destino del soporte entre países); batch mínimo DEFAULT (override por línea en 1.6), vida útil (límite pre-build), elegibilidad maquila, conversiones a CF/paletas</td></tr>
+    <tr><td class="mono">0.2_M_LINEA</td><td>1 línea</td><td class="mono">COD_PAIS · COD_PLANTA · DES_PLANTA · COD_LINEA · KEY_LINEA · TIPO_LINEA(CSD/NCSD/MIXTA/LOZ) · HORAS_DIA · FECHA_INGRESO · COMENTARIO</td><td>Universo de líneas; la LOZ es una línea virtual TIPO=LOZ</td></tr>
+    <tr><td class="mono">0.3_M_CD</td><td>1 CD</td><td class="mono">COD_CD · DES_CD · COD_PAIS · CAPACIDAD_PALETAS · ACTIVO_SN</td><td>Destinos de la redistribución; ACTIVO_SN=N excluye al CD del cálculo (sin campo de prioridad — el reparto es proporcional al % de demanda)</td></tr>
+    <tr><td class="mono">0.4_M_CALENDARIO</td><td>1 mes</td><td class="mono">MES · DIAS_CALENDARIO · DIAS_VENTA · COMENTARIO</td><td>Días disponibles y conversión de política (días → litros)</td></tr>
+    <tr><td class="mono">1.1_P_VELOCIDAD</td><td>línea × marca-formato</td><td class="mono">COD_PAIS · COD_PLANTA · COD_LINEA · MARCA_FORMATO · VEL_LTS_HR_NOMINAL</td><td>lts/hora nominal (el motor aplica OEE)</td></tr>
+    <tr><td class="mono">1.2_P_OEE</td><td>línea × mes</td><td class="mono">COD_PAIS · COD_PLANTA · COD_LINEA · [meses]</td><td>Eficiencia por línea-mes (fracción 0–1)</td></tr>
+    <tr><td class="mono">1.3_P_UTILIZACION</td><td>línea × evento × mes</td><td class="mono">COD_PAIS · COD_PLANTA · COD_LINEA · COD_EVENTO · DES_EVENTO · SIGNO · [meses]</td><td>Catálogo fijo de 11 paradas (domingos, feriados, capacitaciones/EMO, refrigerio, saneamientos, mantto planificado, pruebas I+D) + trabajo en domingo/feriado si se activa</td></tr>
+    <tr><td class="mono">1.4_P_POLITICA</td><td>SKU × mes</td><td class="mono">COD_SKU · DES_SKU · [meses]</td><td>Días de cobertura forward del stock objetivo</td></tr>
+    <tr><td class="mono">1.5_P_ASIGNACION</td><td>SKU × línea × mes</td><td class="mono">COD_PAIS · COD_PLANTA · COD_LINEA · COD_SKU · DES_SKU · [meses]</td><td>% de reparto entre líneas (Σ=100% por SKU-mes)</td></tr>
+    <tr><td class="mono">1.6_P_COMPATIBILIDAD</td><td>SKU × línea</td><td class="mono">COD_SKU · DES_SKU · COD_LINEA · COMPATIBLE_1_0 · PRIORIDAD · BATCH_MIN_LTS_LINEA</td><td>Rutas válidas del rebalanceo y su orden (empates reparten proporcional); batch mínimo específico de esa línea, si difiere del default del SKU</td></tr>
+    <tr><td class="mono">1.7_P_SOPORTE</td><td>origen × destino × envase</td><td class="mono">PAIS_ORIGEN · PAIS_DESTINO · TIPO_ENVASE · HABILITADO_SN · LEADTIME_DIAS · CAP_MAX_LTS_MES</td><td>Nivel 3 de la cascada (genera F_COMEX). Único punto donde se cruza de país — el rebalanceo (Nivel 1) es siempre dentro del mismo país de la línea saturada</td></tr>
+    <tr><td class="mono">1.8_P_LOZ</td><td>línea Z × concepto × mes</td><td class="mono">COD_PAIS · COD_LINEA_Z · CONCEPTO(CAPACIDAD_LTS / COSTO_USD_LT) · [meses]</td><td>Nivel 4 de la cascada (genera F_MAQUILA)</td></tr>
+    <tr><td class="mono">1.9_P_ALMACEN</td><td>1 almacén PT</td><td class="mono">COD_PAIS · COD_PLANTA · DES_ALMACEN · CAPACIDAD_PALETAS · OCUPACION_MAX_PCT</td><td>Techo físico del pre-build</td></tr>
+    <tr><td class="mono">2.1_F_DEMANDA</td><td>SKU × CD × mes</td><td class="mono">COD_PAIS · COD_CD · COD_SKU · DES_SKU · UM · [meses]</td><td>Demanda en litros — el grano CD habilita la redistribución. COD_PAIS se valida contra el país registrado del CD (0.3_M_CD); puede diferir del país del SKU cuando este se exporta</td></tr>
+    <tr><td class="mono">2.2_F_STOCK_INICIAL</td><td>1 SKU</td><td class="mono">COD_PAIS · COD_SKU · DES_SKU · FECHA_CORTE · STOCK_LTS</td><td>Apertura del mes 1; luego el stock rueda</td></tr>
+  </table></div>
+  <h3>Lógica del motor (referencia rápida)</h3>
+  <div class="formula">Para cada línea y mes (previo al loop de SKU):
+  DíasDisp[l,m] = DíasCalendario[m] − (Domingos+Feriados−Domingos_Feriados+Capacitaciones/EMO+Refrigerio+SaneamientoIntegral+MantoPlanificado+SaneamientoAgua+PruebasID) + (TrabajoDomingos+TrabajoFeriados)<span class="c">   // 1.3_P_UTILIZACION — por línea, no todas paran igual</span>
+  CapHoras[l,m] = DíasDisp[l,m] × Horas/día[l]
+
+Para cada mes m (loop secuencial):
+  StockInicial[sku,m] = StockFinal_real[sku,m−1]<span class="c">          // apertura heredada, nunca la teórica</span>
+  StockObj = Política_días × D[m+1] / DíasVenta[m+1]<span class="c">      // cobertura forward</span>
+  ProdReq  = max(0; D_total + StockObj − StockInicial)
+  MPS[l]   = ProdReq × %Asig[l]  &rarr; ajuste batch mínimo &rarr; horas = MPS / (Vel × OEE)
+  Si Utilización[l] &gt; 95%  &rarr; cascada: rebalanceo &rarr; pre-build(p2) &rarr; soporte &rarr; LOZ &rarr; restricto
+  Cierre: Atendido = min(D; Stock+ProdFactible) · StockFinal = Stock+Prod−Atendido · Restricto = D−Atendido
+  Redistribución: proporcional al % de demanda de cada CD activo &rarr; Abasto[sku,cd,m] = Atendido × (D[cd]/ΣD activos) · Restricto[sku,cd,m]</div>
+  <div class="note">Simplificaciones de esta versión del motor (v1.0): rebalanceo proporcional entre líneas compatibles por prioridad · pre-build en la misma línea (hasta 3 meses hacia atrás, limitado por vida útil y almacén PT) · almacén PT agregado por planta · demanda restringida = venta perdida (sin backlog). El módulo optimizador (MILP) de la Fase 2 reemplaza la heurística de %Asig manteniendo este mismo archivo de entrada.</div>
+</section>
+
+<section class="view" id="v7">
+  <h2>MPS mensualizado</h2>
+  <p class="sub">Réplica de <span class="mono">2.1.MPS.LT_E1</span>: plan maestro de producción por SKU × línea, mes a mes, antes de la validación de capacidad. Por SKU se repite Stock Inicial, Cobertura, Política y D Total (son atributos del SKU, no de la línea). <b>D TOTAL</b> = demanda total del SKU ese mes; <b>DEMANDA</b> = porción asignada a esa línea (%Part × D Total); <b>Plan Prod</b> = requerimiento neto × %Part, con lote mínimo. La fila <b>TOTAL</b> recalcula con el filtro activo: D Total se cuenta una sola vez por SKU, Demanda y Plan Prod suman las filas visibles.</p>
+  <div class="note" style="margin-top:0">Usa la barra de filtros superior (planta, línea, categoría, formato, SKU) — la tabla y su fila TOTAL recalculan en vivo.</div>
+  <div class="twrap" style="max-height:640px"><table id="mpsTable"></table></div>
+  <div class="note">Lectura: <b>Plan Prod</b> = % Participación × Requerimiento neto del SKU (con lote mínimo aplicado), <i>sin</i> validar todavía capacidad de línea — es el plan "deseado". La confrontación contra capacidad real está en las vistas 1–3; la versión balanceada por categoría está en la vista 8.</div>
+</section>
+
+<section class="view" id="v8">
+  <h2>Utilización de capacidades por categoría</h2>
+  <p class="sub">Réplica de <span class="mono">4.2 BAL_E1</span>: mismo esquema de 3 bloques (Plan de producción, Capacidad de producción, % Utilización) que la vista por línea, pero la capacidad de cada línea se prorratea entre categorías según el volumen que cada una consume — así el % de utilización por categoría es comparable directamente contra el 95%. Valores post-cascada (plan final, balanceado).</p>
+  <h3>Plan de producción por categoría (litros)</h3>
+  <div class="twrap" id="balCatPlan"></div>
+  <h3>Capacidad atribuida por categoría (litros)</h3>
+  <div class="twrap" id="balCatCap"></div>
+  <h3>% Utilización de capacidad por categoría</h3>
+  <div class="twrap" id="balCatUtil"></div>
+  <div class="note">La fila <b>Con maquila/soporte</b> incluye el volumen resuelto vía LOZ y soporte entre países (capacidad atribuida = 100% de lo usado, porque es capacidad variable, no física). <b>Sin maquila/soporte</b> aísla lo producido en líneas propias, para ver la presión real sobre la planta.</div>
+</section>
+
+<section class="view" id="v9">
+  <h2>Detalle de cálculo: horas y capacidad por SKU-línea</h2>
+  <p class="sub">Trazabilidad de la lógica interna del motor: cómo se llega de horas disponibles de línea a litros de capacidad para cada SKU. Valores finales (post-cascada). El % de participación aquí es el <b>resultante del MPS calculado</b> (horas que ese SKU efectivamente consume ÷ horas totales que consume la línea), no el % de entrada de <span class="mono">1.5_P_ASIGNACION</span> — así se audita si el motor terminó repartiendo distinto de lo planeado por efecto de la cascada.</p>
+  <div class="note" style="margin-top:0">Usa la barra de filtros superior (planta, línea, categoría, formato, SKU) para acotar la tabla.</div>
+  <div class="twrap" style="max-height:640px"><table id="detTable"></table></div>
+  <div class="formula">Cadena de cálculo mostrada por columna, para cada SKU × línea × mes:
+OEE[línea,mes]                                    <span class="c">// 1.2_P_OEE — eficiencia de la línea ese mes</span>
+Utilización[línea,mes] = HorasLínea / CapHoras[línea,mes]    <span class="c">// % de horas disponibles usadas — igual que en la vista 1/2</span>
+%Participación[sku,línea,mes] = HorasSKU / HorasLínea         <span class="c">// share calculado del MPS final, no el input</span>
+HorasDisponiblesSKU = CapHoras[línea,mes] × %Participación    <span class="c">// slice de horas de línea que le corresponde a este SKU</span>
+LitrosCapacidadSKU  = HorasDisponiblesSKU × VelEf[sku,línea,mes]   <span class="c">// VelEf = velocidad nominal × OEE</span></div>
+  <div class="note">Si <b>%Participación calculado</b> difiere mucho del % que pusiste en <span class="mono">1.5_P_ASIGNACION</span>, es señal de que la cascada (rebalanceo, soporte o maquila) movió volumen de ese SKU en esa línea-mes — revisa la vista 3 para ver el detalle de esa cascada.</div>
+</section>
+
+</main>
+<footer>ABCI Cap. 1 · Dashboard de capacidades v1.0 · Se alimenta de Plantilla_ABCI_Cap1_Captura.xlsx · Motor determinístico de 2 pasadas (Fase 1)</footer>
+
+<script>
+/* ===================================================== utilidades */
+const $=s=>document.querySelector(s);
+const fmtM=x=>{const a=Math.abs(x);if(a>=1e6)return (x/1e6).toFixed(2)+' M';if(a>=1e3)return (x/1e3).toFixed(0)+' K';return x.toFixed(0)};
+const fmtP=x=>(x*100).toFixed(1)+'%';
+const mesLbl=m=>{const[y,mo]=m.split('-');return ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+mo-1]+'-'+y.slice(2)};
+const utilColor=u=>u>1?'#B3402A':u>.95?'#F0B9AC':u>.85?'#F6E2AE':'#CFE6D6';
+const utilTxt=u=>u>1?'#fff':'#16262E';
+
+/* ===================================================== CATÁLOGO DE PARADAS (fijo, por línea) */
+const EVENT_DEFS=[
+  {cod:'DOMINGOS',label:'Domingos',sign:-1},
+  {cod:'DOMINGOS_FERIADOS',label:'Domingos que coinciden con feriado',sign:+1},
+  {cod:'FERIADOS',label:'Feriados (fuera de domingo)',sign:-1},
+  {cod:'CAPACITACIONES_EMO',label:'Capacitaciones y/o EMO',sign:-1},
+  {cod:'REFRIGERIO',label:'Refrigerio',sign:-1},
+  {cod:'SANEAMIENTO_INTEGRAL',label:'Saneamiento Integral',sign:-1},
+  {cod:'MANTTO_PLANIFICADO',label:'Mantenimiento Planificado',sign:-1},
+  {cod:'SANEAMIENTO_AGUA_FUM',label:'Saneamiento, Tratamiento de Agua y/o Fumigación',sign:-1},
+  {cod:'PRUEBAS_ID',label:'Pruebas I+D',sign:-1},
+  {cod:'TRABAJO_DOMINGOS',label:'Trabajo en Domingo',sign:+1},
+  {cod:'TRABAJO_FERIADOS',label:'Trabajo en Feriado',sign:+1},
+];
+// Días Disponibles[línea,mes] = Días Calendario - Σ(conceptos que restan) + Σ(conceptos que suman)
+// Si la línea aún no ha entrado en operación (FECHA_INGRESO > mes), la capacidad es 0 —
+// no produce, no cuenta en utilización, y no es destino válido del rebalanceo.
+function diasDisponibles(M,l,m){
+  const fi=M.lineas&&M.lineas[l]&&M.lineas[l].fechaIngreso;
+  if(fi && m<fi) return 0;
+  const dc=(M.cal[m]&&M.cal[m].dc)||30;
+  let neto=dc;
+  EVENT_DEFS.forEach(e=>{
+    const v=(M.eventos&&M.eventos[l+'|'+e.cod+'|'+m])||0;
+    neto+= e.sign<0 ? -v : v;
+  });
+  return Math.max(0,neto);
+}
+function totalParadasObligatorias(M,l,m){
+  return EVENT_DEFS.filter(e=>e.sign<0).reduce((a,e)=>a+((M.eventos&&M.eventos[l+'|'+e.cod+'|'+m])||0),0)
+       - ((M.eventos&&M.eventos[l+'|DOMINGOS_FERIADOS|'+m])||0);
+}
+// CDs excluidos del cálculo (demanda y reparto) cuando ACTIVO_SN = N
+function activeCds(cds){return Object.keys(cds).filter(cd=>cds[cd].activo!==false);}
+// Batch mínimo efectivo: usa el override de línea en 1.6_P_COMPATIBILIDAD si existe; si no, el default del SKU (0.1_M_SKU)
+function batchFor(M,s,l){
+  const ov=(M.compat&&M.compat[s+'|'+l]&&M.compat[s+'|'+l].batch);
+  return (ov&&ov>0) ? ov : ((M.skus[s]&&M.skus[s].batch)||1);
+}
+
+/* ===================================================== DATA DEMO */
+function demoModel(){
+  const months=[];for(let i=1;i<=12;i++)months.push('2026-'+String(i).padStart(2,'0'));
+  const dias=[31,28,31,30,31,30,31,31,30,31,30,31], dv=[25,24,26,26,26,25,27,27,26,27,26,27];
+  const cal={};months.forEach((m,i)=>cal[m]={dc:dias[i],dv:dv[i]});
+  const skus={
+    1711:{pais:'RD',des:'GASEOSA KR 200 NEGRA',mf:'GASEOSA KOLA REAL 200',env:'PET',batch:25000,vida:180,maq:false,ltsCf:4.8,cfPal:140,cat:'GASEOSA',subcat:'GASEOSA COLA',marca:'KOLA REAL',sabor:'NEGRA',formato:200,undCf:24},
+    1725:{pais:'RD',des:'GASEOSA KR 500 NEGRA',mf:'GASEOSA KOLA REAL 500',env:'PET',batch:30000,vida:180,maq:true,ltsCf:12,cfPal:80,cat:'GASEOSA',subcat:'GASEOSA COLA',marca:'KOLA REAL',sabor:'NEGRA',formato:500,undCf:12},
+    1804:{pais:'RD',des:'ENERGIZANTE VOLT 473 LATA',mf:'ENERGIZANTE VOLT 473',env:'LATA',batch:15000,vida:365,maq:false,ltsCf:11.3,cfPal:90,cat:'ENERGIZANTE',subcat:'ENERGIZANTE',marca:'VOLT',sabor:'ORIGINAL',formato:473,undCf:24},
+    1013:{pais:'RD',des:'AGUA COOL HEAVEN 500',mf:'AGUA COOL HEAVEN 500',env:'PET',batch:30000,vida:365,maq:true,ltsCf:10,cfPal:120,cat:'AGUA',subcat:'AGUA SIN GAS',marca:'COOL HEAVEN',sabor:'NATURAL',formato:500,undCf:20},
+    10029:{pais:'RD',des:'JUGO FRUTOP 300',mf:'JUGO FRUTOP 300',env:'PET',batch:20000,vida:240,maq:false,ltsCf:7.2,cfPal:110,cat:'JUGO',subcat:'JUGO',marca:'FRUTOP',sabor:'CITRUS PUNCH',formato:300,undCf:24}};
+  const lineas={L01:{pais:'RD',planta:'SRO',tipo:'CSD',hd:24},L02:{pais:'RD',planta:'SRO',tipo:'MIXTA',hd:24},L03:{pais:'RD',planta:'SRO',tipo:'MIXTA',hd:24,fechaIngreso:'2026-07'},L0Z:{pais:'RD',planta:'SRO',tipo:'LOZ',hd:24}};
+  const vel={'L01|GASEOSA KOLA REAL 200':6000,'L01|GASEOSA KOLA REAL 500':5200,'L01|ENERGIZANTE VOLT 473':9000,
+             'L02|GASEOSA KOLA REAL 200':5000,'L02|AGUA COOL HEAVEN 500':12000,'L02|JUGO FRUTOP 300':7000,
+             'L03|AGUA COOL HEAVEN 500':12500,
+             'L0Z|GASEOSA KOLA REAL 500':4000,'L0Z|AGUA COOL HEAVEN 500':4000};
+  const oee={};
+  months.forEach(m=>{oee['L01|'+m]=.65;oee['L02|'+m]=.70;oee['L03|'+m]=.60;oee['L0Z|'+m]=1;});
+  // Catálogo de paradas por línea y mes — mismos valores de ejemplo que la imagen para ene-mar,
+  // extendidos de forma razonable para el resto del año.
+  const domingos=[4,4,5,4,4,5,4,4,5,4,4,5];
+  const feriadosL01=[4,1,0,1,1,1,0,1,1,0,0,1];
+  const feriadosL02=[4,1,0,1,0,1,1,0,1,0,1,0];
+  const eventos={};
+  months.forEach((m,i)=>{
+    eventos['L01|DOMINGOS|'+m]=domingos[i];      eventos['L02|DOMINGOS|'+m]=domingos[i];      eventos['L03|DOMINGOS|'+m]=domingos[i];
+    eventos['L01|DOMINGOS_FERIADOS|'+m]=0;        eventos['L02|DOMINGOS_FERIADOS|'+m]=0;        eventos['L03|DOMINGOS_FERIADOS|'+m]=0;
+    eventos['L01|FERIADOS|'+m]=feriadosL01[i];    eventos['L02|FERIADOS|'+m]=feriadosL02[i];    eventos['L03|FERIADOS|'+m]=feriadosL02[i];
+    eventos['L01|CAPACITACIONES_EMO|'+m]=(i===5?1:0);   eventos['L02|CAPACITACIONES_EMO|'+m]=0;   eventos['L03|CAPACITACIONES_EMO|'+m]=(m==='2026-07'?2:0);
+    eventos['L01|REFRIGERIO|'+m]=0;               eventos['L02|REFRIGERIO|'+m]=0;               eventos['L03|REFRIGERIO|'+m]=0;
+    eventos['L01|SANEAMIENTO_INTEGRAL|'+m]=0.2;   eventos['L02|SANEAMIENTO_INTEGRAL|'+m]=0.2;   eventos['L03|SANEAMIENTO_INTEGRAL|'+m]=0.2;
+    eventos['L01|MANTTO_PLANIFICADO|'+m]=(m==='2026-06'?4:0);
+    eventos['L02|MANTTO_PLANIFICADO|'+m]=(m==='2026-08'?4:0);
+    eventos['L03|MANTTO_PLANIFICADO|'+m]=0;
+    eventos['L01|SANEAMIENTO_AGUA_FUM|'+m]=0;     eventos['L02|SANEAMIENTO_AGUA_FUM|'+m]=0;     eventos['L03|SANEAMIENTO_AGUA_FUM|'+m]=0;
+    eventos['L01|PRUEBAS_ID|'+m]=(i===9?0.5:0);   eventos['L02|PRUEBAS_ID|'+m]=0;               eventos['L03|PRUEBAS_ID|'+m]=0;
+    eventos['L01|TRABAJO_DOMINGOS|'+m]=0;         eventos['L02|TRABAJO_DOMINGOS|'+m]=0;         eventos['L03|TRABAJO_DOMINGOS|'+m]=0;
+    eventos['L01|TRABAJO_FERIADOS|'+m]=0;         eventos['L02|TRABAJO_FERIADOS|'+m]=0;         eventos['L03|TRABAJO_FERIADOS|'+m]=0;
+  });
+  const pol={};Object.keys(skus).forEach(s=>months.forEach(m=>pol[s+'|'+m]=3.5));
+  const asig={};months.forEach(m=>{
+    asig['1711|L01|'+m]=.7;asig['1711|L02|'+m]=.3;asig['1725|L01|'+m]=1;asig['1804|L01|'+m]=1;
+    asig['1013|L02|'+m]=1;asig['10029|L02|'+m]=1;});
+  const compat={'1711|L01':{ok:1,p:1},'1711|L02':{ok:1,p:2,batch:40000},'1725|L01':{ok:1,p:1},'1725|L0Z':{ok:1,p:9},
+    '1804|L01':{ok:1,p:1},'1013|L02':{ok:1,p:1},'1013|L03':{ok:1,p:2},'1013|L0Z':{ok:1,p:9},'10029|L02':{ok:1,p:1}};
+  const soporte=[{orig:'GT',dest:'RD',env:'LATA',hab:true,lt:21,cap:1500000}];
+  const loz={};months.forEach(m=>{loz['cap|'+m]=250000;loz['cap|RD|'+m]=250000;loz['costo|'+m]=.085});
+  const alm={pal:5665,ocup:.9};
+  const cds={CD01:{pais:'RD',des:'SANTO DOMINGO NORTE',activo:true},CD02:{pais:'RD',des:'SANTIAGO',activo:true},CD03:{pais:'RD',des:'LA ROMANA',activo:true}};
+  const d1711=[1700,1600,1800,1850,1950,2050,2450,2500,2350,2550,2400,2450],
+        d1725=[750,700,800,820,870,920,1080,1120,1060,1150,1090,1110],
+        d1804=[280,260,300,310,330,340,350,360,340,370,350,360],
+        d1013=[1900,1750,1950,1900,2000,2050,2000,2100,2000,2150,2050,2100],
+        d10029=[1100,1000,1150,1100,1120,1150,1050,1100,1080,1150,1100,1120];
+  const split={CD01:.55,CD02:.30,CD03:.15};
+  const dem={};
+  const put=(s,arr)=>months.forEach((m,i)=>Object.keys(split).forEach(cd=>dem[s+'|'+cd+'|'+m]=arr[i]*1000*split[cd]));
+  put('1711',d1711);put('1725',d1725);put('1804',d1804);put('1013',d1013);put('10029',d10029);
+  const stock0={1711:300000,1725:120000,1804:50000,1013:250000,10029:160000};
+  return {months,cal,skus,lineas,vel,oee,eventos,pol,asig,compat,soporte,loz,alm,cds,dem,stock0,pais:'RD'};
+}
+
+/* ===================================================== MOTOR */
+function runEngine(M){
+  const {months,cal,skus,lineas,vel,oee,pol,asig,compat,soporte,loz,alm,cds,dem,stock0}=M;
+  const skuIds=Object.keys(skus), lineIds=Object.keys(lineas).filter(l=>lineas[l].tipo!=='LOZ');
+  const lozId=Object.keys(lineas).find(l=>lineas[l].tipo==='LOZ');
+  const log=[];
+  const Dtot=(s,m)=>activeCds(cds).reduce((a,cd)=>a+(dem[s+'|'+cd+'|'+m]||0),0);
+  const velEf=(s,l,m)=>{const v=vel[l+'|'+skus[s].mf];return v?v*(oee[l+'|'+m]||0):0};
+  const capH=(l,m)=>diasDisponibles(M,l,m)*lineas[l].hd;
+
+  function pass(prebuild){  // prebuild: map 'sku|l|m' -> lts inyectados (producción adelantada)
+    const R={mps:{},util:{},capLts:{},planLts:{},stockIni:{},stockFin:{},stockObj:{},prodReq:{},
+             atendido:{},restricto:{},soporteV:{},maquila:{},casc:[],tipoRes:{},excesoNoRes:{},
+             horasSku:{},horasLinea:{},capHoras:{}};
+    let stock={...stock0};
+    months.forEach((m,mi)=>{
+      const mNext=months[mi+1]||m;
+      const mps={}; // sku|l -> lts
+      skuIds.forEach(s=>{
+        R.stockIni[s+'|'+m]=stock[s]||0;
+        const obj=(pol[s+'|'+m]||0)*(Dtot(s,mNext)/cal[mNext].dv);
+        R.stockObj[s+'|'+m]=obj;
+        const req=Math.max(0,Dtot(s,m)+obj-(stock[s]||0));
+        R.prodReq[s+'|'+m]=req;
+        Object.keys(lineas).forEach(l=>{
+          const a=asig[s+'|'+l+'|'+m]||0;
+          let v=req*a+(prebuild[s+'|'+l+'|'+m]||0);
+          if(v>0){const b=batchFor(M,s,l);v=v<b?b:Math.ceil(v/b)*b;}
+          if(v>0)mps[s+'|'+l]=v;
+        });
+      });
+      // pre-build "retiro": el volumen adelantado se resta del mes destino
+      skuIds.forEach(s=>Object.keys(lineas).forEach(l=>{
+        const w=prebuild['-'+s+'|'+l+'|'+m]||0;
+        if(w>0&&mps[s+'|'+l])mps[s+'|'+l]=Math.max(0,mps[s+'|'+l]-w);
+      }));
+      const hoursOf=l=>skuIds.reduce((a,s)=>{const v=mps[s+'|'+l]||0;return a+(v?v/velEf(s,l,m):0)},0);
+      // ---- cascada por línea saturada
+      lineIds.forEach(l=>{
+        const cap=capH(l,m); let h=hoursOf(l);
+        // Si cap=0 (línea aún no operativa) y hay horas asignadas (error de %Asig para un mes
+        // previo a su ingreso), se marca como "sobre-capacidad total" para forzar su evacuación
+        // completa por la cascada, en vez de usar (util-.95)×cap que daría 0 con cap=0.
+        let util = cap>0 ? h/cap : (h>1e-6?2:0);
+        if(util<=.95)return;
+        const exc0 = cap>0 ? (util-.95)*cap : h;
+        let excH=exc0;
+        const ev={reb:0,pre:0,sop:0,loz:0,res:0};
+        // Nivel 1 · rebalanceo hacia líneas compatibles con holgura, por grupos de prioridad.
+        // Dentro de un mismo nivel de prioridad (empate), el excedente se reparte PROPORCIONAL
+        // a la holgura en litros de cada línea, para que todas las empatadas queden igual de
+        // "saludables" (mismo % de su holgura consumido), en vez de llenar una y dejar otra intacta.
+        skuIds.filter(s=>mps[s+'|'+l]).sort((a,b)=>(mps[b+'|'+l]||0)-(mps[a+'|'+l]||0)).forEach(s=>{
+          if(excH<=1)return;
+          // El rebalanceo (Nivel 1) es SIEMPRE dentro del mismo país; cruzar de país solo
+          // ocurre en el Nivel 3 (soporte entre países, con lead time y tope de 1.7_P_SOPORTE).
+          const targets=lineIds.filter(l2=>l2!==l&&(compat[s+'|'+l2]||{}).ok&&velEf(s,l2,m)>0&&lineas[l2].pais===lineas[l].pais);
+          const prios=[...new Set(targets.map(l2=>(compat[s+'|'+l2]||{}).p||9))].sort((a,b)=>a-b);
+          prios.forEach(p=>{
+            if(excH<=1)return;
+            const group=targets.filter(l2=>((compat[s+'|'+l2]||{}).p||9)===p);
+            const slacks=group.map(l2=>{
+              const slackH=Math.max(0,.95*capH(l2,m)-hoursOf(l2));
+              return {l2,capLts:slackH*velEf(s,l2,m)};
+            }).filter(x=>x.capLts>1);
+            if(!slacks.length)return;
+            const capGroupLts=slacks.reduce((a,x)=>a+x.capLts,0);
+            const wantLts=excH*velEf(s,l,m);
+            const moveLtsTotal=Math.min(wantLts,capGroupLts,mps[s+'|'+l]);
+            if(moveLtsTotal<=0)return;
+            slacks.forEach(x=>{
+              const moveLts=moveLtsTotal*(x.capLts/capGroupLts);
+              if(moveLts<=0)return;
+              mps[s+'|'+l]-=moveLts; mps[s+'|'+x.l2]=(mps[s+'|'+x.l2]||0)+moveLts;
+              excH-=moveLts/velEf(s,l,m); ev.reb+=moveLts;
+            });
+          });
+        });
+        // Nivel 3 · soporte entre países (por envase habilitado). El "destino" es el país
+        // de la línea saturada (no el SKU necesariamente): ese es el país que necesita ayuda.
+        // El tope CAP_MAX_LTS_MES se controla POR REGLA (origen|destino|envase), no global:
+        // el consumo de una regla no debe bloquear el tope de otra.
+        skuIds.filter(s=>mps[s+'|'+l]&&excH>1).forEach(s=>{
+          const rule=soporte.find(r=>r.hab&&r.dest===lineas[l].pais&&r.env===skus[s].env);
+          if(!rule)return;
+          const ruleKey='cap|'+rule.orig+'|'+rule.dest+'|'+rule.env+'|'+m;
+          const used=R.soporteV[ruleKey]||0;
+          const room=Math.max(0,rule.cap-used);
+          const moveLts=Math.min(excH*velEf(s,l,m), room, mps[s+'|'+l]);
+          if(moveLts<=0)return;
+          mps[s+'|'+l]-=moveLts; excH-=moveLts/velEf(s,l,m);
+          R.soporteV[s+'|'+m]=(R.soporteV[s+'|'+m]||0)+moveLts;
+          R.soporteV[ruleKey]=used+moveLts;
+          R.soporteV['cap|'+m]=(R.soporteV['cap|'+m]||0)+moveLts; // total global solo para KPI
+          ev.sop+=moveLts;
+        });
+        // Nivel 4 · maquila LOZ. La capacidad contratada es POR PAÍS (cada país tiene su
+        // propia línea Z y contrato en 1.8_P_LOZ): la maquila de un país no consume el
+        // contrato de otro.
+        skuIds.filter(s=>mps[s+'|'+l]&&skus[s].maq&&excH>1).forEach(s=>{
+          const paisL=lineas[l].pais;
+          const capPais=(loz['cap|'+paisL+'|'+m]!=null)?loz['cap|'+paisL+'|'+m]:(loz['cap|'+m]||0);
+          const usedKey='cap|'+paisL+'|'+m;
+          const used=R.maquila[usedKey]||0, room=Math.max(0,capPais-used);
+          const moveLts=Math.min(excH*velEf(s,l,m), room, mps[s+'|'+l]);
+          if(moveLts<=0)return;
+          mps[s+'|'+l]-=moveLts; excH-=moveLts/velEf(s,l,m);
+          R.maquila[s+'|'+m]=(R.maquila[s+'|'+m]||0)+moveLts;
+          R.maquila[usedKey]=used+moveLts;
+          R.maquila['cap|'+m]=(R.maquila['cap|'+m]||0)+moveLts; // total global solo para KPI
+          ev.loz+=moveLts;
+        });
+        // Nivel 5 · recorte proporcional (restricción)
+        if(excH>1){
+          const hNow=hoursOf(l);
+          const factor=Math.max(0,(.95*cap))/hNow;
+          skuIds.filter(s=>mps[s+'|'+l]).forEach(s=>{
+            const cut=mps[s+'|'+l]*(1-factor);
+            mps[s+'|'+l]-=cut; ev.res+=cut;
+          });
+          excH=0;
+        }
+        R.excesoNoRes[l+'|'+m]=ev.res;
+        R.casc.push({l,m,excesoH:exc0,...ev});
+      });
+      // ---- cierre del mes
+      const lineAll=Object.keys(lineas);
+      lineAll.forEach(l=>{
+        const h=hoursOf(l), cap=capH(l,m);
+        R.util[l+'|'+m]=cap?h/cap:0;
+        R.horasLinea[l+'|'+m]=h; R.capHoras[l+'|'+m]=cap;
+        R.planLts[l+'|'+m]=skuIds.reduce((a,s)=>a+(mps[s+'|'+l]||0),0);
+        const vw=skuIds.reduce((a,s)=>a+(mps[s+'|'+l]||0)*0+((mps[s+'|'+l]||0)?velEf(s,l,m)*(mps[s+'|'+l]||0):0),0);
+        const tot=R.planLts[l+'|'+m];
+        const vAvg=tot>0?vw/tot:(velEf(skuIds.find(s=>velEf(s,l,m)>0)||skuIds[0],l,m)||1);
+        R.capLts[l+'|'+m]=cap*vAvg;
+      });
+      skuIds.forEach(s=>{
+        const prod=Object.keys(lineas).reduce((a,l)=>a+(mps[s+'|'+l]||0),0)
+                  +(R.soporteV[s+'|'+m]||0)+(R.maquila[s+'|'+m]||0);
+        Object.keys(lineas).forEach(l=>{if(mps[s+'|'+l]){R.mps[s+'|'+l+'|'+m]=mps[s+'|'+l];
+          const ve=velEf(s,l,m); R.horasSku[s+'|'+l+'|'+m]=ve>0?mps[s+'|'+l]/ve:0;}});
+        const D=Dtot(s,m), ini=R.stockIni[s+'|'+m];
+        const at=Math.min(D,ini+prod);
+        R.atendido[s+'|'+m]=at;
+        R.restricto[s+'|'+m]=D-at;
+        stock[s]=ini+prod-at;
+        R.stockFin[s+'|'+m]=stock[s];
+        if(D-at>0.5){
+          R.tipoRes[s+'|'+m]= ini < (mi>0?(R.stockObj[s+'|'+months[mi-1]]||0):ini+1)*0.999 ? 'HEREDADA':'PROPIA';
+        }
+      });
+    });
+    return R;
+  }
+
+  // ---- Pasada 1: diagnóstico (sin pre-build)
+  const p1=pass({});
+  // ---- construir inyecciones de pre-build para meses con restricción
+  const prebuild={};
+  const almCapLts=(()=>{const avg=skuIds.reduce((a,s)=>a+skus[s].ltsCf*skus[s].cfPal,0)/skuIds.length;
+    return alm.pal*alm.ocup*avg;})();
+  let almUsed={};months.forEach(m=>almUsed[m]=0);
+  p1.casc.filter(c=>c.res>0).forEach(c=>{
+    // volumen restricto por línea-mes → intentar producirlo antes en la misma línea
+    let need=c.res;
+    for(let k=1;k<=3&&need>1000;k++){
+      const mi=months.indexOf(c.m)-k; if(mi<0)break;
+      const md=months[mi];
+      const slackH=Math.max(0,.95*capH(c.l,md)-(p1.util[c.l+'|'+md]||0)*capH(c.l,md));
+      if(slackH<=1)continue;
+      // sku dominante de la línea en el mes saturado, con vida útil suficiente
+      const cands=skuIds.filter(s=>(p1.mps[s+'|'+c.l+'|'+c.m]||asig[s+'|'+c.l+'|'+c.m]))
+        .filter(s=>skus[s].vida>=k*30&&velEf(s,c.l,md)>0)
+        .sort((a,b)=>(p1.mps[b+'|'+c.l+'|'+c.m]||0)-(p1.mps[a+'|'+c.l+'|'+c.m]||0));
+      if(!cands.length)continue;
+      const s=cands[0];
+      const roomAlm=Math.max(0,almCapLts-almUsed[md]);
+      const inj=Math.min(need, slackH*velEf(s,c.l,md), roomAlm);
+      if(inj<=0)continue;
+      prebuild[s+'|'+c.l+'|'+md]=(prebuild[s+'|'+c.l+'|'+md]||0)+inj;
+      for(let j=mi;j<months.indexOf(c.m);j++)almUsed[months[j]]+=inj;
+      need-=inj;
+      log.push('PRE-BUILD: '+fmtM(inj)+' lts de '+s+' adelantados de '+mesLbl(c.m)+' a '+mesLbl(md)+' en '+c.l);
+    }
+  });
+  // ---- Pasada 2: resolución
+  const p2=pass(prebuild);
+  p2.prebuildTot=Object.entries(prebuild).filter(([k])=>!k.startsWith('-')).reduce((a,[,v])=>a+v,0);
+  p2.log=log; p2.p1=p1; p2.M=M;
+  // marcar pre-build en cascada de p2 usando prebuild aplicado por línea-mes destino
+  p2.casc.forEach(c=>{c.pre=0});
+
+  // ---- Agregación por categoría (vista 4.2 BAL_E1): capacidad de cada línea
+  // prorrateada entre categorías según el volumen final que cada una consume.
+  const cats=[...new Set(skuIds.map(s=>skus[s].cat||'SIN CATEGORÍA'))];
+  const catPlan={},catCap={},catExtra={}; // extra = maquila + soporte
+  months.forEach(m=>{
+    Object.keys(lineas).forEach(l=>{
+      const isLoz=lineas[l].tipo==='LOZ';
+      const capLine=isLoz?0:(p2.capLts[l+'|'+m]||0); // LOZ se trata aparte via catExtra
+      let totalVolLine=0; const volCat={};
+      skuIds.forEach(s=>{
+        const v=p2.mps[s+'|'+l+'|'+m]||0; if(!v)return;
+        totalVolLine+=v; const c=skus[s].cat||'SIN CATEGORÍA';
+        volCat[c]=(volCat[c]||0)+v;
+      });
+      Object.keys(volCat).forEach(c=>{
+        const share=totalVolLine>0?volCat[c]/totalVolLine:0;
+        catPlan[c+'|'+m]=(catPlan[c+'|'+m]||0)+volCat[c];
+        catCap[c+'|'+m]=(catCap[c+'|'+m]||0)+share*capLine;
+      });
+    });
+    skuIds.forEach(s=>{
+      const c=skus[s].cat||'SIN CATEGORÍA';
+      const extra=(p2.soporteV[s+'|'+m]||0)+(p2.maquila[s+'|'+m]||0);
+      if(extra>0){
+        catPlan[c+'|'+m]=(catPlan[c+'|'+m]||0)+extra;
+        catCap[c+'|'+m]=(catCap[c+'|'+m]||0)+extra;
+        catExtra[c+'|'+m]=(catExtra[c+'|'+m]||0)+extra;
+      }
+    });
+  });
+  p2.cats=cats; p2.catPlan=catPlan; p2.catCap=catCap; p2.catExtra=catExtra;
+
+  return p2;
+}
+
+/* ---- Plan MPS "puro" (sin cascada, sin validar capacidad) — réplica 2.1.MPS.LT_E1 */
+function computeMPSPlan(M){
+  const skuIds=Object.keys(M.skus);
+  const Dtot=(s,m)=>activeCds(M.cds).reduce((a,cd)=>a+(M.dem[s+'|'+cd+'|'+m]||0),0);
+  let stock={...M.stock0};
+  const out={mps:{},stockIni:{},stockFin:{},dem:{},pol:{},cobIni:{}};
+  M.months.forEach((m,mi)=>{
+    const mNext=M.months[mi+1]||m;
+    skuIds.forEach(s=>{
+      const ini=stock[s]||0; out.stockIni[s+'|'+m]=ini;
+      const D=Dtot(s,m); out.dem[s+'|'+m]=D;
+      const dv=(M.cal[m]&&M.cal[m].dv)||26;
+      out.cobIni[s+'|'+m]= D>0 ? ini/(D/dv) : null;
+      const pol=M.pol[s+'|'+m]||0; out.pol[s+'|'+m]=pol;
+      const dvN=(M.cal[mNext]&&M.cal[mNext].dv)||26;
+      const objNext=pol*(Dtot(s,mNext)/dvN);
+      const req=Math.max(0,D+objNext-ini);
+      let totalPlan=0;
+      Object.keys(M.lineas).forEach(l=>{
+        const a=M.asig[s+'|'+l+'|'+m]||0; if(a<=0)return;
+        let v=req*a; const b=batchFor(M,s,l);
+        if(v>0){v=v<b?b:Math.ceil(v/b)*b;}
+        out.mps[s+'|'+l+'|'+m]=v; totalPlan+=v;
+      });
+      stock[s]=ini+totalPlan-D;
+      out.stockFin[s+'|'+m]=stock[s];
+    });
+  });
+  return out;
+}
+
+/* ===================================================== RENDER */
+let MODEL=demoModel(), RES=runEngine(MODEL), MPSPLAN=computeMPSPlan(MODEL);
+
+/* ---- Filtros globales (aplican a todas las vistas) ---- */
+const FILT={planta:'',linea:'',cat:'',formato:'',cd:'',sku:''};
+function matchSku(s){
+  const sk=MODEL.skus[s]; if(!sk)return false;
+  if(FILT.cat && (sk.cat||'')!==FILT.cat)return false;
+  if(FILT.formato && String(sk.formato||'')!==FILT.formato)return false;
+  if(FILT.sku){
+    const q=FILT.sku.toUpperCase();
+    if(!(String(s).includes(q)||(sk.des||'').toUpperCase().includes(q)))return false;
+  }
+  return true;
+}
+function matchLinea(l){
+  const li=MODEL.lineas[l]; if(!li)return false;
+  if(FILT.planta && (li.planta||'')!==FILT.planta)return false;
+  if(FILT.linea && l!==FILT.linea)return false;
+  return true;
+}
+function matchCd(cd){
+  if(FILT.cd && cd!==FILT.cd)return false;
+  return true;
+}
+function fillSel(sel,vals,cur){
+  sel.innerHTML='<option value="">'+(sel.id==='fFormato'||sel.id==='fCd'?'Todos':'Todas')+'</option>'
+    +vals.map(v=>'<option value="'+v+'"'+(String(v)===cur?' selected':'')+'>'+v+'</option>').join('');
+  if(cur && !vals.map(String).includes(cur)){sel.value='';return '';}
+  return cur||'';
+}
+function populateFilters(){
+  const M=MODEL;
+  const plantas=[...new Set(Object.values(M.lineas).map(x=>x.planta).filter(Boolean))].sort();
+  FILT.planta=fillSel($('#fPlanta'),plantas,FILT.planta);
+  const lineasOpt=Object.keys(M.lineas).filter(l=>!FILT.planta||M.lineas[l].planta===FILT.planta).sort();
+  FILT.linea=fillSel($('#fLinea'),lineasOpt,FILT.linea);
+  const cats=[...new Set(Object.values(M.skus).map(x=>x.cat).filter(Boolean))].sort();
+  FILT.cat=fillSel($('#fCat'),cats,FILT.cat);
+  const fmts=[...new Set(Object.values(M.skus).map(x=>String(x.formato||'')).filter(Boolean))].sort((a,b)=>(+a)-(+b));
+  FILT.formato=fillSel($('#fFormato'),fmts,FILT.formato);
+  const cdsOpt=Object.keys(M.cds).sort();
+  FILT.cd=fillSel($('#fCd'),cdsOpt,FILT.cd);
+  const active=[FILT.planta,FILT.linea,FILT.cat,FILT.formato,FILT.cd,FILT.sku].filter(Boolean).length;
+  $('#fInfo').textContent=active?active+' filtro(s) activo(s)':'';
+}
+let filtersWired=false;
+function wireFilters(){
+  if(filtersWired)return; filtersWired=true;
+  [['fPlanta','planta'],['fLinea','linea'],['fCat','cat'],['fFormato','formato'],['fCd','cd']].forEach(([id,k])=>{
+    $('#'+id).addEventListener('change',e=>{FILT[k]=e.target.value;if(k==='planta')FILT.linea=FILT.linea&&MODEL.lineas[FILT.linea]&&MODEL.lineas[FILT.linea].planta===e.target.value?FILT.linea:'';renderAll();});
+  });
+  let t=null;
+  $('#fSku').addEventListener('input',e=>{clearTimeout(t);t=setTimeout(()=>{FILT.sku=e.target.value.trim();renderAll();},250);});
+  $('#fClear').addEventListener('click',()=>{Object.keys(FILT).forEach(k=>FILT[k]='');$('#fSku').value='';renderAll();});
+}
+
+function renderAll(){
+  const M=MODEL,R=RES,{months,cds,skus,lineas,dem}=M;
+  populateFilters(); wireFilters();
+  renderMPS(); renderBalCat(); renderDetalle();
+  // Universos filtrados (barra global): SKUs por cat/formato/búsqueda, líneas por planta/línea, CDs por CD + activos
+  const skuIds=Object.keys(skus).filter(matchSku);
+  const fCdIds=activeCds(cds).filter(matchCd);
+  const Dtot=m=>skuIds.reduce((a,s)=>a+fCdIds.reduce((b,cd)=>b+(dem[s+'|'+cd+'|'+m]||0),0),0);
+  // Atendido/restricto por CD vía ratio proporcional (misma regla de la vista 6)
+  const ratioOf=(s,m)=>{
+    const D=activeCds(cds).reduce((a,cd)=>a+(dem[s+'|'+cd+'|'+m]||0),0);
+    return D>0?Math.min(1,(R.atendido[s+'|'+m]||0)/D):0;
+  };
+  const atendF=m=>skuIds.reduce((a,s)=>{const r=ratioOf(s,m);return a+fCdIds.reduce((b,cd)=>b+(dem[s+'|'+cd+'|'+m]||0)*r,0)},0);
+  const totalD=months.reduce((a,m)=>a+Dtot(m),0);
+  const totalAt=months.reduce((a,m)=>a+atendF(m),0);
+  const totalRes=totalD-totalAt;
+  const totalMaq=months.reduce((a,m)=>a+skuIds.reduce((b,s)=>b+(R.maquila[s+'|'+m]||0),0),0);
+  const totalSop=months.reduce((a,m)=>a+skuIds.reduce((b,s)=>b+(R.soporteV[s+'|'+m]||0),0),0);
+  const lineIds=Object.keys(lineas).filter(l=>lineas[l].tipo!=='LOZ'&&matchLinea(l));
+  const utilAvg=lineIds.length?lineIds.reduce((a,l)=>a+months.reduce((b,m)=>b+(R.util[l+'|'+m]||0),0)/months.length,0)/lineIds.length:0;
+  const satur=lineIds.flatMap(l=>months.filter(m=>(R.util[l+'|'+m]||0)>.95).map(m=>l+' '+mesLbl(m)));
+  const hayFiltro=[FILT.planta,FILT.linea,FILT.cat,FILT.formato,FILT.cd,FILT.sku].some(Boolean);
+  const sufijo=hayFiltro?' (filtro aplicado)':'';
+
+  // -------- verdict + KPIs
+  $('#verdict').innerHTML = totalRes>1000
+    ? '<div class="verdict bad">¿Restringe demanda? SÍ — '+fmtM(totalRes)+' lts no atendibles ('+fmtP(totalD?totalRes/totalD:0)+' de la demanda)'+sufijo+'<small>Aún después de rebalanceo, pre-build, soporte entre países y maquila. Detalle por SKU y CD en la vista de Abastecimiento.</small></div>'
+    : '<div class="verdict ok">¿Restringe demanda? NO — se atiende el 100% del plan'+sufijo+'<small>La cascada de resolución absorbió todos los excesos de capacidad.</small></div>';
+  $('#kpis').innerHTML=[
+    ['Demanda total'+sufijo,fmtM(totalD)+' lts',''],
+    ['Utilización promedio',fmtP(utilAvg),utilAvg>.95?'bad':utilAvg>.85?'warn':'ok'],
+    ['Línea-meses saturados',satur.length,satur.length?'warn':'ok'],
+    ['Pre-build aplicado',fmtM(R.prebuildTot||0)+' lts','',],
+    ['Soporte países',fmtM(totalSop)+' lts',totalSop>0?'warn':''],
+    ['Maquila LOZ',fmtM(totalMaq)+' lts',totalMaq>0?'warn':''],
+    ['Demanda restringida',fmtM(totalRes)+' lts',totalRes>1000?'bad':'ok'],
+  ].map(([l,v,c])=>'<div class="kpi '+c+'"><div class="v">'+v+'</div><div class="l">'+l+'</div></div>').join('');
+
+  // -------- heatmap resumen (líneas filtradas por planta/línea)
+  let hm='<table class="hm"><tr><th>Línea</th>'+months.map(m=>'<th>'+mesLbl(m)+'</th>').join('')+'</tr>';
+  Object.keys(lineas).filter(matchLinea).forEach(l=>{
+    hm+='<tr><td><b>'+l+'</b> <span style="color:var(--steel);font-size:11px">'+lineas[l].tipo+'</span></td>';
+    months.forEach(m=>{
+      if(lineas[l].tipo==='LOZ'){const u=(R.maquila['cap|'+m]||0)/((M.loz['cap|'+m]||1));
+        hm+='<td style="background:'+(u>0? '#E8DFF0':'#F4F6F5')+'" title="Maquila usada">'+(u>0?fmtP(u):'·')+'</td>';return;}
+      const u=R.util[l+'|'+m]||0;
+      hm+='<td style="background:'+utilColor(u)+';color:'+utilTxt(u)+'" title="'+l+' '+mesLbl(m)+'">'+fmtP(u)+'</td>';
+    });
+    hm+='</tr>';});
+  $('#hmResumen').innerHTML=hm+'</table>';
+  $('#hmResumenCat').innerHTML=balCatTable(utilGetter,v=>fmtP(v),v=>utilColor(v));
+
+  // -------- barras totales (SKUs + CDs filtrados)
+  const maxD=Math.max(1,...months.map(Dtot));
+  $('#totBars').innerHTML=months.map(m=>{
+    const D=Dtot(m), at=atendF(m), rs=D-at;
+    return '<div class="stack"><div>'+mesLbl(m)+'</div><div class="bar" style="width:'+(D/maxD*100)+'%">'
+      +'<div style="width:'+(D?at/D*100:0)+'%;background:var(--petrol)" title="Atendido '+fmtM(at)+'"></div>'
+      +(rs>500?'<div style="width:'+(rs/D*100)+'%;background:var(--red)" title="Restricto '+fmtM(rs)+'"></div>':'')
+      +'</div><div class="num">'+fmtM(D)+(rs>500?' <span style="color:var(--red)">−'+fmtM(rs)+'</span>':'')+'</div></div>';
+  }).join('');
+
+  // -------- vista Capacidad por línea: selector acotado por planta/línea
+  const selOpts=Object.keys(lineas).filter(matchLinea);
+  const prevSel=$('#selLinea').value;
+  $('#selLinea').innerHTML=selOpts.map(l=>'<option value="'+l+'"'+(l===prevSel?' selected':'')+'>'+l+' — '+lineas[l].tipo+(lineas[l].fechaIngreso?' (ingresa '+mesLbl(lineas[l].fechaIngreso)+')':'')+'</option>').join('');
+  if(selOpts.length)renderLinea($('#selLinea').value||selOpts[0]);
+  else $('#lineaDetail').innerHTML='<div class="note">Ninguna línea coincide con el filtro de planta/línea.</div>';
+
+  // -------- vista Cascada (cards filtradas por planta/línea)
+  const cascAll=[...R.p1.casc].filter(c=>matchLinea(c.l));
+  const maxE=Math.max(1,...cascAll.map(c=>c.reb+c.sop+c.loz+c.res+0.0001));
+  $('#cascada').innerHTML=cascAll.length? cascAll.map(c=>{
+    const preRes=(R.prebuildTot&&c.res>0)?Math.min(c.res, 0):0;
+    const tot=c.reb+c.sop+c.loz+c.res;
+    const seg=(v,col)=>v>0?'<div style="width:'+(v/maxE*100)+'%;background:'+col+'" title="'+fmtM(v)+' lts"></div>':'';
+    // restricto final de p2 para esa línea-mes
+    const resFinal=(R.casc.find(x=>x.l===c.l&&x.m===c.m)||{}).res||0;
+    const preV=Math.max(0,c.res-resFinal);
+    return '<div class="card"><b class="mono">'+c.l+' · '+mesLbl(c.m)+'</b> — exceso sobre 95%: <b>'+fmtM(tot)+' lts eq.</b>'
+      +'<div class="bar" style="margin-top:8px">'+seg(c.reb,'#2E7D5B')+seg(preV,'#5B8A46')+seg(c.sop,'#B08903')+seg(c.loz,'#C4661F')+seg(resFinal,'#B3402A')+'</div>'
+      +'<div style="font-size:12px;color:var(--steel);margin-top:6px">Rebalanceo '+fmtM(c.reb)+' · Pre-build '+fmtM(preV)+' · Soporte '+fmtM(c.sop)+' · LOZ '+fmtM(c.loz)+' · <span style="color:'+(resFinal>500?'var(--red)':'var(--green)')+'">Restricto '+fmtM(resFinal)+'</span></div></div>';
+  }).join(''):'<div class="note green">Ninguna línea superó el 95% de utilización: la cascada no se activó.</div>';
+  let bit='<table><tr><th>Evento</th></tr>';
+  (R.log.length?R.log:['Sin eventos de pre-build.']).forEach(e=>bit+='<tr><td class="mono">'+e+'</td></tr>');
+  $('#bitacora').innerHTML=bit+'</table>';
+
+  // -------- vista Abastecimiento (proporcional; filtros: CD + SKU)
+  const activeCdIds=activeCds(cds);
+  const abasto={},restCd={};
+  skuIds.forEach(s=>months.forEach(m=>{
+    const disp=R.atendido[s+'|'+m]||0;
+    const Dtotal=activeCdIds.reduce((a,cd)=>a+(dem[s+'|'+cd+'|'+m]||0),0);
+    const ratio=Dtotal>0?Math.min(1,disp/Dtotal):0;
+    activeCdIds.forEach(cd=>{
+      const d=dem[s+'|'+cd+'|'+m]||0, ab=d*ratio;
+      abasto[s+'|'+cd+'|'+m]=ab; restCd[s+'|'+cd+'|'+m]=d-ab;
+    });
+  }));
+  let cc='<table class="hm"><tr><th>CD</th>'+months.map(m=>'<th>'+mesLbl(m)+'</th>').join('')+'<th>Año</th></tr>';
+  fCdIds.forEach(cd=>{
+    let sumA=0,sumD=0;
+    cc+='<tr><td><b>'+cd+'</b> '+cds[cd].des+'</td>';
+    months.forEach(m=>{
+      const d=skuIds.reduce((a,s)=>a+(dem[s+'|'+cd+'|'+m]||0),0);
+      const ab=skuIds.reduce((a,s)=>a+(abasto[s+'|'+cd+'|'+m]||0),0);
+      sumA+=ab;sumD+=d;const u=d?ab/d:1;
+      cc+='<td style="background:'+(u>=.999?'#CFE6D6':u>=.97?'#F6E2AE':'#F0B9AC')+'">'+fmtP(u)+'</td>';
+    });
+    cc+='<td class="num"><b>'+fmtP(sumD?sumA/sumD:1)+'</b></td></tr>';
+  });
+  $('#cdCumpl').innerHTML=cc+'</table>';
+  const restRows=[];
+  skuIds.forEach(s=>fCdIds.forEach(cd=>months.forEach(m=>{
+    const r=restCd[s+'|'+cd+'|'+m]||0;
+    if(r>500)restRows.push({s,cd,m,r,t:R.tipoRes[s+'|'+m]||'PROPIA'});
+  })));
+  restRows.sort((a,b)=>b.r-a.r);
+  $('#restrictoTbl').innerHTML='<table><tr><th>SKU</th><th>CD</th><th>Mes</th><th style="text-align:right">Litros</th><th>Tipo</th></tr>'
+    +(restRows.length?restRows.map(x=>'<tr><td>'+x.s+' · '+skus[x.s].des+'</td><td>'+x.cd+'</td><td>'+mesLbl(x.m)+'</td><td class="num" style="color:var(--red)">'+fmtM(x.r)+'</td><td><span class="tag '+(x.t==='HEREDADA'?'h':'p')+'">'+x.t+'</span></td></tr>').join('')
+    :'<tr><td colspan="5">Sin demanda restringida — todos los CDs se atienden al 100%.</td></tr>')+'</table>';
+  $('#restrictoNote').innerHTML='<b>Regla de reparto:</b> Abasto[sku,cd,m] = Atendido[sku,m] × (Demanda[sku,cd,m] ÷ Σ Demanda[sku,cd,m] de CDs activos) — todos los CDs activos reciben el mismo % de cumplimiento para ese SKU-mes, así ninguno queda en cero mientras otro está al 100%. CDs con ACTIVO_SN=N quedan fuera del cálculo. <b>Lectura tipo:</b> PROPIA = el déficit nace en ese mes por capacidad. HEREDADA = arranca con stock bajo por restricción del mes anterior (efecto arrastre del loop). Esta tabla es <span class="mono">F_RESTRICTO</span>, el output que consume Comercial/EGPD.';
+
+  // -------- vista 5: stock vs política
+  let st='<table class="hm"><tr><th>SKU</th>'+months.map(m=>'<th>'+mesLbl(m)+'</th>').join('')+'</tr>';
+  skuIds.forEach(s=>{
+    st+='<tr><td>'+s+' · '+skus[s].des+'</td>';
+    months.forEach((m,i)=>{
+      const mN=months[i+1]||m;
+      const dDia=skuIds.length?(Object.keys(cds).reduce((a,cd)=>a+(dem[s+'|'+cd+'|'+mN]||0),0))/M.cal[mN].dv:1;
+      const cov=dDia>0?(R.stockFin[s+'|'+m]||0)/dDia:99;
+      const tgt=M.pol[s+'|'+m]||0;
+      const ok=cov>=tgt*.98;
+      st+='<td style="background:'+(ok?'#CFE6D6':cov>=tgt*.7?'#F6E2AE':'#F0B9AC')+'" title="objetivo '+tgt.toFixed(1)+' d">'+cov.toFixed(1)+'</td>';
+    });
+    st+='</tr>';});
+  $('#stockTbl').innerHTML=st+'</table><div style="padding:8px 12px;font-size:12px;color:var(--steel)">Valor = días de cobertura del stock de cierre. Verde ≥ política · ámbar = parcial · rojo = crítico.</div>';
+}
+
+function lineaChartSVG(l){
+  const M=MODEL,R=RES,months=M.months,isLoz=M.lineas[l].tipo==='LOZ',fi=M.lineas[l].fechaIngreso;
+  const data=months.map(m=>{
+    const plan=isLoz?(R.maquila['cap|'+m]||0):(R.planLts[l+'|'+m]||0);
+    const cap=isLoz?(M.loz['cap|'+m]||0):(R.capLts[l+'|'+m]||0);
+    const off=!!(fi&&m<fi);
+    return {m,plan,cap,util:(!off&&cap>0)?plan/cap:null,off};
+  });
+  const maxV=Math.max(1,...data.map(d=>Math.max(d.plan,d.cap)))*1.18;
+  const W=1080,H=400,mL=58,mR=58,mT=30,mB=58,n=months.length;
+  const cw=(W-mL-mR)/n, bw=Math.min(26,cw*0.30);
+  const yV=v=>mT+(H-mT-mB)*(1-v/maxV);
+  const UMAX=1.3;
+  const yU=u=>mT+(H-mT-mB)*(1-Math.min(u,UMAX)/UMAX);
+  const mm=v=>(v/1e6).toFixed(1);
+  let s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;font-family:\'IBM Plex Sans\',sans-serif">';
+  // grid + eje izquierdo (MM lts)
+  for(let t=0;t<=4;t++){
+    const v=maxV*t/4, gy=yV(v);
+    s+='<line x1="'+mL+'" y1="'+gy+'" x2="'+(W-mR)+'" y2="'+gy+'" stroke="#DDE6E9" stroke-width="1"/>';
+    s+='<text x="'+(mL-8)+'" y="'+(gy+4)+'" text-anchor="end" font-size="11" fill="#5A7A8A">'+mm(v)+'</text>';
+  }
+  // eje derecho (% utilización) + umbral 95%
+  [0,.5,.95,1.3].forEach(u=>{
+    const gy=yU(u);
+    s+='<text x="'+(W-mR+8)+'" y="'+(gy+4)+'" font-size="11" fill="'+(u===.95?'#B3402A':'#5A7A8A')+'">'+(u*100).toFixed(0)+'%</text>';
+    if(u===.95)s+='<line x1="'+mL+'" y1="'+gy+'" x2="'+(W-mR)+'" y2="'+gy+'" stroke="#B3402A" stroke-width="1.5" stroke-dasharray="6,5" opacity=".55"/>';
+  });
+  // barras + etiquetas de valor
+  const pts=[];
+  data.forEach((d,i)=>{
+    const xc=mL+cw*i+cw/2;
+    if(d.off){
+      s+='<rect x="'+(mL+cw*i+3)+'" y="'+mT+'" width="'+(cw-6)+'" height="'+(H-mT-mB)+'" fill="#F2F4F3"/>';
+      s+='<text x="'+xc+'" y="'+((mT+H-mB)/2)+'" text-anchor="middle" font-size="10" fill="#9AAAB2" transform="rotate(-90 '+xc+' '+((mT+H-mB)/2)+')">no operativa</text>';
+    }else{
+      s+='<rect x="'+(xc-bw-2)+'" y="'+yV(d.cap)+'" width="'+bw+'" height="'+Math.max(0,(H-mB)-yV(d.cap))+'" fill="#145C74" rx="2"/>';
+      s+='<rect x="'+(xc+2)+'" y="'+yV(d.plan)+'" width="'+bw+'" height="'+Math.max(0,(H-mB)-yV(d.plan))+'" fill="#9CC4D2" rx="2"/>';
+      s+='<text x="'+(xc-2-bw/2)+'" y="'+(H-mB-8)+'" text-anchor="middle" font-size="10.5" font-weight="600" fill="#fff">'+mm(d.cap)+'</text>';
+      s+='<text x="'+(xc+2+bw/2)+'" y="'+(H-mB-8)+'" text-anchor="middle" font-size="10.5" font-weight="600" fill="#16262E">'+mm(d.plan)+'</text>';
+      if(d.util!=null)pts.push({x:xc,y:yU(d.util),u:d.util});
+    }
+    s+='<text x="'+xc+'" y="'+(H-mB+20)+'" text-anchor="middle" font-size="11.5" fill="#16262E">'+mesLbl(d.m)+'</text>';
+  });
+  // línea de % utilización + etiquetas
+  if(pts.length>1)s+='<polyline points="'+pts.map(p=>p.x+','+p.y).join(' ')+'" fill="none" stroke="#D98E04" stroke-width="3" stroke-linejoin="round"/>';
+  pts.forEach(p=>{
+    s+='<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="#D98E04" stroke="#fff" stroke-width="1.5"/>';
+    const lbl=(p.u*100).toFixed(1)+'%';
+    const lw=lbl.length*6.4+10;
+    s+='<rect x="'+(p.x-lw/2)+'" y="'+(p.y-24)+'" width="'+lw+'" height="16" rx="3" fill="#FBF0D8" stroke="#D98E04" stroke-width=".8"/>';
+    s+='<text x="'+p.x+'" y="'+(p.y-12)+'" text-anchor="middle" font-size="10.5" font-weight="600" fill="#8A5B03">'+lbl+'</text>';
+  });
+  // ejes base
+  s+='<line x1="'+mL+'" y1="'+(H-mB)+'" x2="'+(W-mR)+'" y2="'+(H-mB)+'" stroke="#5A7A8A" stroke-width="1.2"/>';
+  s+='<text x="'+mL+'" y="'+(mT-12)+'" font-size="10.5" fill="#5A7A8A">MM LTS</text>';
+  s+='<text x="'+(W-mR)+'" y="'+(mT-12)+'" text-anchor="end" font-size="10.5" fill="#5A7A8A">% UTILIZACIÓN</text>';
+  return s+'</svg>';
+}
+function renderLinea(l){
+  const M=MODEL,{lineas}=M;
+  const isLoz=lineas[l].tipo==='LOZ';
+  const fi=lineas[l].fechaIngreso;
+  const titulo=l+' — '+lineas[l].tipo+(lineas[l].planta?' · '+lineas[l].planta:'')+' | ANÁLISIS DE CAPACIDADES';
+  $('#lineaDetail').innerHTML=
+    '<div class="card" style="padding:14px 14px 8px">'
+      +'<div style="text-align:center;font-family:var(--disp);font-weight:700;font-size:19px;letter-spacing:1px;text-transform:uppercase;color:var(--deep);margin-bottom:6px">'+titulo+'</div>'
+      +lineaChartSVG(l)
+      +'<div class="leg" style="justify-content:center;margin-top:4px">'
+        +'<span><span class="dot" style="background:#145C74"></span>'+(isLoz?'Capacidad contratada':'Capacidad')+' (MM lts)</span>'
+        +'<span><span class="dot" style="background:#9CC4D2"></span>'+(isLoz?'Maquila usada':'Producción / Plan')+' (MM lts)</span>'
+        +'<span><span class="dot" style="background:#D98E04"></span>% Utilización (eje der.)</span>'
+        +'<span><span class="dot" style="background:#B3402A"></span>Umbral 95%</span>'
+      +'</div>'
+    +'</div>'
+    +(fi?'<div class="note green">Línea nueva: ingresa operativa en <b>'+mesLbl(fi)+'</b>. Antes de ese mes su capacidad es 0 — no produce, no cuenta en utilización, y no es destino válido del rebalanceo (Nivel 1 de la cascada) aunque esté marcada compatible en 1.6_P_COMPATIBILIDAD.</div>':'')
+    +(isLoz?'<div class="note">La línea Z no tiene utilización física: se compara volumen maquilado contra capacidad contratada (1.8_P_LOZ).</div>'
+           :'<div class="note">Capacidad(lts) = Días Disponibles (ver detalle abajo) × horas/día × velocidad efectiva ponderada del mix asignado.</div>'
+            +renderParadasTable(l));
+}
+function renderParadasTable(l){
+  const M=MODEL,{months,lineas}=M;
+  let h='<h3 style="margin-top:22px">Días de parada y disponibilidad — '+l+'</h3>'
+       +'<div class="twrap"><table class="hm"><tr><th style="text-align:left">Concepto</th>'+months.map(m=>'<th>'+mesLbl(m)+'</th>').join('')+'</tr>';
+  const row=(label,vals,opts)=>{
+    opts=opts||{};
+    h+='<tr'+(opts.strong?' style="background:#F4F6F5;font-weight:600"':'')+'><td style="text-align:left">'+label+'</td>'
+      +vals.map(v=>'<td'+(opts.bg?' style="background:'+opts.bg(v)+'"':'')+'>'+(opts.fmt?opts.fmt(v):v.toFixed(1))+'</td>').join('')
+      +'</tr>';
+  };
+  row('Días Calendario', months.map(m=>(M.cal[m]&&M.cal[m].dc)||0));
+  EVENT_DEFS.forEach(e=>{
+    const vals=months.map(m=>(M.eventos&&M.eventos[l+'|'+e.cod+'|'+m])||0);
+    row(e.label+' <span class="tag '+(e.sign<0?'p':'h')+'" style="margin-left:6px">'+(e.sign<0?'resta':'suma')+'</span>', vals);
+  });
+  row('Total Paradas Obligatorias', months.map(m=>totalParadasObligatorias(M,l,m)), {strong:true});
+  row('Días Disponibles para producir', months.map(m=>diasDisponibles(M,l,m)), {strong:true,bg:()=>'#DCE8EC'});
+  row('Horas Disponibles (Días × hrs/día)', months.map(m=>diasDisponibles(M,l,m)*lineas[l].hd));
+  return h+'</table></div>';
+}
+$('#selLinea')?.addEventListener('change',e=>renderLinea(e.target.value));
+
+/* ===================================================== VISTA 7 · MPS mensualizado */
+const METRICS7=['%PART','D TOTAL','STOCK INI','COB INI','POL','DEMANDA','PLAN PROD','STOCK FINAL'];
+function mpsRows(){
+  const M=MODEL,skuIds=Object.keys(M.skus);
+  const rows=[];
+  skuIds.forEach(s=>{
+    Object.keys(M.lineas).forEach(l=>{
+      const any=M.months.some(m=>(M.asig[s+'|'+l+'|'+m]||0)>0);
+      if(any)rows.push({s,l});
+    });
+  });
+  return rows.sort((a,b)=> a.l===b.l ? a.s-b.s : a.l.localeCompare(b.l));
+}
+function renderMPS(){
+  const M=MODEL,P=MPSPLAN,skus=M.skus;
+  let rows=mpsRows().filter(r=>matchSku(r.s)&&matchLinea(r.l));
+  let h='<thead><tr><th rowspan="2">Línea</th><th rowspan="2">SKU</th><th rowspan="2">Descripción</th><th rowspan="2">Categoría</th><th rowspan="2">Subcat.</th><th rowspan="2">Marca</th><th rowspan="2">Sabor</th><th rowspan="2">Fmt.</th>';
+  M.months.forEach(m=>h+='<th colspan="'+METRICS7.length+'" style="text-align:center;border-left:2px solid rgba(255,255,255,.4)">'+mesLbl(m)+'</th>');
+  h+='</tr><tr>';
+  M.months.forEach(()=>METRICS7.forEach((mt,i)=>h+='<th style="'+(i===0?'border-left:2px solid rgba(255,255,255,.4);':'')+'font-size:10px">'+mt+'</th>'));
+  h+='</tr></thead><tbody>';
+  // ---- Fila TOTAL (recalcula con el filtro activo):
+  //      D TOTAL se deduplica por SKU (un SKU en varias líneas cuenta una sola vez);
+  //      DEMANDA suma la porción asignada (%Part × D Total) de las filas visibles;
+  //      PLAN PROD suma todas las filas visibles (es por línea, sí se acumula).
+  if(rows.length){
+    const skusUnicos=[...new Set(rows.map(r=>r.s))];
+    h+='<tr style="background:#EFF2F1;font-weight:600;border-bottom:2px solid var(--petrol)"><td colspan="8">TOTAL (filtro aplicado — '+rows.length+' fila(s), '+skusUnicos.length+' SKU(s))</td>';
+    M.months.forEach(m=>{
+      const dTotTot=skusUnicos.reduce((a,s)=>a+(P.dem[s+'|'+m]||0),0);
+      const demTot=rows.reduce((a,r)=>a+((M.asig[r.s+'|'+r.l+'|'+m]||0)*(P.dem[r.s+'|'+m]||0)),0);
+      const planTot=rows.reduce((a,r)=>a+(P.mps[r.s+'|'+r.l+'|'+m]||0),0);
+      const bl='border-left:2px solid var(--line);';
+      h+='<td style="'+bl+'"></td>'
+        +'<td class="num" style="color:var(--steel)"><b>'+fmtM(dTotTot)+'</b></td>'
+        +'<td></td><td></td><td></td>'
+        +'<td class="num"><b>'+fmtM(demTot)+'</b></td>'
+        +'<td class="num"><b>'+fmtM(planTot)+'</b></td>'
+        +'<td></td>';
+    });
+    h+='</tr>';
+  }
+  if(!rows.length)h+='<tr><td colspan="8">Sin resultados para el filtro aplicado.</td></tr>';
+  rows.forEach(({s,l})=>{
+    const sk=skus[s];
+    h+='<tr><td><b class="mono">'+l+'</b></td><td class="mono">'+s+'</td><td>'+(sk.des||'')+'</td><td>'+(sk.cat||'')+'</td><td>'+(sk.subcat||'')+'</td><td>'+(sk.marca||'')+'</td><td>'+(sk.sabor||'')+'</td><td class="num">'+(sk.formato||'')+'</td>';
+    M.months.forEach((m,mi)=>{
+      const part=M.asig[s+'|'+l+'|'+m]||0;
+      const sIni=P.stockIni[s+'|'+m]||0, cob=P.cobIni[s+'|'+m], pol=P.pol[s+'|'+m]||0;
+      const demV=P.dem[s+'|'+m]||0, plan=P.mps[s+'|'+l+'|'+m]||0, sFin=P.stockFin[s+'|'+m]||0;
+      const bl='border-left:2px solid var(--line);';
+      h+='<td class="num" style="'+bl+'">'+fmtP(part)+'</td>'
+        +'<td class="num" style="color:var(--steel)">'+fmtM(demV)+'</td>'
+        +'<td class="num">'+fmtM(sIni)+'</td>'
+        +'<td class="num">'+(cob==null?'Sin Cuota':cob.toFixed(1))+'</td>'
+        +'<td class="num">'+pol.toFixed(1)+'</td>'
+        +'<td class="num">'+fmtM(part*demV)+'</td>'
+        +'<td class="num">'+fmtM(plan)+'</td>'
+        +'<td class="num" style="'+(sFin<0?'color:var(--red);font-weight:600':'')+'">'+fmtM(sFin)+'</td>';
+    });
+    h+='</tr>';
+  });
+  $('#mpsTable').innerHTML=h+'</tbody>';
+}
+
+/* ===================================================== VISTA · Utilización por categoría (respeta filtros globales) */
+let CATAGG=null;
+function catAggFiltered(){
+  const M=MODEL,R=RES;
+  const skuF=Object.keys(M.skus).filter(matchSku);
+  const catPlan={},catCap={},catExtra={};
+  M.months.forEach(m=>{
+    Object.keys(M.lineas).filter(l=>M.lineas[l].tipo!=='LOZ'&&matchLinea(l)).forEach(l=>{
+      const totalVolLine=R.planLts[l+'|'+m]||0, capLine=R.capLts[l+'|'+m]||0;
+      if(totalVolLine<=0)return;
+      skuF.forEach(s=>{
+        const v=R.mps[s+'|'+l+'|'+m]||0; if(!v)return;
+        const c=M.skus[s].cat||'SIN CATEGORÍA';
+        catPlan[c+'|'+m]=(catPlan[c+'|'+m]||0)+v;
+        catCap[c+'|'+m]=(catCap[c+'|'+m]||0)+(v/totalVolLine)*capLine; // capacidad atribuida al SKU (share dentro de la línea completa)
+      });
+    });
+    skuF.forEach(s=>{
+      const extra=(R.soporteV[s+'|'+m]||0)+(R.maquila[s+'|'+m]||0);
+      if(extra>0){
+        const c=M.skus[s].cat||'SIN CATEGORÍA';
+        catPlan[c+'|'+m]=(catPlan[c+'|'+m]||0)+extra;
+        catCap[c+'|'+m]=(catCap[c+'|'+m]||0)+extra;
+        catExtra[c+'|'+m]=(catExtra[c+'|'+m]||0)+extra;
+      }
+    });
+  });
+  const cats=[...new Set(skuF.map(s=>M.skus[s].cat||'SIN CATEGORÍA'))].sort();
+  return {cats,catPlan,catCap,catExtra};
+}
+function balCatTable(getter,fmt,heat){
+  const M=MODEL,A=CATAGG;
+  const qtr=[['Q1',0,3],['Q2',3,3],['Q3',6,3],['Q4',9,3]];
+  let h='<table class="hm"><thead><tr><th></th>';
+  qtr.forEach(q=>h+='<th colspan="3">'+q[0]+'</th>');
+  h+='<th>2026</th></tr><tr><th>Categoría</th>';
+  M.months.forEach(m=>h+='<th>'+mesLbl(m)+'</th>');
+  h+='<th>TOTAL</th></tr></thead><tbody>';
+  if(!A.cats.length)return h+'<tr><td colspan="14">Sin categorías que coincidan con el filtro.</td></tr></tbody></table>';
+  A.cats.forEach(c=>{
+    let sum=0;
+    h+='<tr><td>'+c+'</td>';
+    M.months.forEach(m=>{const v=getter(c,m);sum+=(typeof v==='number'?v:0);
+      const disp=fmt(v,c,m);
+      h+='<td'+(heat?' style="background:'+heat(v)+'"':'')+'>'+disp+'</td>';});
+    h+='<td class="num"><b>'+(getter===utilGetter?'':fmt(sum,c,'TOTAL'))+'</b></td></tr>';
+  });
+  // filas de control: sin maquila / total
+  let totSinMaqYear=0, totYear=0;
+  h+='<tr style="background:#F4F6F5"><td><b>Sin maquila/soporte</b></td>';
+  M.months.forEach(m=>{
+    const plan=A.cats.reduce((a,c)=>a+((A.catPlan[c+'|'+m]||0)-(A.catExtra[c+'|'+m]||0)),0);
+    const cap=A.cats.reduce((a,c)=>a+((A.catCap[c+'|'+m]||0)-(A.catExtra[c+'|'+m]||0)),0);
+    let v; if(getter===planGetter)v=plan; else if(getter===capGetter)v=cap; else v=cap>0?plan/cap:0;
+    totSinMaqYear+=(getter===utilGetter?0:v);
+    h+='<td'+(heat?' style="background:'+heat(v)+'"':'')+'>'+fmt(v,'','')+'</td>';
+  });
+  h+='<td class="num">'+(getter===utilGetter?'':fmt(totSinMaqYear,'','') )+'</td></tr>';
+  h+='<tr style="background:#EFF2F1;font-weight:600"><td><b>TOTAL</b></td>';
+  M.months.forEach(m=>{
+    const plan=A.cats.reduce((a,c)=>a+(A.catPlan[c+'|'+m]||0),0);
+    const cap=A.cats.reduce((a,c)=>a+(A.catCap[c+'|'+m]||0),0);
+    let v; if(getter===planGetter)v=plan; else if(getter===capGetter)v=cap; else v=cap>0?plan/cap:0;
+    totYear+=(getter===utilGetter?0:v);
+    h+='<td'+(heat?' style="background:'+heat(v)+'"':'')+'><b>'+fmt(v,'','')+'</b></td>';
+  });
+  h+='<td class="num"><b>'+(getter===utilGetter?'':fmt(totYear,'',''))+'</b></td></tr>';
+  return h+'</tbody></table>';
+}
+function planGetter(c,m){return CATAGG.catPlan[c+'|'+m]||0}
+function capGetter(c,m){return CATAGG.catCap[c+'|'+m]||0}
+function utilGetter(c,m){const cap=CATAGG.catCap[c+'|'+m]||0;return cap>0?(CATAGG.catPlan[c+'|'+m]||0)/cap:0}
+function renderBalCat(){
+  CATAGG=catAggFiltered();
+  $('#balCatPlan').innerHTML=balCatTable(planGetter,v=>fmtM(v));
+  $('#balCatCap').innerHTML=balCatTable(capGetter,v=>fmtM(v));
+  $('#balCatUtil').innerHTML=balCatTable(utilGetter,v=>fmtP(v),v=>utilColor(v));
+}
+
+/* ===================================================== VISTA 9 · Detalle horas/capacidad SKU-línea */
+const METRICS9=['OEE','UTIL. LÍNEA','%PART. (MPS)','HORAS SKU','LTS CAPACIDAD'];
+function detRows(){
+  const M=MODEL,R=RES,skuIds=Object.keys(M.skus);
+  const rows=[];
+  skuIds.forEach(s=>Object.keys(M.lineas).forEach(l=>{
+    const any=M.months.some(m=>(R.horasSku[s+'|'+l+'|'+m]||0)>0);
+    if(any)rows.push({s,l});
+  }));
+  return rows.sort((a,b)=> a.l===b.l ? a.s-b.s : a.l.localeCompare(b.l));
+}
+function renderDetalle(){
+  const M=MODEL,R=RES,skus=M.skus;
+  let rows=detRows().filter(r=>matchSku(r.s)&&matchLinea(r.l));
+  let h='<thead><tr><th rowspan="2">Línea</th><th rowspan="2">SKU</th><th rowspan="2">Descripción</th><th rowspan="2">Categoría</th>';
+  M.months.forEach(m=>h+='<th colspan="5" style="text-align:center;border-left:2px solid rgba(255,255,255,.4)">'+mesLbl(m)+'</th>');
+  h+='</tr><tr>';
+  M.months.forEach(()=>METRICS9.forEach((mt,i)=>h+='<th style="'+(i===0?'border-left:2px solid rgba(255,255,255,.4);':'')+'font-size:10px">'+mt+'</th>'));
+  h+='</tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan="4">Sin resultados para el filtro aplicado.</td></tr>';
+  rows.forEach(({s,l})=>{
+    const sk=skus[s];
+    h+='<tr><td><b class="mono">'+l+'</b></td><td class="mono">'+s+'</td><td>'+(sk.des||'')+'</td><td>'+(sk.cat||'')+'</td>';
+    M.months.forEach(m=>{
+      const oee=M.oee[l+'|'+m]||(M.lineas[l].tipo==='LOZ'?1:0);
+      const util=R.util[l+'|'+m]||0;
+      const horasLinea=R.horasLinea[l+'|'+m]||0;
+      const horasSku=R.horasSku[s+'|'+l+'|'+m]||0;
+      const part=horasLinea>0?horasSku/horasLinea:0;
+      const capHoras=R.capHoras[l+'|'+m]||0;
+      const horasDispSku=capHoras*part;
+      const velEf=(M.vel[l+'|'+sk.mf]||0)*oee;
+      const capLitrosSku=horasDispSku*velEf;
+      const bl='border-left:2px solid var(--line);';
+      h+='<td class="num" style="'+bl+'">'+fmtP(oee)+'</td>'
+        +'<td class="num" style="background:'+utilColor(util)+';color:'+utilTxt(util)+'">'+fmtP(util)+'</td>'
+        +'<td class="num">'+fmtP(part)+'</td>'
+        +'<td class="num">'+horasDispSku.toFixed(1)+'</td>'
+        +'<td class="num">'+fmtM(capLitrosSku)+'</td>';
+    });
+    h+='</tr>';
+  });
+  $('#detTable').innerHTML=h+'</tbody>';
+}
+
+/* ===================================================== PARSER XLSX */
+function parseWB(wb,logEl){
+  const L=[];const err=[];
+  const sh=n=>{const ws=wb.Sheets[n];if(!ws){err.push('Falta pestaña '+n);return null}
+    return XLSX.utils.sheet_to_json(ws,{header:1,range:3,defval:null,raw:true})};
+  const isDate=v=>v instanceof Date||(typeof v==='number'&&v>40000&&v<60000);
+  const toKey=v=>{const d=v instanceof Date?v:new Date(Math.round((v-25569)*86400*1000));
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
+  const table=(n)=>{const a=sh(n);if(!a)return null;const hdr=a[0];const rows=a.slice(1).filter(r=>r&&r[0]!==null&&r[0]!=='');
+    const mcols=[];hdr.forEach((h,i)=>{if(isDate(h))mcols.push({i,m:toKey(h)})});
+    return {hdr,rows,mcols}};
+  try{
+    const M={pais:'RD',cal:{},skus:{},lineas:{},vel:{},oee:{},eventos:{},pol:{},asig:{},compat:{},soporte:[],loz:{},alm:{pal:0,ocup:.9},cds:{},dem:{},stock0:{}};
+    let months=new Set();
+    const tSku=table('0.1_M_SKU');
+    tSku.rows.forEach(r=>{M.skus[String(r[1])]={pais:String(r[0]||''),des:r[2],mf:r[9],env:r[8],ltsCf:+r[11]||1,cfPal:+r[12]||100,
+      batch:+r[13]||1,vida:+r[14]||365,maq:String(r[15]||'N').toUpperCase()==='S',
+      cat:r[3]||'SIN CATEGORÍA',subcat:r[4]||'',marca:r[5]||'',sabor:r[6]||'',formato:r[7]||'',undCf:+r[10]||1};});
+    L.push('0.1_M_SKU: '+tSku.rows.length+' SKUs ('+new Set(tSku.rows.map(r=>String(r[0]))).size+' país(es))');
+    const tLin=table('0.2_M_LINEA');
+    tLin.rows.forEach(r=>{
+      const fi=r[7];
+      M.lineas[String(r[3])]={pais:String(r[0]||''),planta:String(r[1]||''),tipo:String(r[5]||'').toUpperCase(),hd:+r[6]||24,
+        fechaIngreso: isDate(fi)?toKey(fi):null};
+      M.pais=String(r[0]||M.pais); // país "primario" solo para referencia visual del dashboard, no para lógica de cálculo
+    });
+    L.push('0.2_M_LINEA: '+tLin.rows.length+' líneas ('+Object.values(M.lineas).filter(x=>x.tipo==='LOZ').length+' LOZ, '
+      +Object.values(M.lineas).filter(x=>x.fechaIngreso).length+' con fecha de ingreso programada)');
+    const tCd=table('0.3_M_CD');
+    tCd.rows.forEach(r=>{M.cds[String(r[0])]={pais:String(r[2]||''),des:r[1],activo:String(r[4]||'S').toUpperCase()!=='N'}});
+    L.push('0.3_M_CD: '+tCd.rows.length+' CDs');
+    const tCal=table('0.4_M_CALENDARIO');
+    tCal.rows.forEach(r=>{if(isDate(r[0])){const k=toKey(r[0]);M.cal[k]={dc:+r[1]||30,dv:+r[2]||26};months.add(k)}});
+    const tVel=table('1.1_P_VELOCIDAD');
+    tVel.rows.forEach(r=>M.vel[String(r[2])+'|'+String(r[3])]=+r[4]||0);
+    const tOee=table('1.2_P_OEE');
+    tOee.rows.forEach(r=>tOee.mcols.forEach(c=>{if(r[c.i]!=null)M.oee[String(r[2])+'|'+c.m]=+r[c.i]}));
+    const tUti=table('1.3_P_UTILIZACION');
+    const codigosValidos=new Set(EVENT_DEFS.map(e=>e.cod));
+    const codigosVistos=new Set();
+    tUti.rows.forEach(r=>{
+      const lin=String(r[2]), cod=String(r[3]||'').toUpperCase().trim();
+      codigosVistos.add(cod);
+      if(!codigosValidos.has(cod)){err.push('Código de parada no reconocido en 1.3_P_UTILIZACION: "'+cod+'" (línea '+lin+') — no se incluye en el cálculo de días disponibles');return;}
+      tUti.mcols.forEach(c=>{M.eventos[lin+'|'+cod+'|'+c.m]=+r[c.i]||0;});
+    });
+    L.push('1.3_P_UTILIZACION: '+tUti.rows.length+' filas de parada, '+codigosVistos.size+' código(s) distintos');
+    const tPol=table('1.4_P_POLITICA');
+    tPol.rows.forEach(r=>tPol.mcols.forEach(c=>{if(r[c.i]!=null)M.pol[String(r[0])+'|'+c.m]=+r[c.i]}));
+    const tAsg=table('1.5_P_ASIGNACION');
+    tAsg.rows.forEach(r=>tAsg.mcols.forEach(c=>{if(r[c.i]!=null)M.asig[String(r[3])+'|'+String(r[2])+'|'+c.m]=+r[c.i]}));
+    const tCmp=table('1.6_P_COMPATIBILIDAD');
+    tCmp.rows.forEach(r=>M.compat[String(r[0])+'|'+String(r[2])]={ok:+r[3]||0,p:+r[4]||9,batch:+r[5]||0});
+    const tSop=table('1.7_P_SOPORTE');
+    tSop.rows.forEach(r=>M.soporte.push({orig:r[0],dest:r[1],env:String(r[2]||'').toUpperCase(),
+      hab:String(r[3]||'N').toUpperCase()==='S',lt:+r[4]||0,cap:+r[5]||0}));
+    const tLoz=table('1.8_P_LOZ');
+    tLoz.rows.forEach(r=>tLoz.mcols.forEach(c=>{
+      const con=String(r[2]||'').toUpperCase(), paisZ=String(r[0]||'');
+      if(con.startsWith('CAPACIDAD')){
+        M.loz['cap|'+paisZ+'|'+c.m]=(M.loz['cap|'+paisZ+'|'+c.m]||0)+(+r[c.i]||0); // tope real, por país
+        M.loz['cap|'+c.m]=(M.loz['cap|'+c.m]||0)+(+r[c.i]||0);                     // total global (solo display)
+      }
+      if(con.startsWith('COSTO'))M.loz['costo|'+c.m]=+r[c.i]||0;}));
+    const tAlm=table('1.9_P_ALMACEN');
+    tAlm.rows.forEach(r=>{M.alm.pal+=(+r[3]||0);M.alm.ocup=+r[4]||M.alm.ocup});
+    const tDem=table('2.1_F_DEMANDA');
+    const paisesMismatch=new Set();
+    tDem.rows.forEach(r=>{
+      const paisFila=String(r[0]||''), cd=String(r[1]||'');
+      if(M.cds[cd]&&M.cds[cd].pais&&paisFila&&M.cds[cd].pais!==paisFila) paisesMismatch.add(cd+' (fila dice '+paisFila+', CD registrado como '+M.cds[cd].pais+')');
+      tDem.mcols.forEach(c=>{if(r[c.i]!=null){M.dem[String(r[2])+'|'+cd+'|'+c.m]=+r[c.i];months.add(c.m)}});
+    });
+    if(paisesMismatch.size)err.push('COD_PAIS de 2.1_F_DEMANDA no coincide con el país registrado del CD en 0.3_M_CD: '+[...paisesMismatch].join('; '));
+    L.push('2.1_F_DEMANDA: '+tDem.rows.length+' filas SKU×CD');
+    const tStk=table('2.2_F_STOCK_INICIAL');
+    tStk.rows.forEach(r=>M.stock0[String(r[1])]=+r[4]||0);
+    M.months=[...months].sort().filter(m=>M.cal[m]);
+    if(!M.months.length)err.push('Sin meses válidos: verifica 0.4_M_CALENDARIO y las columnas de fecha de 2.1');
+    // validaciones
+    M.months.forEach(m=>Object.keys(M.skus).forEach(s=>{
+      const sum=Object.keys(M.lineas).reduce((a,l)=>a+(M.asig[s+'|'+l+'|'+m]||0),0);
+      if(sum>0&&Math.abs(sum-1)>.001)err.push('Σ%asignación ≠ 100% → SKU '+s+' '+mesLbl(m)+' ('+fmtP(sum)+')');
+    }));
+    Object.keys(M.asig).forEach(k=>{const[s,l]=k.split('|');
+      if(M.asig[k]>0&&!(M.compat[s+'|'+l]||{}).ok&&(M.lineas[l]||{}).tipo!=='LOZ')err.push('Asignación sin compatibilidad: SKU '+s+' en '+l);});
+    if(err.length){logEl.textContent='⚠ VALIDACIÓN CON OBSERVACIONES:\n'+[...new Set(err)].slice(0,40).join('\n')+'\n\n'+L.join('\n');}
+    else logEl.textContent='✔ Carga OK\n'+L.join('\n')+'\nMeses: '+M.months.length;
+    if(err.some(e=>e.startsWith('Falta')||e.startsWith('Sin meses')))return null;
+    return M;
+  }catch(e){logEl.textContent='✖ Error al parsear: '+e.message;return null}
+}
+
+$('#fileIn').addEventListener('change',ev=>{
+  const f=ev.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      const M=parseWB(wb,$('#log'));
+      if(M){MODEL=M;RES=runEngine(M);$('#srcName').textContent=f.name.toUpperCase();renderAll();}
+    }catch(err){$('#log').textContent='✖ No se pudo leer el archivo: '+err.message}
+  };
+  rd.readAsArrayBuffer(f);
+});
+
+/* tabs */
+const tabs=document.querySelectorAll('.tabs button'),views=document.querySelectorAll('.view');
+tabs.forEach(b=>b.addEventListener('click',()=>{
+  tabs.forEach(x=>x.classList.remove('on'));views.forEach(v=>v.classList.remove('on'));
+  b.classList.add('on');document.getElementById(b.dataset.v).classList.add('on');window.scrollTo({top:0});
+}));
+
+renderAll();
+</script>
+</body>
+</html>
