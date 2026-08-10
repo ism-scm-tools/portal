@@ -73,7 +73,9 @@ const ISM_USERS = [
 
   { user: "jramos",      nombre: "Jennifer Ramos",                 hash: "eac50db3e6bbd428c5ca297e0e69db9573553aebac6fdfc4d48463cea87f66bb", role: "manager", categoria: "Supply Chain" },
   { user: "rperez",      nombre: "Rodrigo Pérez",                  hash: "eac50db3e6bbd428c5ca297e0e69db9573553aebac6fdfc4d48463cea87f66bb", role: "manager", categoria: "Supply Chain" },
+  { user: "cmiranda",      nombre: "Carlos Miranda",               hash: "eac50db3e6bbd428c5ca297e0e69db9573553aebac6fdfc4d48463cea87f66bb", role: "manager", categoria: "Supply Chain" },
 
+   
   { user: "aalvarado",   nombre: "Aarón Alvarado",                 hash: "eac50db3e6bbd428c5ca297e0e69db9573553aebac6fdfc4d48463cea87f66bb", role: "lead",    categoria: "Planeamiento de Supply Chain" },
   { user: "jatoche",     nombre: "Jeferson Atoche",                hash: "eac50db3e6bbd428c5ca297e0e69db9573553aebac6fdfc4d48463cea87f66bb", role: "lead",    categoria: "Desarrollo Logístico" },
 
