@@ -55,7 +55,7 @@ const ISM_APPS = [
     proceso: "Planeamiento de Materiales",
     sensibilidad: "alta",
     paises: ["PE", "RD", "HT", "GT"],
-    estado: "pendiente",
+    estado: "nuevo",
     url: "#",
   },
   {
@@ -64,7 +64,7 @@ const ISM_APPS = [
     proceso: "Supply Chain Finance",
     sensibilidad: "alta",
     paises: ["Todos"],
-    estado: "pendiente",
+    estado: "nuevo",
     url: "#",
   },
   {
@@ -73,7 +73,7 @@ const ISM_APPS = [
     proceso: "Planeamiento de Inventarios de PT",
     sensibilidad: "media",
     paises: ["Todos"],
-    estado: "pendiente",
+    estado: "nuevo",
     url: "#",
   },
   {
@@ -82,7 +82,7 @@ const ISM_APPS = [
     proceso: "Planeamiento Integral de Supply Chain",
     sensibilidad: "alta",
     paises: ["Todos"],
-    estado: "pendiente",
+    estado: "nuevo",
     url: "#",
   },
   {
@@ -91,7 +91,7 @@ const ISM_APPS = [
     proceso: "Planeamiento de Supply Chain",
     sensibilidad: "alta",
     paises: ["Todos"],
-    estado: "pendiente",
+    estado: "nuevo",
     url: "#",
   },
   {
@@ -100,7 +100,7 @@ const ISM_APPS = [
     proceso: "Planeamiento de Inventarios de PT",
     sensibilidad: "media",
     paises: ["Todos"],
-    estado: "pendiente",
+    estado: "nuevo",
     url: "#",
   },
   {
@@ -109,7 +109,7 @@ const ISM_APPS = [
     proceso: "Planeamiento de Demanda",
     sensibilidad: "media",
     paises: ["Todos"],
-    estado: "pendiente",
+    estado: "nuevo",
     url: "#",
   },
 ];
