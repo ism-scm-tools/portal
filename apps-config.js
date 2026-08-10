@@ -60,7 +60,7 @@ const ISM_APPS = [
   },
   {
     nombre: "Análisis de Estados Financieros",
-    categoria: "Estratégico",
+    categoria: "Restringido",
     proceso: "Supply Chain Finance",
     sensibilidad: "alta",
     paises: ["Todos"],
