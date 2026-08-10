@@ -1,1 +1,1204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portafolio de Proyectos SCM — ISM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ============ ISM DESIGN TOKENS (Manual de Identidad Visual v1.0) ============ */
+:root{
+  --ism-green:#00953B; --ism-green-dark:#006B2B; --ism-green-10:#E8F5EE;
+  --ism-red:#EE3124; --ism-black:#302A1B;
+  --scm-ok-bg:#E8F5EE; --scm-ok-text:#004D1E; --scm-ok-border:#99D4B1;
+  --scm-warning-bg:#FFF8E1; --scm-warning-text:#7A5A00; --scm-warning-border:#FFBC36;
+  --scm-critical-bg:#FDEDEC; --scm-critical-text:#9B1A10; --scm-critical-border:#F89C95;
+  --scm-nd-bg:#F3F4F6; --scm-nd-text:#374151; --scm-nd-border:#D1D5DB;
+  --font-display:'Work Sans','Segoe UI',Arial,sans-serif;
+  --font-body:'Nunito','Segoe UI',Arial,sans-serif;
+  --header-height:56px; --sidebar-width:240px; --sidebar-collapsed:56px;
+  --radius-sm:6px; --radius-md:10px; --radius-full:9999px;
+  --gray-50:#F9FAFB; --gray-200:#E5E7EB; --gray-500:#6B7280; --gray-700:#374151;
+  --surface:#FFFFFF; --bg-page:#F5F6F7;
+}
+/* ---- Tema oscuro ---- */
+body.dark-theme{
+  --surface:#1E2128; --bg-page:#14161B;
+  --gray-50:#262A33; --gray-200:#343841; --gray-500:#9CA3AF; --gray-700:#D1D5DB;
+  --ism-black:#F1F2F4; --ism-green-10:rgba(0,149,59,.16);
+}
+body.dark-theme .ism-nav-item.active{background:rgba(0,149,59,.18); color:#6FCF97;}
+body.dark-theme .ism-nav-item:hover{background:rgba(255,255,255,.05);}
+body.dark-theme .ism-proj-card:hover, body.dark-theme .ism-export-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.35);}
+body.dark-theme .ism-filters select, body.dark-theme .ism-filters input, body.dark-theme .ism-ai-chat__input input{color:var(--ism-black);}
+body.dark-theme::-webkit-scrollbar-thumb{background:#3a3f4a;}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:var(--font-body); font-size:15px; color:var(--ism-black); background:var(--bg-page);}
+h1,h2,h3,h4,.ism-num{font-family:var(--font-display);}
 
+/* ---- Header ---- */
+.ism-header{position:fixed; top:0; left:0; right:0; height:var(--header-height); background:var(--ism-green);
+  display:flex; align-items:center; gap:16px; padding:0 20px; z-index:1000; color:#fff;}
+.ism-header__logo{font-family:var(--font-display); font-weight:800; font-size:20px; letter-spacing:.5px;}
+.ism-header__area{font-size:11px; text-transform:uppercase; opacity:.75; letter-spacing:1px; border-left:1px solid rgba(255,255,255,.35); padding-left:14px;}
+.ism-header__app-name{font-weight:600; font-size:15px;}
+.ism-header__country-badge{background:rgba(255,255,255,.18); padding:3px 10px; border-radius:var(--radius-full); font-size:12px; font-weight:600;}
+.ism-header__meta{font-size:12px; opacity:.65; margin-left:auto;}
+.ism-header__avatar{width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,.22); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px;}
+.ism-header__refresh{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.4); color:#fff; font-family:var(--font-display); font-weight:600; font-size:12px; padding:6px 12px; border-radius:var(--radius-sm); cursor:pointer; display:flex; align-items:center; gap:6px;}
+.ism-header__refresh:hover{background:rgba(255,255,255,.28);}
+.ism-header__refresh.spinning svg{animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ---- Sidebar ---- */
+.ism-sidebar{position:fixed; top:var(--header-height); left:0; bottom:0; width:var(--sidebar-width); background:var(--surface); border-right:1px solid var(--gray-200); overflow-y:auto; transition:width .2s ease; z-index:900;}
+.ism-sidebar--collapsed{width:var(--sidebar-collapsed);}
+.ism-sidebar__toggle{width:100%; padding:14px; background:none; border:none; text-align:left; cursor:pointer; color:var(--gray-500); font-size:16px;}
+.ism-nav-item{display:flex; align-items:center; gap:12px; padding:11px 16px; cursor:pointer; color:var(--gray-700); font-size:14px; font-weight:500; border-left:3px solid transparent; white-space:nowrap; overflow:hidden;}
+.ism-nav-item:hover{background:var(--ism-green-10);}
+.ism-nav-item.active{background:var(--ism-green-10); border-left-color:var(--ism-green); color:var(--ism-green-dark); font-weight:600;}
+.ism-nav-item svg{flex-shrink:0; width:18px; height:18px;}
+.ism-sidebar--collapsed .ism-nav-item span{display:none;}
+.ism-nav-item__badge{margin-left:auto; background:var(--ism-red); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:var(--radius-full);}
+.ism-sidebar--collapsed .ism-nav-item__badge{display:none;}
+
+/* ---- Main layout ---- */
+.ism-main{margin-left:var(--sidebar-width); margin-top:var(--header-height); padding:28px 32px 80px; transition:margin-left .2s ease;}
+.ism-main--expanded{margin-left:var(--sidebar-collapsed);}
+.ism-section{display:none;}
+.ism-section.active{display:block; animation:fadein .25s ease;}
+@keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+.ism-page-title{font-size:22px; font-weight:600; margin-bottom:4px;}
+.ism-page-sub{color:var(--gray-500); font-size:13px; margin-bottom:20px;}
+
+/* ---- Cards / badges ---- */
+.ism-card{background:var(--surface); border:1px solid var(--gray-200); border-radius:var(--radius-md); padding:18px 20px;}
+.ism-badge{display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:var(--radius-full); font-size:11px; font-weight:700; text-transform:uppercase; border:1px solid;}
+.ism-badge--ok{background:var(--scm-ok-bg); color:var(--scm-ok-text); border-color:var(--scm-ok-border);}
+.ism-badge--warning{background:var(--scm-warning-bg); color:var(--scm-warning-text); border-color:var(--scm-warning-border);}
+.ism-badge--critical{background:var(--scm-critical-bg); color:var(--scm-critical-text); border-color:var(--scm-critical-border);}
+.ism-badge--nd{background:var(--scm-nd-bg); color:var(--scm-nd-text); border-color:var(--scm-nd-border);}
+.ism-badge--dot::before{content:''; width:6px; height:6px; border-radius:50%; background:currentColor;}
+
+/* ---- Summary strip ---- */
+.ism-summary-strip{display:flex; gap:14px; margin-bottom:22px; flex-wrap:wrap;}
+.ism-summary-chip{flex:1; min-width:140px; background:var(--surface); border:1px solid var(--gray-200); border-radius:var(--radius-md); padding:14px 16px;}
+.ism-summary-chip .num{font-size:28px; font-weight:700; font-family:var(--font-display);}
+.ism-summary-chip .label{font-size:12px; color:var(--gray-500); font-weight:600; text-transform:uppercase; letter-spacing:.3px;}
+.ism-summary-chip.crit .num{color:var(--ism-red);}
+.ism-summary-chip.warn .num{color:var(--scm-warning-text);}
+.ism-summary-chip.ok .num{color:var(--ism-green);}
+.ism-summary-chip.nd .num{color:var(--gray-500);}
+
+/* ---- Filters ---- */
+.ism-filters{display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; align-items:center;}
+.ism-filters select, .ism-filters input{font-family:var(--font-body); font-size:13px; padding:7px 10px; border:1px solid var(--gray-200); border-radius:var(--radius-sm); background:var(--surface);}
+.ism-btn{font-family:var(--font-display); font-weight:600; font-size:13px; padding:8px 16px; border-radius:var(--radius-sm); border:none; cursor:pointer;}
+.ism-btn--primary{background:var(--ism-green); color:#fff;}
+.ism-btn--primary:hover{background:var(--ism-green-dark);}
+.ism-btn--outline{background:var(--surface); border:1px solid var(--gray-200); color:var(--gray-700);}
+.ism-btn--outline:hover{border-color:var(--ism-green); color:var(--ism-green-dark);}
+
+/* ---- Project cards (Section 1) ---- */
+.ism-proj-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:16px;}
+.ism-proj-card{background:var(--surface); border:1px solid var(--gray-200); border-left:5px solid var(--gray-200); border-radius:var(--radius-md); padding:18px 20px; cursor:pointer; transition:box-shadow .15s;}
+.ism-proj-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);}
+.ism-proj-card.sem-critical{border-left-color:var(--ism-red);}
+.ism-proj-card.sem-warning{border-left-color:var(--scm-warning-border);}
+.ism-proj-card.sem-ok{border-left-color:var(--ism-green);}
+.ism-proj-card.sem-nd{border-left-color:var(--gray-500);}
+.ism-proj-card__top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px;}
+.ism-proj-card__title{font-family:var(--font-display); font-weight:600; font-size:15px; line-height:1.3;}
+.ism-proj-card__code{font-size:11px; color:var(--gray-500); font-weight:600;}
+.ism-proj-card__meta{font-size:12.5px; color:var(--gray-500); margin:2px 0 10px;}
+.ism-proj-card__row{display:flex; justify-content:space-between; font-size:12.5px; margin-top:6px; color:var(--gray-700);}
+.ism-proj-card__row b{color:var(--ism-black);}
+.ism-progress-track{height:6px; background:var(--gray-50); border-radius:var(--radius-full); overflow:hidden; margin-top:4px;}
+.ism-progress-fill{height:100%; background:var(--ism-green); border-radius:var(--radius-full);}
+.ism-motivo{font-size:11.5px; color:var(--gray-500); margin-top:8px; font-style:italic;}
+.ism-new-alert{background:var(--scm-critical-bg); color:var(--scm-critical-text); font-size:11px; font-weight:700; padding:2px 8px; border-radius:var(--radius-sm); margin-top:8px; display:inline-block;}
+
+/* ---- Table ---- */
+.ism-table-wrap{overflow-x:auto; border-radius:var(--radius-md); border:1px solid var(--gray-200);}
+.ism-table{width:100%; border-collapse:collapse; background:var(--surface);}
+.ism-table thead th{background:var(--ism-green); color:#fff; font-family:var(--font-display); font-weight:600; font-size:12px; text-transform:uppercase; padding:10px 12px; text-align:left; white-space:nowrap;}
+.ism-table tbody td{padding:10px 12px; font-size:13px; border-top:1px solid var(--gray-200);}
+.ism-table tbody tr:nth-child(even){background:var(--gray-50);}
+.ism-table tbody tr:hover{background:#F4FAF6; color:#302A1B;}
+.ism-table tbody tr:hover td b{color:#302A1B;}
+.ism-table__row--critical, .ism-table__row--critical td, .ism-table__row--critical td b{background:var(--scm-critical-bg) !important; color:#302A1B !important;}
+.ism-table__row--warning, .ism-table__row--warning td, .ism-table__row--warning td b{background:var(--scm-warning-bg) !important; color:#302A1B !important;}
+
+/* ---- Modal ---- */
+.ism-modal-backdrop{position:fixed; inset:0; background:rgba(48,42,27,.5); z-index:2000; display:none; align-items:flex-start; justify-content:center; padding:60px 20px; overflow-y:auto;}
+.ism-modal-backdrop.open{display:flex;}
+.ism-modal{background:var(--surface); border-radius:var(--radius-md); max-width:640px; width:100%; padding:26px 28px; position:relative;}
+.ism-modal__close{position:absolute; top:16px; right:18px; background:none; border:none; font-size:20px; cursor:pointer; color:var(--gray-500);}
+.ism-modal h3{font-size:18px; margin-bottom:4px;}
+.ism-modal .sub{color:var(--gray-500); font-size:12.5px; margin-bottom:16px;}
+.ism-modal-block{margin-bottom:16px;}
+.ism-modal-block h4{font-size:12px; text-transform:uppercase; letter-spacing:.4px; color:var(--gray-500); margin-bottom:6px;}
+.ism-modal-block p, .ism-modal-block li{font-size:13.5px; line-height:1.55;}
+
+/* ---- Audit cards (Section 3) ---- */
+.ism-audit-hero{background:var(--surface); border:1px solid var(--gray-200); border-radius:var(--radius-md); padding:22px 24px; display:flex; align-items:center; gap:22px; margin-bottom:22px;}
+.ism-grade-circle{width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:28px; flex-shrink:0;}
+.ism-audit-hero h3{font-size:17px; margin-bottom:4px;}
+.ism-audit-hero p{font-size:13px; color:var(--gray-500);}
+.ism-audit-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px;}
+.ism-audit-card{border-radius:var(--radius-md); padding:16px 18px; border:1px solid var(--gray-200); color:#302A1B;}
+.ism-audit-card .grade{font-family:var(--font-display); font-weight:800; font-size:24px;}
+.ism-audit-card .dim{font-weight:600; font-size:13.5px; margin:2px 0 6px;}
+.ism-audit-card .detail{font-size:12.5px; color:#4A4030; line-height:1.4;}
+
+/* ---- Email variants ---- */
+.ism-email-tabs{display:flex; gap:8px; margin-bottom:14px;}
+.ism-email-tab{padding:8px 16px; border-radius:var(--radius-sm); border:1px solid var(--gray-200); background:var(--surface); cursor:pointer; font-size:13px; font-weight:600; font-family:var(--font-display);}
+.ism-email-tab.active{background:var(--ism-green); color:#fff; border-color:var(--ism-green);}
+.ism-email-body{background:var(--surface); border:1px solid var(--gray-200); border-radius:var(--radius-md); padding:20px 22px; white-space:pre-wrap; font-size:13.5px; line-height:1.6; display:none;}
+.ism-email-body.active{display:block;}
+
+/* ---- AI chat ---- */
+.ism-ai-chat{display:flex; flex-direction:column; height:520px; background:var(--surface); border:1px solid var(--gray-200); border-radius:var(--radius-md); overflow:hidden;}
+.ism-ai-chat__header{background:var(--ism-green-10); padding:12px 16px; font-weight:600; font-size:13.5px; color:var(--ism-green-dark); border-bottom:1px solid var(--gray-200);}
+.ism-ai-chat__messages{flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px;}
+.ism-msg{max-width:80%; padding:9px 13px; border-radius:12px; font-size:13.5px; line-height:1.5;}
+.ism-msg--user{align-self:flex-end; background:var(--ism-green); color:#fff; border-bottom-right-radius:2px;}
+.ism-msg--ai{align-self:flex-start; background:var(--gray-50); border:1px solid var(--gray-200); border-bottom-left-radius:2px; white-space:pre-wrap;}
+.ism-ai-typing{align-self:flex-start; font-size:12px; color:var(--gray-500); padding:4px 13px;}
+.ism-ai-chat__input{display:flex; gap:8px; padding:12px; border-top:1px solid var(--gray-200);}
+.ism-ai-chat__input input{flex:1; padding:9px 12px; border:1px solid var(--gray-200); border-radius:var(--radius-sm); font-family:var(--font-body); font-size:13.5px;}
+.ism-ai-prompts{margin-top:14px; display:flex; flex-wrap:wrap; gap:8px;}
+.ism-ai-prompt-chip{background:var(--ism-green-10); color:var(--ism-green-dark); font-size:12px; padding:6px 12px; border-radius:var(--radius-full); cursor:pointer; border:1px solid var(--scm-ok-border);}
+
+/* ---- Accordion (Lógica de análisis) ---- */
+.ism-accordion-item{border:1px solid var(--gray-200); border-radius:var(--radius-md); margin-bottom:10px; overflow:hidden;}
+.ism-accordion-head{padding:14px 18px; background:var(--surface); cursor:pointer; font-weight:600; font-size:14px; display:flex; justify-content:space-between; align-items:center;}
+.ism-accordion-body{padding:0 18px 18px; display:none; font-size:13.5px; line-height:1.6; color:var(--gray-700);}
+.ism-accordion-item.open .ism-accordion-body{display:block;}
+.ism-formula{background:var(--gray-50); border:1px solid var(--gray-200); border-radius:var(--radius-sm); padding:10px 14px; font-family:monospace; font-size:12.5px; margin:6px 0;}
+
+/* ---- Export ---- */
+.ism-export-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:14px; margin-bottom:20px;}
+.ism-export-card{background:var(--surface); border:2px solid var(--gray-200); border-radius:var(--radius-md); padding:18px; text-align:center; cursor:pointer;}
+.ism-export-card:hover{border-color:var(--ism-green);}
+.ism-export-card.selected{border-color:var(--ism-green); background:var(--ism-green-10);}
+.ism-export-card .ic{font-size:26px; margin-bottom:6px;}
+.ism-checkbox-group{display:flex; flex-direction:column; gap:8px; margin-bottom:18px;}
+.ism-checkbox-group label{font-size:13.5px; display:flex; align-items:center; gap:8px;}
+.ism-export-history{font-size:12.5px; color:var(--gray-500);}
+
+/* ---- Footer ---- */
+.ism-footer{margin-top:40px; padding:16px 0; border-top:1px solid var(--gray-200); font-size:11.5px; color:var(--gray-500); display:flex; justify-content:space-between;}
+.ism-empty{text-align:center; padding:40px 20px; color:var(--gray-500); font-size:13.5px;}
+.ism-alert{padding:12px 16px; border-radius:var(--radius-sm); font-size:13px; margin-bottom:16px; border:1px solid;}
+.ism-alert--ok{background:var(--scm-ok-bg); color:var(--scm-ok-text); border-color:var(--scm-ok-border);}
+.ism-alert--warn{background:var(--scm-warning-bg); color:var(--scm-warning-text); border-color:var(--scm-warning-border);}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="ism-header">
+  <div class="ism-header__logo">ism</div>
+  <div class="ism-header__area">Supply Chain</div>
+  <div class="ism-header__app-name">Portafolio de Proyectos SCM</div>
+  <div class="ism-header__country-badge">6 Países</div>
+  <button class="ism-header__refresh" id="btnRefresh" onclick="refreshFromSmartsheet()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-3-6.7M21 4v5h-5"/></svg>
+    Actualizar datos
+  </button>
+  <div class="ism-header__meta" id="lastUpdatedMeta">Snapshot: 06 Ago 2026</div>
+  <button class="ism-header__refresh" id="themeToggleBtn" onclick="toggleTheme()" title="Cambiar tema claro/oscuro" style="padding:6px 10px;">🌙</button>
+  <div class="ism-header__avatar">RS</div>
+</header>
+
+<!-- ============ SIDEBAR ============ -->
+<nav class="ism-sidebar" id="sidebar">
+  <button class="ism-sidebar__toggle" onclick="toggleSidebar()">☰</button>
+  <div class="ism-nav-item active" data-section="proyectos" onclick="showSection('proyectos', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Proyectos</span>
+  </div>
+  <div class="ism-nav-item" data-section="acciones" onclick="showSection('acciones', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    <span>Acciones Prioritarias</span>
+    <span class="ism-nav-item__badge" id="badgeAcciones">–</span>
+  </div>
+  <div class="ism-nav-item" data-section="auditoria" onclick="showSection('auditoria', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <span>Auditoría de Datos</span>
+  </div>
+  <div class="ism-nav-item" data-section="kpis" onclick="showSection('kpis', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-3-3L7 13.5"/></svg>
+    <span>Indicadores (KPIs)</span>
+  </div>
+  <div class="ism-nav-item" data-section="reporte" onclick="showSection('reporte', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 21V9"/></svg>
+    <span>Reporte Ejecutivo</span>
+  </div>
+  <div class="ism-nav-item" data-section="ia" onclick="showSection('ia', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    <span>Análisis IA</span>
+  </div>
+  <div class="ism-nav-item" data-section="logica" onclick="showSection('logica', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+    <span>Lógica de Análisis</span>
+  </div>
+  <div class="ism-nav-item" data-section="exportar" onclick="showSection('exportar', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+    <span>Exportar Resultados</span>
+  </div>
+</nav>
+
+<!-- ============ MAIN ============ -->
+<main class="ism-main" id="mainContent">
+
+  <!-- ================= SECCIÓN 1: PROYECTOS ================= -->
+  <section class="ism-section active" id="sec-proyectos">
+    <div class="ism-page-title">Portafolio de Proyectos — SCM Planeamiento</div>
+    <div class="ism-page-sub">Workspace: Gerencia Supply Chain Management · Carpetas 2025 y 2026 · Área SCM - Planeamiento · <span id="dataModeLabel">datos: snapshot local</span></div>
+
+    <div class="ism-alert ism-alert--warn" id="liderAlert">
+      ⚠️ El campo <b>"Líder del Proyecto"</b> en Smartsheet muestra a Roberto Sánchez en 4 de 6 hojas (valor de plantilla sin actualizar). Por instrucción tuya, este tablero usa la <b>lista de líderes que confirmaste manualmente</b>, no el campo crudo de Smartsheet. Ver detalle en <a href="#" onclick="showSection('logica', document.querySelector('[data-section=logica]')); return false;">Lógica de Análisis</a>.
+    </div>
+
+    <div class="ism-summary-strip" id="summaryStrip"></div>
+
+    <div class="ism-filters">
+      <select id="filterPais" onchange="renderProyectos()"><option value="">País: Todos</option></select>
+      <select id="filterLider" onchange="renderProyectos()"><option value="">Responsable: Todos</option></select>
+      <select id="filterSemaforo" onchange="renderProyectos()"><option value="">Semáforo: Todos</option><option value="critical">🔴 Rojo</option><option value="warning">🟡 Amarillo</option><option value="ok">🟢 Verde</option><option value="nd">⚪ N/D</option></select>
+      <button class="ism-btn ism-btn--outline" onclick="resetFilters()">Limpiar filtros</button>
+    </div>
+
+    <div class="ism-proj-grid" id="proyectosGrid"></div>
+  </section>
+
+  <!-- ================= SECCIÓN 2: ACCIONES PRIORITARIAS ================= -->
+  <section class="ism-section" id="sec-acciones">
+    <div class="ism-page-title">Acciones Prioritarias</div>
+    <div class="ism-page-sub">Qué necesita de ti (o de un responsable nombrado) hoy — fuente única: Smartsheet (sin ACTA de pendientes, por instrucción).</div>
+    <div class="ism-alert ism-alert--warn">
+      ⚠️ <b>Por qué esta sección viene incompleta:</b> de las 6 hojas Gantt, solo <b>Implementación del Rol Corporativo de SCM</b> tiene el campo "Responsable" diligenciado en una parte relevante de sus tareas en rojo (10 de 22 = 45%). En los otros 5 proyectos, <b>0% de las tareas marcadas en rojo tienen un responsable nombrado</b> a nivel de fila — Smartsheet no me dice quién debe actuar, solo que la tarea está atrasada. Por eso no puedo generar "necesita tu input de [nombre]" para esos 5: la fuente no tiene ese dato, y prefiero decírtelo en vez de inventar un responsable. Ver detalle completo en <a href="#" onclick="showSection('logica', document.querySelector('[data-section=logica]')); return false;">Lógica de Análisis</a>.
+    </div>
+    <div class="ism-alert ism-alert--ok" id="accionesStatus">Pulsa <b>"Actualizar datos"</b> en el encabezado para intentar cargar responsables en vivo (por si se completó el campo desde que se generó este snapshot).</div>
+
+    <h3 style="font-size:14px; margin:18px 0 10px;">🔴 Necesita atención (con responsable nombrado en Smartsheet)</h3>
+    <div id="accionesUrgentes"></div>
+
+    <h3 style="font-size:14px; margin:24px 0 10px;">⚪ Bloqueado por falta de cobertura de equipo</h3>
+    <div id="accionesBloqueadas"></div>
+
+    <h3 style="font-size:14px; margin:24px 0 10px;">✅ Resuelto recientemente (últimos 7 días)</h3>
+    <div id="accionesResueltas" class="ism-empty">Sin datos aún — usa "Actualizar datos".</div>
+  </section>
+
+  <!-- ================= SECCIÓN 3: AUDITORÍA DE DATOS ================= -->
+  <section class="ism-section" id="sec-auditoria">
+    <div class="ism-page-title">Auditoría de Calidad de Datos</div>
+    <div class="ism-page-sub">Skill "Data Quality Audit" de Smartsheet · 6 dimensiones × 6 proyectos + calificación total por proyecto + calificación de portafolio · Snapshot 06 Ago 2026.</div>
+
+    <div class="ism-audit-hero">
+      <div class="ism-grade-circle" id="auditGradeCircle" style="background:var(--scm-critical-bg); color:var(--scm-critical-text);">D+</div>
+      <div>
+        <h3 id="auditHeroTitle">Calidad de datos — Portafolio SCM Planeamiento (6 proyectos)</h3>
+        <p id="auditHeroSub">Arrastrado principalmente por Cobertura de equipo (F en 5/6 proyectos) y Ownership de proyecto (D en 4/6, por el líder de plantilla sin corregir en Smartsheet).</p>
+      </div>
+    </div>
+
+    <h3 style="font-size:14px; margin-bottom:12px;">Calificación por proyecto (6 dimensiones + total)</h3>
+    <div class="ism-table-wrap" style="margin-bottom:26px;">
+      <table class="ism-table">
+        <thead><tr><th>Proyecto</th><th>Ownership</th><th>Salud del Sprint</th><th>Cobertura de equipo</th><th>Coherencia de estado</th><th>Higiene de listas</th><th>Frescura</th><th>Total proyecto</th></tr></thead>
+        <tbody id="projectGradesBody"></tbody>
+      </table>
+    </div>
+
+    <h3 style="font-size:14px; margin-bottom:12px;">Calificación de portafolio por dimensión (promedio de los 6 proyectos)</h3>
+    <div class="ism-audit-grid" id="auditGrid"></div>
+
+    <h3 style="font-size:14px; margin:26px 0 12px;">Tabla de hallazgos</h3>
+    <div class="ism-table-wrap">
+      <table class="ism-table">
+        <thead><tr><th>Proyecto</th><th>Tipo de hallazgo</th><th>Severidad</th><th>Detalle</th><th>Acción sugerida</th><th>¿Auto-corregible?</th></tr></thead>
+        <tbody id="findingsTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ================= SECCIÓN KPIs (Manual de Control y Seguimiento 7.2) ================= -->
+  <section class="ism-section" id="sec-kpis">
+    <div class="ism-page-title">Indicadores de Desempeño (KPIs)</div>
+    <div class="ism-page-sub">Fórmulas redefinidas por el equipo de proyectos (06 Ago 2026) — <b>reemplazan</b> las de la Sección 7.2 del Manual v.1. Calculadas con datos reales de las 6 hojas Gantt.</div>
+
+    <div class="ism-alert ism-alert--warn">
+      ⚠️ <b>Hallazgo de datos que limita el KPI "% Hitos por Cumplir":</b> la nueva definición exige comparar "Fecha de Fin Real" vs. "Fecha de Fin Planificado" de cada hito. En <b>4 de 6 proyectos</b> (Forecast, S&OP, Gestión de Inventarios, Homologación Data Maestra) esas dos fechas son idénticas en prácticamente todas las filas, o falta la fecha planificada — lo que indica que el hito probablemente no se ha completado aún y el campo no está registrando una fecha real independiente. Calcular el KPI ahí daría ~100% de forma artificial, así que lo marco como <b>N/D</b> en vez de mostrar un dato engañoso. Rol Corporativo y MRP/MPS sí tienen fechas independientes y su KPI es confiable.
+    </div>
+
+    <div class="ism-table-wrap" style="margin-top:18px;">
+      <table class="ism-table">
+        <thead><tr>
+          <th>Proyecto</th>
+          <th>SPI</th>
+          <th>Salud del Proyecto</th>
+          <th>% Hitos por Cumplir</th>
+          <th>Variación de Cronograma</th>
+        </tr></thead>
+        <tbody id="kpiTableBody"></tbody>
+      </table>
+    </div>
+
+    <h3 style="font-size:14px; margin:26px 0 12px;">Resumen de portafolio</h3>
+    <div class="ism-summary-strip" id="kpiSummaryStrip"></div>
+
+    <h3 style="font-size:14px; margin:26px 0 12px;">Nota metodológica</h3>
+    <div class="ism-card">
+      <p style="font-size:13px; line-height:1.6;"><b>Fuente:</b> definición acordada por el equipo de proyectos el 06 Ago 2026, que reemplaza la Sección 7.2 del Manual del Modelo de Control y Seguimiento de Proyectos v.1.</p>
+      <p style="font-size:13px; line-height:1.6; margin-top:8px;"><b>SPI:</b> =1 en cronograma · &lt;1 retrasado · &gt;1 adelantado.</p>
+      <p style="font-size:13px; line-height:1.6; margin-top:4px;"><b>Salud del Proyecto:</b> semáforo Verde ≥95% · Amarillo 90–94.9% · Rojo &lt;90%.</p>
+      <p style="font-size:13px; line-height:1.6; margin-top:4px;"><b>% Hitos por Cumplir:</b> mismo semáforo. Un hito "a tiempo" se completó en o antes de su fecha planificada. Mismo umbral que Salud del Proyecto.</p>
+      <p style="font-size:13px; line-height:1.6; margin-top:4px;"><b>Variación de Cronograma:</b> =1 en tiempo · &lt;1 adelantado · &gt;1 retrasado (nótese que aquí la lógica se invierte respecto al SPI: menos días de los planificados = adelantado).</p>
+    </div>
+  </section>
+
+  <!-- ================= SECCIÓN 4: REPORTE EJECUTIVO ================= -->
+  <section class="ism-section" id="sec-reporte">
+    <div class="ism-page-title">Reporte Ejecutivo (Stakeholder Reporting)</div>
+    <div class="ism-page-sub">Dos variantes de correo (&lt;300 palabras), generadas con el flujo: buscar hoja → resumen → revisar discusiones.</div>
+    <div class="ism-email-tabs">
+      <div class="ism-email-tab active" onclick="showEmailTab('riesgo', this)">Abre con el riesgo</div>
+      <div class="ism-email-tab" onclick="showEmailTab('avance', this)">Abre con los avances</div>
+    </div>
+    <div class="ism-email-body active" id="email-riesgo"></div>
+    <div class="ism-email-body" id="email-avance"></div>
+    <div style="margin-top:14px;">
+      <button class="ism-btn ism-btn--outline" onclick="copyEmail('riesgo')">Copiar variante "Riesgo"</button>
+      <button class="ism-btn ism-btn--outline" onclick="copyEmail('avance')">Copiar variante "Avances"</button>
+    </div>
+  </section>
+
+  <!-- ================= SECCIÓN 5: ANÁLISIS IA ================= -->
+  <section class="ism-section" id="sec-ia">
+    <div class="ism-page-title">Análisis IA</div>
+    <div class="ism-page-sub">Chat conectado a Claude (claude-sonnet-4-6) con acceso en vivo al conector de Smartsheet.</div>
+    <div class="ism-ai-chat">
+      <div class="ism-ai-chat__header">💬 Asistente de Portafolio SCM</div>
+      <div class="ism-ai-chat__messages" id="chatMessages">
+        <div class="ism-msg ism-msg--ai">Hola Roberto. Puedo consultar en vivo las 6 hojas del portafolio SCM-Planeamiento. Pregúntame por ejemplo sobre atrasos, riesgos o inconsistencias de un proyecto puntual.</div>
+      </div>
+      <div class="ism-ai-chat__input">
+        <input type="text" id="chatInput" placeholder="Escribe tu pregunta sobre el portafolio…" onkeydown="if(event.key==='Enter') sendChat();">
+        <button class="ism-btn ism-btn--primary" onclick="sendChat()">Enviar</button>
+      </div>
+    </div>
+    <div class="ism-ai-prompts">
+      <div class="ism-ai-prompt-chip" onclick="quickPrompt('¿Qué proyecto tiene el riesgo más alto ahora mismo y por qué?')">¿Qué proyecto tiene más riesgo?</div>
+      <div class="ism-ai-prompt-chip" onclick="quickPrompt('Dame el detalle de hitos del proyecto Homologación de Data Maestra')">Hitos de Data Maestra</div>
+      <div class="ism-ai-prompt-chip" onclick="quickPrompt('¿Hay discusiones sin resolver en alguna de las 6 hojas Gantt?')">Discusiones sin resolver</div>
+    </div>
+  </section>
+
+  <!-- ================= SECCIÓN 6: LÓGICA DE ANÁLISIS ================= -->
+  <section class="ism-section" id="sec-logica">
+    <div class="ism-page-title">Lógica de Análisis</div>
+    <div class="ism-page-sub">Metodología, fuentes, fórmulas, supuestos e historial de versiones de este tablero.</div>
+
+    <div class="ism-accordion-item open">
+      <div class="ism-accordion-head" onclick="toggleAccordion(this)">1. Fuentes de datos requeridas <span>▾</span></div>
+      <div class="ism-accordion-body">
+        <div class="ism-table-wrap"><table class="ism-table">
+          <thead><tr><th>Proyecto</th><th>Hoja Project Metadata</th><th>Hoja Gantt</th><th>Dashboard (Sight)</th></tr></thead>
+          <tbody id="sourcesTableBody"></tbody>
+        </table></div>
+        <p style="margin-top:10px;">Workspace raíz: <b>Gerencia Supply Chain Management</b> (ID 7573964072478596) → carpeta año (2025 / 2026) → Nivel Proyecto → SCM - Planeamiento.</p>
+      </div>
+    </div>
+
+    <div class="ism-accordion-item">
+      <div class="ism-accordion-head" onclick="toggleAccordion(this)">2. Regla de semáforo (declarada) <span>▾</span></div>
+      <div class="ism-accordion-body">
+        <div class="ism-formula">🔴 Rojo: "Saludo Proyecto" = Rojo en Smartsheet, O fecha de fin planificada ya vencida.</div>
+        <div class="ism-formula">🟡 Amarillo: "Saludo Proyecto" = Amarillo, O el campo no existe Y la fecha de fin planificada vence en ≤60 días (riesgo de cierre sin visibilidad de estado).</div>
+        <div class="ism-formula">🟢 Verde: "Saludo Proyecto" = Verde y sin hallazgos de auditoría de severidad Alta abiertos.</div>
+        <div class="ism-formula">⚪ N/D: el campo "Saludo Proyecto" no existe en Project Metadata y la fecha de fin planificada está a más de 60 días. Nunca se asume Verde por defecto — se marca como hallazgo de auditoría.</div>
+        <p style="margin-top:8px;">Esta regla corre en el navegador con la fecha del día en que abres el tablero, comparándola contra "Fecha de Fin Planificada".</p>
+      </div>
+    </div>
+
+    <div class="ism-accordion-item">
+      <div class="ism-accordion-head" onclick="toggleAccordion(this)">3. Supuestos y anulaciones manuales <span>▾</span></div>
+      <div class="ism-accordion-body">
+        <p><b>Líder del Proyecto:</b> por instrucción tuya del 06 Ago 2026, este tablero usa la lista de líderes que confirmaste (Claudia Espinoza, Jennifer Ramos, Roberto Sánchez, Aarón Alvarado, Rodrigo Pérez, Juan Valverde) en lugar del campo "Líder del Proyecto" de Smartsheet, que en 4 de 6 hojas conserva el valor de plantilla (Roberto Sánchez). Se recomienda corregir ese campo directamente en Smartsheet para evitar esta doble fuente de verdad a futuro.</p>
+        <p style="margin-top:8px;"><b>Acciones Prioritarias (Sección 2):</b> por instrucción tuya, se alimenta únicamente de las hojas Gantt de Smartsheet (tareas, discusiones). No se usa el "ACTA DE PENDIENTES SC ISM" — no se ubicó como activo independiente en los workspaces con acceso, y confirmaste que tiene limitantes de acceso en revisión.</p>
+        <p style="margin-top:8px;"><b>Actualización:</b> el tablero intenta refrescar automáticamente al abrirse y también permite forzarlo con el botón "Actualizar datos" del encabezado. El refresco llama a la API de Anthropic con el conector MCP de Smartsheet — funciona dentro de Claude.ai o de un hosting con esa integración habilitada; si se abre como archivo local (file://) sin esa conexión, el tablero mostrará el último snapshot embebido y lo indicará explícitamente en vez de fallar en silencio.</p>
+      </div>
+    </div>
+
+    <div class="ism-accordion-item">
+      <div class="ism-accordion-head" onclick="toggleAccordion(this)">4. Historial de versiones <span>▾</span></div>
+      <div class="ism-accordion-body">
+        <div class="ism-table-wrap"><table class="ism-table">
+          <thead><tr><th>Versión</th><th>Fecha</th><th>Cambios</th></tr></thead>
+          <tbody>
+            <tr><td>v1.0</td><td>06 Ago 2026</td><td>Primera versión. 6 proyectos validados desde Smartsheet (SCM-Planeamiento 2025/2026). Líderes reconciliados manualmente. Auditoría inicial de 6 dimensiones. Reporte ejecutivo de 2 variantes.</td></tr>
+            <tr><td>v1.1</td><td>06 Ago 2026</td><td>Tarjetas de proyecto con datos reales a nivel de tarea (SPI, % avance, atrasadas). Auditoría por proyecto × 6 dimensiones + portafolio. Sección de Acciones Prioritarias con causa raíz real (cobertura de equipo). Nueva sección de Indicadores (KPIs) con fórmulas redefinidas por el equipo de proyectos, que reemplazan la Sección 7.2 del Manual v.1. Hallazgo de auditoría sobre confiabilidad de fechas de hitos en 4/6 proyectos.</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SECCIÓN 7: EXPORTAR ================= -->
+  <section class="ism-section" id="sec-exportar">
+    <div class="ism-page-title">Exportar Resultados</div>
+    <div class="ism-page-sub">Selecciona formato y alcance.</div>
+
+    <div class="ism-export-grid">
+      <div class="ism-export-card selected" data-fmt="xlsx" onclick="selectExportFormat(this)"><div class="ic">📊</div>Excel (.xlsx)</div>
+      <div class="ism-export-card" data-fmt="csv" onclick="selectExportFormat(this)"><div class="ic">📄</div>CSV</div>
+      <div class="ism-export-card" data-fmt="print" onclick="selectExportFormat(this)"><div class="ic">🖨️</div>PDF / Imprimir</div>
+    </div>
+
+    <div class="ism-checkbox-group">
+      <label><input type="checkbox" checked value="resumen"> Resumen de portafolio</label>
+      <label><input type="checkbox" checked value="proyectos"> Tabla de proyectos</label>
+      <label><input type="checkbox" checked value="auditoria"> Hallazgos de auditoría</label>
+      <label><input type="checkbox" value="reporte"> Reporte ejecutivo</label>
+    </div>
+
+    <button class="ism-btn ism-btn--primary" onclick="runExport()">Descargar</button>
+
+    <h4 style="font-size:12px; text-transform:uppercase; color:var(--gray-500); margin:26px 0 8px;">Historial de sesión</h4>
+    <div class="ism-export-history" id="exportHistory">Sin exportaciones en esta sesión.</div>
+  </section>
+
+</main>
+
+<!-- ============ MODAL DETALLE PROYECTO ============ -->
+<div class="ism-modal-backdrop" id="modalBackdrop" onclick="if(event.target===this) closeModal();">
+  <div class="ism-modal" id="modalContent"></div>
+</div>
+
+<footer class="ism-footer" style="margin-left:var(--sidebar-width); padding-left:32px; padding-right:32px;" id="footerBar">
+  <span>© Industrias San Miguel — ISM. Jefatura Corporativa de Supply Chain.</span>
+  <span>Portafolio de Proyectos SCM · v1.0 · 06 Ago 2026</span>
+</footer>
+
+<script>
+/* ============================================================
+   DATOS BASE — validados en vivo desde Smartsheet el 06 Ago 2026
+   Workspace "Gerencia Supply Chain Management" (7573964072478596)
+   ============================================================ */
+const HOY = new Date('2026-08-06');
+
+const proyectos = [
+  {
+    id:'rol-corp', codigo:'P1', anio:2025,
+    nombre:'Implementación del Rol Corporativo de SCM',
+    lider:'Claudia Espinoza', liderSmartsheet:'Claudia Espinoza', liderCoincide:true,
+    coLider:'Claudia Espinoza',
+    tipo:'Transversal', paises:['Perú','Chile','República Dominicana','Guatemala','Haití','Brasil'],
+    fechaInicioPlan:'2025-03-03', fechaFinPlan:'2026-12-31',
+    saludGantt:'Amarillo',
+    pctReal:0.75, pctPlan:0.809, spi:1.15,
+    objetivo:'Nueva estructura de Supply Chain y Excelencia Operacional estandarizada en los países; modelo de S&OP en países; estandarización de procesos clave.',
+    alcance:'1. Roles, responsabilidades y gobernanza bajo el nuevo modelo.\n2. Lineamientos y frecuencias de S&OP en todos los países.\n3. Políticas, herramientas y modelos de información integrados.',
+    indicadorMeta:'Evaluación de perfiles internos y movimientos ejecutados; documentación (políticas/procedimientos) aprobada; nueva estructura comunicada.',
+    sheets:{metadata:219877999595396, gantt:4723477626965892, dashboard:2068493026781060},
+    ganttModificado:'2026-08-05',
+    rojoCount:22, rojoConResponsable:10, hitosATiempo:6, hitosTotal:17, hitosConfiable:true,
+    atrasadas:[
+      {nombre:'Manuales de Supply Chain', responsable:'Roberto Sánchez', fecha:'2026-08-28', pctReal:0.68},
+      {nombre:'Manual del análisis y balance de capacidades integrados ABCI', responsable:'Jennifer Ramos', fecha:'2026-08-28', pctReal:0.09},
+      {nombre:'Manual de S&OP de Supply Chain', responsable:'Roberto Sánchez', fecha:'2026-06-19', pctReal:0.89},
+      {nombre:'Handbook de indicadores 2.0', responsable:'Roberto Sánchez', fecha:'2026-04-03', pctReal:0.76},
+      {nombre:'Procedimientos de Planeamiento (Todos)', responsable:'Roberto Sánchez', fecha:'2026-07-17', pctReal:0.6},
+    ],
+  },
+  {
+    id:'forecast', codigo:'P2', anio:2025,
+    nombre:'Forecast avanzado de demanda',
+    lider:'Jennifer Ramos', liderSmartsheet:'Roberto Mitchail Sánchez Marquina', liderCoincide:false,
+    coLider:'Roberto Sánchez',
+    tipo:'Ruta de Negocio', paises:['Perú'],
+    fechaInicioPlan:null, fechaFinPlan:'2026-08-19',
+    saludGantt:'Rojo',
+    pctReal:0.81, pctPlan:0.979, spi:1.0,
+    objetivo:'Modelo de forecast avanzado (ML) de demanda para mejorar la asertividad del S&OP.',
+    alcance:'Sin dato detallado disponible en el snapshot — pendiente de refresco en vivo.',
+    indicadorMeta:'Sin dato.',
+    sheets:{metadata:2274378691596164, gantt:6777978318966660, dashboard:8377744150030212},
+    ganttModificado:'2026-08-04',
+    rojoCount:34, rojoConResponsable:0, hitosATiempo:28, hitosTotal:28, hitosConfiable:false,
+    atrasadas:[
+      {nombre:'FASE 3: IMPLEMENTACIÓN', responsable:'Sin asignar', fecha:'2026-08-04', pctReal:0.87},
+      {nombre:'HT — Despliegues', responsable:'Sin asignar', fecha:'2026-08-04', pctReal:0.75},
+      {nombre:'Productivización del modelo (ML)', responsable:'Sin asignar', fecha:'2026-07-24', pctReal:0.46},
+      {nombre:'Validación del pipeline con datos históricos', responsable:'Sin asignar', fecha:'2026-07-17', pctReal:0.5},
+      {nombre:'Implementación del pipeline en Snowflake', responsable:'Sin asignar', fecha:'2026-07-16', pctReal:0.5},
+    ],
+  },
+  {
+    id:'sop', codigo:'P3', anio:2025,
+    nombre:'Implementación del Modelo de S&OP en Países',
+    lider:'Roberto Sánchez', liderSmartsheet:'Roberto Mitchail Sánchez Marquina', liderCoincide:true,
+    coLider:'Roberto Sánchez',
+    tipo:'Proyecto Transversal', paises:['Perú'],
+    fechaInicioPlan:null, fechaFinPlan:'2026-12-30',
+    saludGantt:'Verde',
+    pctReal:0.55, pctPlan:0.543, spi:1.37,
+    objetivo:'Modelo de Comité de S&OP desplegado en países bajo un ritmo mensual estándar.',
+    alcance:'Sin dato detallado disponible en el snapshot — pendiente de refresco en vivo.',
+    indicadorMeta:'Sin dato.',
+    sheets:{metadata:8545248376475524, gantt:382474051866500, dashboard:207548121933700},
+    ganttModificado:'2026-08-04',
+    rojoCount:6, rojoConResponsable:0, hitosATiempo:8, hitosTotal:8, hitosConfiable:false,
+    atrasadas:[
+      {nombre:'FASE 3: Control y seguimiento', responsable:'Sin asignar', fecha:'2026-12-30', pctReal:0.51},
+      {nombre:'Formación continua', responsable:'Sin asignar', fecha:'2026-06-26', pctReal:0.78},
+      {nombre:'Seguimiento capacitación nuevos ingresos', responsable:'Sin asignar', fecha:'2026-03-25', pctReal:0.5},
+      {nombre:'MBR', responsable:'Sin asignar', fecha:'2026-02-18', pctReal:0.5},
+      {nombre:'Revisión de rutinas de trabajo', responsable:'Sin asignar', fecha:'2026-02-16', pctReal:0.5},
+    ],
+  },
+  {
+    id:'mrp-mps', codigo:'P4', anio:2025,
+    nombre:'Implementación MRP y MPS en SAP',
+    lider:'Aarón Alvarado', liderSmartsheet:'Roberto Mitchail Sánchez Marquina', liderCoincide:false,
+    coLider:'Roberto Sánchez',
+    tipo:'Transversal', paises:['Perú'],
+    fechaInicioPlan:null, fechaFinPlan:'2027-03-25',
+    saludGantt:'Verde',
+    pctReal:0.59, pctPlan:0.609, spi:0.95,
+    objetivo:'MRP y MPS operando en SAP para planeamiento de materiales y producción.',
+    alcance:'Sin dato detallado disponible en el snapshot — pendiente de refresco en vivo.',
+    indicadorMeta:'Sin dato.',
+    sheets:{metadata:8524944992325508, gantt:362170667716484, dashboard:2067956155869060},
+    ganttModificado:'2026-08-04',
+    rojoCount:14, rojoConResponsable:0, hitosATiempo:23, hitosTotal:31, hitosConfiable:true,
+    atrasadas:[
+      {nombre:'Guatemala — Actualizar datos maestros', responsable:'Sin asignar', fecha:'2027-01-28', pctReal:0.23},
+      {nombre:'Haití — Actualizar datos maestros', responsable:'Sin asignar', fecha:'2026-12-30', pctReal:0.29},
+      {nombre:'República Dominicana — Actualizar datos maestros', responsable:'Sin asignar', fecha:'2026-11-30', pctReal:0.42},
+      {nombre:'Realizar ajustes en configuraciones y revalidar resultados MD', responsable:'Sin asignar', fecha:'2026-08-10', pctReal:0.25},
+      {nombre:'Perú — Gestionar firma de acta de cierre O&SC', responsable:'Sin asignar', fecha:'2026-07-06', pctReal:0.75},
+    ],
+  },
+  {
+    id:'inventarios', codigo:'P5', anio:2025,
+    nombre:'Gestión Adaptativa de Inventarios',
+    lider:'Rodrigo Pérez', liderSmartsheet:'Roberto Mitchail Sánchez Marquina', liderCoincide:false,
+    coLider:'Roberto Sánchez',
+    tipo:'Transversal', paises:['Perú'],
+    fechaInicioPlan:null, fechaFinPlan:'2026-08-12',
+    saludGantt:'Rojo',
+    pctReal:0.65, pctPlan:0.993, spi:1.0,
+    objetivo:'Modelo de gestión adaptativa / DDMRP de inventarios.',
+    alcance:'Sin dato detallado disponible en el snapshot — pendiente de refresco en vivo.',
+    indicadorMeta:'Sin dato.',
+    sheets:{metadata:5821513798209412, gantt:3569713984524164, dashboard:5908893869074308},
+    ganttModificado:'2026-07-31',
+    rojoCount:38, rojoConResponsable:0, hitosATiempo:63, hitosTotal:64, hitosConfiable:false,
+    hallazgoExtra:'Existe una hoja duplicada "Copia TI Gantt: Gestión Adaptativa de Inventarios" (modificada 05 Ago 2026) además del Gantt oficial — confirmar cuál es la fuente vigente.',
+    atrasadas:[
+      {nombre:'Perú — Dashboard: Materiales Directos', responsable:'Sin asignar', fecha:'2026-08-12', pctReal:0.67},
+      {nombre:'Brasil — Dashboard: Materiales Directos', responsable:'Sin asignar', fecha:'2026-08-12', pctReal:0.67},
+      {nombre:'DDMRP: Producto Terminado (Perú)', responsable:'Sin asignar', fecha:'2026-06-26', pctReal:0.54},
+      {nombre:'DDMRP: Producto Terminado (RD)', responsable:'Sin asignar', fecha:'2026-06-26', pctReal:0.59},
+      {nombre:'Dashboard DDMRP', responsable:'Sin asignar', fecha:'2026-04-21', pctReal:0.24},
+    ],
+  },
+  {
+    id:'data-maestra', codigo:'P6', anio:2026,
+    nombre:'Homologación de Data Maestra',
+    lider:'Juan Valverde', liderSmartsheet:'Roberto Mitchail Sánchez Marquina', liderCoincide:false,
+    coLider:'Sin asignar en Smartsheet',
+    tipo:'Transversal', paises:['Perú'],
+    fechaInicioPlan:null, fechaFinPlan:'2026-07-20',
+    saludGantt:'Rojo',
+    pctReal:0.61, pctPlan:1.0, spi:1.01,
+    objetivo:'Homologación de data maestra entre países y sistemas.',
+    alcance:'Sin dato detallado disponible en el snapshot — pendiente de refresco en vivo.',
+    indicadorMeta:'Sin dato.',
+    sheets:{metadata:3382954794372996, gantt:624778336489348, dashboard:7566323627648900},
+    ganttModificado:'2026-07-31',
+    rojoCount:10, rojoConResponsable:0, hitosATiempo:1, hitosTotal:1, hitosConfiable:false,
+    atrasadas:[
+      {nombre:'FASE 3: Implementación', responsable:'Sin asignar', fecha:'2026-07-09', pctReal:0.3},
+      {nombre:'SAP R3 — Normalización de catálogos', responsable:'Sin asignar', fecha:'2026-07-09', pctReal:0.74},
+      {nombre:'SAP S4/HANA — Normalización de catálogos', responsable:'Sin asignar', fecha:'2026-07-09', pctReal:0.7},
+      {nombre:'Definición de estructuras de descripciones de textos de material', responsable:'Sin asignar', fecha:'2026-07-02', pctReal:0.75},
+      {nombre:'Elaboración de procedimiento de creación de códigos', responsable:'Sin asignar', fecha:'2026-06-17', pctReal:0.25},
+    ],
+  },
+];
+
+/* ============ ESTADO GLOBAL ============ */
+let liveActionItems = null; // se llena tras refreshFromSmartsheet()
+let liveMode = false;
+const newAlerts = new Set(); // ids marcados como "nuevo rojo" en esta sesión
+
+/* ============ SEMÁFORO ============ */
+function diasHasta(fechaStr){
+  if(!fechaStr) return null;
+  const d = new Date(fechaStr);
+  return Math.round((d - HOY) / 86400000);
+}
+function computeSemaforo(p){
+  // Fuente primaria: campo "Salud" (RYG) de la fila raíz (Jerarquía=0) de cada hoja Gantt — es un
+  // campo formulaico que SÍ existe en las 6 hojas (a diferencia de "Saludo Proyecto" en Project
+  // Metadata, que solo estaba cargado en 2 de 6 — ver hallazgo de auditoría).
+  if(p.saludGantt === 'Rojo') return {clase:'critical', label:'Rojo', motivo:`Campo "Salud" de la hoja Gantt = Rojo (SPI ${p.spi}, Real ${Math.round(p.pctReal*100)}% vs Plan ${Math.round(p.pctPlan*100)}%).`};
+  if(p.saludGantt === 'Amarillo') return {clase:'warning', label:'Amarillo', motivo:`Campo "Salud" de la hoja Gantt = Amarillo (SPI ${p.spi}, Real ${Math.round(p.pctReal*100)}% vs Plan ${Math.round(p.pctPlan*100)}%).`};
+  if(p.saludGantt === 'Verde') return {clase:'ok', label:'Verde', motivo:`Campo "Salud" de la hoja Gantt = Verde (SPI ${p.spi}, Real ${Math.round(p.pctReal*100)}% vs Plan ${Math.round(p.pctPlan*100)}%).`};
+  const dias = diasHasta(p.fechaFinPlan);
+  if(dias !== null && dias < 0) return {clase:'critical', label:'Rojo (regla derivada)', motivo:'Fecha de fin planificada vencida y sin campo "Salud" en la hoja Gantt.'};
+  if(dias !== null && dias <= 60) return {clase:'warning', label:'Amarillo (regla derivada)', motivo:`Vence en ${dias} días y la hoja no tiene campo "Salud" cargado.`};
+  return {clase:'nd', label:'N/D', motivo:'La hoja Gantt no tiene campo "Salud" cargado — hallazgo de auditoría, no se asume Verde.'};
+}
+
+/* ============ TEMA CLARO / OSCURO ============ */
+function toggleTheme(){
+  const isDark = document.body.classList.toggle('dark-theme');
+  document.getElementById('themeToggleBtn').textContent = isDark ? '☀️' : '🌙';
+}
+
+/* ============ SIDEBAR / NAV ============ */
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('ism-sidebar--collapsed');
+  document.getElementById('mainContent').classList.toggle('ism-main--expanded');
+}
+function showSection(id, el){
+  document.querySelectorAll('.ism-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelectorAll('.ism-nav-item').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+}
+
+/* ============ RENDER SECCIÓN 1 ============ */
+function populateFilterOptions(){
+  const paises = new Set(), lideres = new Set();
+  proyectos.forEach(p=>{ p.paises.forEach(c=>paises.add(c)); lideres.add(p.lider); });
+  const fp = document.getElementById('filterPais');
+  [...paises].sort().forEach(c=>{ const o=document.createElement('option'); o.value=c; o.textContent=c; fp.appendChild(o); });
+  const fl = document.getElementById('filterLider');
+  [...lideres].sort().forEach(l=>{ const o=document.createElement('option'); o.value=l; o.textContent=l; fl.appendChild(o); });
+}
+function resetFilters(){
+  document.getElementById('filterPais').value='';
+  document.getElementById('filterLider').value='';
+  document.getElementById('filterSemaforo').value='';
+  renderProyectos();
+}
+function renderSummary(list){
+  const counts = {critical:0, warning:0, ok:0, nd:0};
+  list.forEach(p=>counts[computeSemaforo(p).clase]++);
+  document.getElementById('summaryStrip').innerHTML = `
+    <div class="ism-summary-chip crit"><div class="num">${counts.critical}</div><div class="label">🔴 Rojo</div></div>
+    <div class="ism-summary-chip warn"><div class="num">${counts.warning}</div><div class="label">🟡 Amarillo</div></div>
+    <div class="ism-summary-chip ok"><div class="num">${counts.ok}</div><div class="label">🟢 Verde</div></div>
+    <div class="ism-summary-chip nd"><div class="num">${counts.nd}</div><div class="label">⚪ N/D</div></div>
+    <div class="ism-summary-chip"><div class="num">${list.length}</div><div class="label">Activos</div></div>
+  `;
+}
+function renderProyectos(){
+  const pais = document.getElementById('filterPais').value;
+  const lider = document.getElementById('filterLider').value;
+  const sem = document.getElementById('filterSemaforo').value;
+  let list = proyectos.filter(p=>{
+    if(pais && !p.paises.includes(pais)) return false;
+    if(lider && p.lider !== lider) return false;
+    if(sem && computeSemaforo(p).clase !== sem) return false;
+    return true;
+  });
+  renderSummary(list);
+  const order = {critical:0, warning:1, nd:2, ok:3};
+  list.sort((a,b)=>{
+    const sa=computeSemaforo(a), sb=computeSemaforo(b);
+    if(order[sa.clase] !== order[sb.clase]) return order[sa.clase]-order[sb.clase];
+    return (diasHasta(a.fechaFinPlan) ?? 9999) - (diasHasta(b.fechaFinPlan) ?? 9999);
+  });
+  const grid = document.getElementById('proyectosGrid');
+  grid.innerHTML = list.map(p=>{
+    const s = computeSemaforo(p);
+    const emoji = {critical:'🔴',warning:'🟡',ok:'🟢',nd:'⚪'}[s.clase];
+    const dias = diasHasta(p.fechaFinPlan);
+    const isNew = newAlerts.has(p.id);
+    const spiUp = p.spi >= 1;
+    const cobertura = p.rojoCount ? Math.round((p.rojoConResponsable/p.rojoCount)*100) : null;
+    const atrasadasHtml = (p.atrasadas||[]).slice(0,5).map(a=>
+      `<div class="ism-proj-card__row" style="margin-top:3px;"><span style="max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${a.nombre}</span><b style="color:var(--ism-red);">${formatFecha(a.fecha)}</b></div>`
+    ).join('');
+    return `<div class="ism-proj-card sem-${s.clase}" onclick="openModal('${p.id}')">
+      <div class="ism-proj-card__top">
+        <div><div class="ism-proj-card__title">${p.nombre}</div><div class="ism-proj-card__code">${p.codigo} · ${p.tipo} · ${p.anio}</div></div>
+        <span class="ism-badge ism-badge--${s.clase} ism-badge--dot">${emoji} ${s.label.replace(' (regla derivada)','')}</span>
+      </div>
+      <div style="margin:8px 0 4px;">
+        <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--gray-500);"><span>Real</span><b style="color:var(--ism-black);">${Math.round(p.pctReal*100)}%</b></div>
+        <div class="ism-progress-track"><div class="ism-progress-fill" style="width:${p.pctReal*100}%;"></div></div>
+        <div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--gray-500); margin-top:6px;"><span>Plan</span><b style="color:var(--gray-700);">${Math.round(p.pctPlan*100)}%</b></div>
+        <div class="ism-progress-track"><div class="ism-progress-fill" style="width:${p.pctPlan*100}%; background:var(--gray-500);"></div></div>
+      </div>
+      <div class="ism-proj-card__row">
+        <span class="ism-badge ism-badge--${spiUp?'ok':'critical'}" style="padding:2px 8px;">${spiUp?'▲':'▼'} SPI ${p.spi.toFixed(2)}</span>
+        <b>Fin plan.: ${p.fechaFinPlan ? formatFecha(p.fechaFinPlan) : 'Sin dato'}</b>
+      </div>
+      <div class="ism-proj-card__meta" style="margin-top:8px;">Líder: <b>${p.lider}</b>${!p.liderCoincide ? ' <span style="color:var(--scm-warning-text);">(corregido)</span>' : ''} · Co-Líder/Responsable Gantt: <b>${p.coLider}</b></div>
+      ${p.rojoCount ? `<div style="margin-top:10px; padding-top:8px; border-top:1px dashed var(--gray-200);">
+        <div style="font-size:12px; font-weight:600; color:var(--ism-red);">⚠ ${p.rojoCount} actividades en salud Rojo${cobertura!==null ? ` · ${cobertura}% con responsable asignado` : ''} <span style="font-weight:400; color:var(--gray-500);">(más recientes)</span></div>
+        ${atrasadasHtml}
+        ${p.rojoCount > 5 ? `<div style="font-size:11.5px; color:var(--gray-500); font-style:italic; margin-top:3px;">+${p.rojoCount-5} más…</div>` : ''}
+      </div>` : ''}
+      <div class="ism-motivo">${s.motivo}</div>
+      ${isNew ? '<div class="ism-new-alert">⚠ Nuevo Rojo en esta sesión</div>' : ''}
+    </div>`;
+  }).join('') || '<div class="ism-empty">No hay proyectos que coincidan con el filtro.</div>';
+}
+function formatFecha(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-PE', {day:'2-digit', month:'short', year:'numeric'});
+}
+
+/* ============ MODAL DETALLE ============ */
+function openModal(id){
+  const p = proyectos.find(x=>x.id===id);
+  const s = computeSemaforo(p);
+  document.getElementById('modalContent').innerHTML = `
+    <button class="ism-modal__close" onclick="closeModal()">×</button>
+    <h3>${p.nombre}</h3>
+    <div class="sub">${p.codigo} · Líder: ${p.lider} · ${p.tipo} · Última modificación Gantt: ${formatFecha(p.ganttModificado)}</div>
+    <span class="ism-badge ism-badge--${s.clase}" style="margin-bottom:14px;">${s.label}</span>
+    <div class="ism-modal-block"><h4>¿Qué resuelve?</h4><p>${p.objetivo}</p></div>
+    <div class="ism-modal-block"><h4>Alcance / próximos pasos</h4><p>${p.alcance}</p></div>
+    <div class="ism-modal-block"><h4>Indicador meta</h4><p>${p.indicadorMeta}</p></div>
+    <div class="ism-modal-block"><h4>Fechas</h4><p>Inicio planificado: ${p.fechaInicioPlan ? formatFecha(p.fechaInicioPlan) : 'Sin dato'}<br>Fin planificado: ${p.fechaFinPlan ? formatFecha(p.fechaFinPlan) : 'Sin dato'}</p></div>
+    ${p.hallazgoExtra ? `<div class="ism-modal-block"><h4>Hallazgo de auditoría</h4><p style="color:var(--scm-warning-text);">${p.hallazgoExtra}</p></div>` : ''}
+    <div class="ism-modal-block"><h4>Trazabilidad de hitos y riesgos abiertos</h4><p style="color:var(--gray-500);">Requiere refresco en vivo (Gantt row-level) — pulsa "Actualizar datos" en el encabezado.</p></div>
+  `;
+  document.getElementById('modalBackdrop').classList.add('open');
+}
+function closeModal(){ document.getElementById('modalBackdrop').classList.remove('open'); }
+
+/* ============ SECCIÓN 3: AUDITORÍA — calificación real por proyecto x 6 dimensiones ============
+   Calculada sobre datos de tarea reales extraídos de las 6 hojas Gantt (no Project Metadata) */
+const gradeToNum = {A:4, B:3, C:2, D:1, F:0};
+const numToGrade = ['F','D','C','B','A'];
+function avgGrade(grades){
+  const nums = grades.filter(g=>g!=='N/D').map(g=>gradeToNum[g]);
+  if(!nums.length) return 'N/D';
+  const avg = nums.reduce((a,b)=>a+b,0)/nums.length;
+  return numToGrade[Math.round(avg)];
+}
+const projectAudits = [
+  { id:'rol-corp',
+    Ownership:'A', OwnershipNota:'Líder (Claudia Espinoza) coincide con el Responsable raíz de la hoja Gantt.',
+    Salud:'B', SaludNota:'Real (75%) vs Plan (81%), 6pp de brecha. SPI 1.15 mide algo distinto (duración real/planificada) — no es contradictorio, ver Sección KPIs.',
+    Cobertura:'C', CoberturaNota:'10 de 22 tareas en rojo (45%) tienen responsable nombrado — el único proyecto con cobertura parcial.',
+    Coherencia:'B', CoherenciaNota:'Salud=Amarillo es consistente con 22 tareas en rojo abiertas.',
+    Higiene:'C', HigieneNota:'Picklist "Tipo de Proyecto" no coincide con el de otros proyectos del portafolio.',
+    Frescura:'A', FrescuraNota:'Modificada hace 1 día (05 Ago 2026).' },
+  { id:'forecast',
+    Ownership:'D', OwnershipNota:'Responsable raíz en Smartsheet = Roberto Sánchez (placeholder); líder real es Jennifer Ramos, corregido manualmente.',
+    Salud:'D', SaludNota:'Salud=Rojo consistente con 17pp de brecha entre Plan (98%) y Real (81%).',
+    Cobertura:'F', CoberturaNota:'0 de 34 tareas en rojo (0%) tienen responsable nombrado.',
+    Coherencia:'B', CoherenciaNota:'Salud=Rojo es coherente con la brecha real de avance.',
+    Higiene:'C', HigieneNota:'Mismo hallazgo de picklist inconsistente del portafolio.',
+    Frescura:'A', FrescuraNota:'Modificada hace 2 días (04 Ago 2026).' },
+  { id:'sop',
+    Ownership:'A', OwnershipNota:'Líder (Roberto Sánchez) coincide con el Responsable raíz de la hoja Gantt.',
+    Salud:'A', SaludNota:'Real (55%) y Plan (54%) casi iguales, SPI 1.37 — proyecto adelantado y coherente.',
+    Cobertura:'F', CoberturaNota:'0 de 6 tareas en rojo (0%) tienen responsable nombrado.',
+    Coherencia:'A', CoherenciaNota:'Salud=Verde es coherente con el avance real vs. plan.',
+    Higiene:'C', HigieneNota:'Mismo hallazgo de picklist inconsistente del portafolio.',
+    Frescura:'A', FrescuraNota:'Modificada hace 2 días (04 Ago 2026).' },
+  { id:'mrp-mps',
+    Ownership:'D', OwnershipNota:'Responsable raíz en Smartsheet = Roberto Sánchez (placeholder); líder real es Aarón Alvarado, corregido manualmente.',
+    Salud:'B', SaludNota:'Real (59%) vs Plan (61%) — brecha menor de 2pp, SPI 0.95.',
+    Cobertura:'F', CoberturaNota:'0 de 14 tareas en rojo (0%) tienen responsable nombrado.',
+    Coherencia:'C', CoherenciaNota:'Salud=Verde a pesar de 14 tareas en rojo abiertas — posible sobre-optimismo del semáforo raíz.',
+    Higiene:'C', HigieneNota:'Mismo hallazgo de picklist inconsistente del portafolio.',
+    Frescura:'A', FrescuraNota:'Modificada hace 2 días (04 Ago 2026).' },
+  { id:'inventarios',
+    Ownership:'D', OwnershipNota:'Responsable raíz en Smartsheet = Roberto Sánchez (placeholder); líder real es Rodrigo Pérez, corregido manualmente.',
+    Salud:'D', SaludNota:'Brecha grande: Real (65%) vs Plan (99%), 34pp — Salud=Rojo coherente.',
+    Cobertura:'F', CoberturaNota:'0 de 38 tareas en rojo (0%) tienen responsable nombrado — el mayor volumen de tareas en rojo del portafolio.',
+    Coherencia:'B', CoherenciaNota:'Salud=Rojo coherente con la brecha real.',
+    Higiene:'D', HigieneNota:'Además del picklist inconsistente, existe una hoja Gantt duplicada ("Copia TI Gantt…").',
+    Frescura:'B', FrescuraNota:'Gantt oficial modificado hace 6 días (31 Jul); la copia duplicada se modificó hace 1 día.' },
+  { id:'data-maestra',
+    Ownership:'D', OwnershipNota:'La fila raíz no tiene ningún Responsable asignado en Smartsheet; líder real es Juan Valverde, solo confirmado manualmente.',
+    Salud:'D', SaludNota:'Fecha de fin planificada ya vencida (20 Jul 2026), Real 61% vs Plan 100% — Salud=Rojo coherente.',
+    Cobertura:'F', CoberturaNota:'0 de 10 tareas en rojo (0%) tienen responsable nombrado.',
+    Coherencia:'B', CoherenciaNota:'Salud=Rojo coherente con el vencimiento real.',
+    Higiene:'C', HigieneNota:'Mismo hallazgo de picklist inconsistente del portafolio.',
+    Frescura:'B', FrescuraNota:'Modificada hace 6 días (31 Jul 2026).' },
+];
+const auditFindings = [
+  {proyecto:'Todos (portafolio)', tipo:'Ownership', severidad:'Alta', autoCorregible:false, detalle:'El Responsable de la fila raíz en Smartsheet = Roberto Sánchez en 4/6 hojas (valor de plantilla, no actualizado con el analista real).', accion:'Actualizar el campo en Smartsheet con el líder real de cada proyecto.'},
+  {proyecto:'Todos (portafolio) excepto Rol Corporativo', tipo:'Cobertura de equipo', severidad:'Alta', autoCorregible:false, detalle:'0% de las tareas en salud Rojo tienen un responsable nombrado en 5 de 6 proyectos (102 tareas rojas sin dueño en total). Esto es lo que bloquea la Sección de Acciones Prioritarias.', accion:'Diligenciar el campo "Responsable" al menos en las tareas en rojo de cada Gantt.'},
+  {proyecto:'Forecast, S&OP, Gestión de Inventarios, Homologación Data Maestra', tipo:'Confiabilidad de fechas de hitos', severidad:'Alta', autoCorregible:false, detalle:'"Fecha de Fin Real" del hito es idéntica a "Fecha de Fin Planificado" en casi todas las filas (o falta la fecha planificada, como en 16/24 hitos de S&OP) — indica que el hito no se completó realmente y el campo no distingue fecha real de planificada. Esto invalida el cálculo confiable del KPI "% Hitos por Cumplir" en estos 4 proyectos.', accion:'Pedir a cada líder que solo registre "Fecha de Fin Real" cuando el hito se complete de verdad, dejándola vacía mientras esté pendiente.'},
+  {proyecto:'Implementación MRP y MPS en SAP', tipo:'Coherencia de estado', severidad:'Media', autoCorregible:false, detalle:'Salud raíz = Verde a pesar de tener 14 tareas en salud Rojo abiertas.', accion:'Revisar si el semáforo raíz debería bajar a Amarillo dado el volumen de tareas rojas.'},
+  {proyecto:'Gestión Adaptativa de Inventarios', tipo:'Higiene de listas / duplicidad', severidad:'Media', autoCorregible:false, detalle:'Existen dos hojas Gantt: la oficial y "Copia TI Gantt…" (modificada 05 Ago 2026).', accion:'Confirmar cuál es la fuente vigente y archivar o eliminar la copia.'},
+  {proyecto:'Todos (portafolio)', tipo:'Higiene de listas', severidad:'Baja', autoCorregible:true, detalle:'La lista desplegable "Tipo de Proyecto" no es idéntica entre hojas (algunas incluyen "Gestión"/"Plan de Acción", otras "Funcional"/"Industrial"/"Innovación").', accion:'Unificar el picklist "Tipo de Proyecto" en la plantilla corporativa — cambio de configuración, sin decisiones de negocio pendientes.'},
+  {proyecto:'Todos (portafolio)', tipo:'Frescura de datos', severidad:'Ninguna (positivo)', autoCorregible:true, detalle:'Las 6 hojas Gantt fueron modificadas entre el 31 Jul y el 05 Ago 2026 (≤6 días) — sin hallazgo de stale data con el umbral de 14 días.', accion:'Sin acción — mantener cadencia de actualización.'},
+];
+function severityRank(s){ return {Alta:0, Media:1, Baja:2, 'Ninguna (positivo)':3}[s] ?? 4; }
+function gradeCellHtml(grade, nota){
+  const colors = {A:'var(--scm-ok-text)', B:'var(--scm-ok-text)', C:'var(--scm-warning-text)', D:'var(--scm-critical-text)', F:'var(--scm-critical-text)'};
+  return `<span title="${nota.replace(/"/g,'&quot;')}" style="font-weight:700; color:${colors[grade]||'var(--gray-500)'}; cursor:help; border-bottom:1px dotted currentColor;">${grade}</span>`;
+}
+function renderAuditoria(){
+  const sorted = [...auditFindings].sort((a,b)=>severityRank(a.severidad)-severityRank(b.severidad));
+  document.getElementById('findingsTableBody').innerHTML = sorted.map(f=>{
+    const rowClass = f.severidad==='Alta' ? 'ism-table__row--critical' : f.severidad==='Media' ? 'ism-table__row--warning' : '';
+    const autoBadge = f.severidad==='Ninguna (positivo)' ? '—' : (f.autoCorregible ? '<span class="ism-badge ism-badge--ok">Sí</span>' : '<span class="ism-badge ism-badge--nd">Requiere tu decisión</span>');
+    return `<tr class="${rowClass}"><td>${f.proyecto}</td><td>${f.tipo}</td><td>${f.severidad}</td><td>${f.detalle}</td><td>${f.accion}</td><td>${autoBadge}</td></tr>`;
+  }).join('');
+  const activeFindings = auditFindings.filter(f=>f.severidad!=='Ninguna (positivo)');
+  const autoCount = activeFindings.filter(f=>f.autoCorregible).length;
+  const decisionCount = activeFindings.filter(f=>!f.autoCorregible).length;
+  document.getElementById('auditHeroSub').textContent = `${activeFindings.length} hallazgos detectados · ${autoCount} auto-corregible(s) · ${decisionCount} requieren tu decisión · 6 proyectos analizados.`;
+
+  // Tabla por proyecto x 6 dimensiones + total
+  document.getElementById('projectGradesBody').innerHTML = projectAudits.map(pa=>{
+    const p = proyectos.find(x=>x.id===pa.id);
+    const total = avgGrade([pa.Ownership, pa.Salud, pa.Cobertura, pa.Coherencia, pa.Higiene, pa.Frescura]);
+    return `<tr>
+      <td><b>${p.nombre}</b></td>
+      <td>${gradeCellHtml(pa.Ownership, pa.OwnershipNota)}</td>
+      <td>${gradeCellHtml(pa.Salud, pa.SaludNota)}</td>
+      <td>${gradeCellHtml(pa.Cobertura, pa.CoberturaNota)}</td>
+      <td>${gradeCellHtml(pa.Coherencia, pa.CoherenciaNota)}</td>
+      <td>${gradeCellHtml(pa.Higiene, pa.HigieneNota)}</td>
+      <td>${gradeCellHtml(pa.Frescura, pa.FrescuraNota)}</td>
+      <td>${gradeCellHtml(total, 'Promedio de las 6 dimensiones (redondeado).')}</td>
+    </tr>`;
+  }).join('') + `<tr style="background:var(--ism-green-10); font-weight:600;">
+      <td>Portafolio (promedio 6 proyectos)</td>
+      <td>${gradeCellHtml(avgGrade(projectAudits.map(p=>p.Ownership)),'Promedio de Ownership de los 6 proyectos.')}</td>
+      <td>${gradeCellHtml(avgGrade(projectAudits.map(p=>p.Salud)),'Promedio de Salud del Sprint de los 6 proyectos.')}</td>
+      <td>${gradeCellHtml(avgGrade(projectAudits.map(p=>p.Cobertura)),'Promedio de Cobertura de equipo de los 6 proyectos.')}</td>
+      <td>${gradeCellHtml(avgGrade(projectAudits.map(p=>p.Coherencia)),'Promedio de Coherencia de estado de los 6 proyectos.')}</td>
+      <td>${gradeCellHtml(avgGrade(projectAudits.map(p=>p.Higiene)),'Promedio de Higiene de listas de los 6 proyectos.')}</td>
+      <td>${gradeCellHtml(avgGrade(projectAudits.map(p=>p.Frescura)),'Promedio de Frescura de los 6 proyectos.')}</td>
+      <td>${gradeCellHtml(avgGrade(projectAudits.map(pa=>avgGrade([pa.Ownership,pa.Salud,pa.Cobertura,pa.Coherencia,pa.Higiene,pa.Frescura]))),'Calificación total del portafolio.')}</td>
+    </tr>`;
+
+  const portfolioGrades = {
+    Ownership: avgGrade(projectAudits.map(p=>p.Ownership)),
+    Salud: avgGrade(projectAudits.map(p=>p.Salud)),
+    Cobertura: avgGrade(projectAudits.map(p=>p.Cobertura)),
+    Coherencia: avgGrade(projectAudits.map(p=>p.Coherencia)),
+    Higiene: avgGrade(projectAudits.map(p=>p.Higiene)),
+    Frescura: avgGrade(projectAudits.map(p=>p.Frescura)),
+  };
+  const dims = [
+    {dim:'Ownership', grade:portfolioGrades.Ownership, detail:'Responsable raíz incorrecto (placeholder) en 4 de 6 hojas Gantt.'},
+    {dim:'Salud del Sprint', grade:portfolioGrades.Salud, detail:'Mezcla de proyectos adelantados (S&OP) y muy atrasados (Inventarios, Data Maestra).'},
+    {dim:'Cobertura de equipo', grade:portfolioGrades.Cobertura, detail:'102 de 124 tareas en rojo del portafolio (82%) no tienen responsable nombrado.'},
+    {dim:'Coherencia de estado', grade:portfolioGrades.Coherencia, detail:'El semáforo raíz de cada hoja es mayormente coherente con el avance real, salvo MRP/MPS.'},
+    {dim:'Higiene de listas', grade:portfolioGrades.Higiene, detail:'Picklist "Tipo de Proyecto" inconsistente entre hojas; hoja duplicada en Inventarios.'},
+    {dim:'Frescura de datos', grade:portfolioGrades.Frescura, detail:'Las 6 hojas Gantt se modificaron dentro de los últimos 6 días (umbral: 14 días).'},
+  ];
+  const gradeColors = {A:['var(--scm-ok-bg)','var(--scm-ok-text)'], B:['var(--scm-ok-bg)','var(--scm-ok-text)'], C:['var(--scm-warning-bg)','var(--scm-warning-text)'], D:['var(--scm-critical-bg)','var(--scm-critical-text)'], F:['var(--scm-critical-bg)','var(--scm-critical-text)'], 'N/D':['var(--scm-nd-bg)','var(--scm-nd-text)']};
+  document.getElementById('auditGrid').innerHTML = dims.map(d=>{
+    const [bg,fg] = gradeColors[d.grade];
+    return `<div class="ism-audit-card" style="background:${bg};">
+      <div class="grade" style="color:${fg};">${d.grade}</div>
+      <div class="dim">${d.dim}</div>
+      <div class="detail">${d.detail}</div>
+    </div>`;
+  }).join('');
+
+  // Hero: calificación total del portafolio
+  const portfolioTotal = avgGrade(Object.values(portfolioGrades));
+  const [heroBg, heroFg] = gradeColors[portfolioTotal];
+  document.getElementById('auditGradeCircle').style.background = heroBg;
+  document.getElementById('auditGradeCircle').style.color = heroFg;
+  document.getElementById('auditGradeCircle').textContent = portfolioTotal;
+}
+
+/* ============ SECCIÓN KPIs — Redefinidos por el equipo de proyectos (reemplaza Manual 7.2) ============ */
+function semaforoPct(value){
+  return value>=0.95 ? 'ok' : value>=0.90 ? 'warning' : 'critical';
+}
+function renderKPIs(){
+  document.getElementById('kpiTableBody').innerHTML = proyectos.map(p=>{
+    const spi = p.pctReal / p.pctPlan; // KPI: SPI = %Avance real / %Avance planificado
+    const spiLabel = spi > 1 ? 'Adelantado' : spi < 1 ? 'Retrasado' : 'En cronograma';
+    const salud = p.pctReal / p.pctPlan; // KPI: Salud del Proyecto = %Avance real / %Avance planificado (%)
+    const kpi3 = p.hitosTotal ? p.hitosATiempo / p.hitosTotal : null;
+    const vc = p.spi; // KPI: Variación de Cronograma = Duración real / Duración planificada
+    const vcLabel = vc > 1 ? 'Retrasado' : vc < 1 ? 'Adelantado' : 'En tiempo';
+    return `<tr>
+      <td><b>${p.nombre}</b></td>
+      <td>${spi.toFixed(2)} <span style="color:var(--gray-500); font-size:11.5px;">(${spiLabel})</span></td>
+      <td><span class="ism-badge ism-badge--${semaforoPct(salud)}">${(salud*100).toFixed(1)}%</span></td>
+      <td>${p.hitosConfiable && kpi3!==null ? `<span class="ism-badge ism-badge--${semaforoPct(kpi3)}">${(kpi3*100).toFixed(1)}%</span> <span style="color:var(--gray-500); font-size:11.5px;">(${p.hitosATiempo}/${p.hitosTotal})</span>` : `<span class="ism-badge ism-badge--nd">N/D — dato no confiable</span>`}</td>
+      <td>${vc.toFixed(2)} <span style="color:var(--gray-500); font-size:11.5px;">(${vcLabel})</span></td>
+    </tr>`;
+  }).join('');
+
+  const confiables = proyectos.filter(p=>p.hitosConfiable);
+  const avgSpi = proyectos.reduce((s,p)=>s+p.pctReal/p.pctPlan,0)/proyectos.length;
+  const avgKpi3 = confiables.length ? confiables.reduce((s,p)=>s+p.hitosATiempo/p.hitosTotal,0)/confiables.length : null;
+  const avgVc = proyectos.reduce((s,p)=>s+p.spi,0)/proyectos.length;
+  document.getElementById('kpiSummaryStrip').innerHTML = `
+    <div class="ism-summary-chip"><div class="num">${avgSpi.toFixed(2)}</div><div class="label">SPI Promedio Portafolio</div></div>
+    <div class="ism-summary-chip"><div class="num">${avgKpi3!==null ? (avgKpi3*100).toFixed(0)+'%' : 'N/D'}</div><div class="label">% Hitos a Tiempo (solo ${confiables.length} proyectos con dato confiable)</div></div>
+    <div class="ism-summary-chip"><div class="num">${avgVc.toFixed(2)}</div><div class="label">Variación de Cronograma Promedio</div></div>
+    <div class="ism-summary-chip nd"><div class="num">${proyectos.length-confiables.length}</div><div class="label">Proyectos con hitos N/D</div></div>
+  `;
+}
+
+/* ============ SECCIÓN 2: ACCIONES PRIORITARIAS (real, con y sin cobertura) ============ */
+function renderAccionesReales(){
+  const rolCorp = proyectos.find(p=>p.id==='rol-corp');
+  const conResponsable = (rolCorp.atrasadas||[]).filter(a=>a.responsable !== 'Sin asignar' && a.responsable !== 'Sin asignar en Smartsheet');
+  document.getElementById('accionesUrgentes').innerHTML = conResponsable.length ? `<div class="ism-table-wrap"><table class="ism-table">
+    <thead><tr><th>Acción</th><th>Proyecto</th><th>Responsable</th><th>Por qué importa hoy</th><th>Vencimiento</th></tr></thead>
+    <tbody>${conResponsable.map(a=>{
+      const dias = diasHasta(a.fecha);
+      return `<tr class="${dias<0?'ism-table__row--critical':''}"><td>Cerrar "${a.nombre}"</td><td>${rolCorp.nombre}</td><td><b>${a.responsable}</b></td><td>Tarea en salud Rojo, ${Math.round(a.pctReal*100)}% avanzada, ${dias<0?`vencida hace ${Math.abs(dias)} días`:`vence en ${dias} días`}</td><td>${formatFecha(a.fecha)}</td></tr>`;
+    }).join('')}</tbody>
+  </table></div>` : '<div class="ism-empty">Sin tareas con responsable nombrado en este snapshot.</div>';
+
+  const bloqueados = proyectos.filter(p=>p.id!=='rol-corp' && p.rojoCount);
+  document.getElementById('accionesBloqueadas').innerHTML = `<div class="ism-table-wrap"><table class="ism-table">
+    <thead><tr><th>Proyecto</th><th>Líder</th><th>Tareas en rojo sin responsable</th><th>Acción sugerida</th></tr></thead>
+    <tbody>${bloqueados.map(p=>`<tr class="ism-table__row--warning"><td>${p.nombre}</td><td>${p.lider}</td><td>${p.rojoCount} de ${p.rojoCount} (100%)</td><td>Pedir a ${p.lider.split(' ')[0]} que diligencie "Responsable" en las tareas rojas de su Gantt para poder priorizar acciones puntuales</td></tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+/* ============ SECCIÓN 4: REPORTE EJECUTIVO ============ */
+function buildEmails(){
+  const rojo = proyectos.filter(p=>computeSemaforo(p).clase==='critical');
+  const amarillo = proyectos.filter(p=>computeSemaforo(p).clase==='warning');
+  const nd = proyectos.filter(p=>computeSemaforo(p).clase==='nd');
+
+  document.getElementById('email-riesgo').textContent =
+`Asunto: Portafolio SCM Planeamiento — riesgos que requieren decisión
+
+Hola equipo,
+
+Del portafolio de 6 proyectos de SCM-Planeamiento, el foco de esta semana es Homologación de Data Maestra (Juan Valverde), en rojo, con fecha de fin planificada ya vencida (20 Jul 2026). Necesitamos un plan de recuperación con fecha revisada esta semana.
+
+En amarillo por regla derivada: ${amarillo.map(p=>p.nombre).join(', ') || 'ninguno'} — estos proyectos no tienen el campo de semáforo cargado en Smartsheet y su fecha de cierre está a 60 días o menos, por lo que no tenemos visibilidad de estado real. Pido a cada líder cargar el campo "Saludo Proyecto" esta semana.
+
+En paralelo, la auditoría de datos detectó que el campo "Líder del Proyecto" en Smartsheet no refleja al responsable real en 4 de 6 hojas (quedó con un valor de plantilla). Ya lo estamos corrigiendo, pero pido no usar ese campo como fuente hasta que se actualice.
+
+Proyectos sin alerta inmediata por fecha: ${nd.filter(p=>!amarillo.includes(p)).map(p=>p.nombre).join(', ') || 'ninguno'}.
+
+Quedo atento a los planes de recuperación.
+
+Saludos,
+Roberto`;
+
+  document.getElementById('email-avance').textContent =
+`Asunto: Portafolio SCM Planeamiento — avance de la semana
+
+Hola equipo,
+
+Actualización del portafolio de 6 proyectos de SCM-Planeamiento (Implementación del Rol Corporativo, Forecast avanzado de demanda, S&OP en Países, MRP/MPS en SAP, Gestión Adaptativa de Inventarios y Homologación de Data Maestra). Las 6 hojas Gantt se actualizaron en los últimos 6 días, así que la información que revisamos está fresca.
+
+Implementación del Rol Corporativo de SCM (Claudia Espinoza) avanza en amarillo, con cierre planificado a fin de 2026.
+
+El punto que necesita nuestra atención esta semana es Homologación de Data Maestra (Juan Valverde), en rojo por fecha de fin vencida — vamos a revisar plan de recuperación con Juan.
+
+El resto del portafolio (Forecast, S&OP, MRP/MPS, Inventarios) sigue en curso, pero pedimos a cada líder cargar el semáforo de estado en Smartsheet para tener visibilidad completa la próxima semana.
+
+También detectamos, vía auditoría de datos, que el campo de líder de proyecto en Smartsheet necesita actualizarse — ya en proceso.
+
+Saludos,
+Roberto`;
+}
+function showEmailTab(tab, el){
+  document.querySelectorAll('.ism-email-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.ism-email-body').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('email-'+tab).classList.add('active');
+}
+function copyEmail(tab){
+  const text = document.getElementById('email-'+tab).textContent;
+  navigator.clipboard.writeText(text).then(()=>alert('Correo copiado al portapapeles.'));
+}
+
+/* ============ SECCIÓN 6: TABLA DE FUENTES ============ */
+function renderSources(){
+  document.getElementById('sourcesTableBody').innerHTML = proyectos.map(p=>`
+    <tr><td>${p.nombre}</td><td>${p.sheets.metadata}</td><td>${p.sheets.gantt}</td><td>${p.sheets.dashboard}</td></tr>
+  `).join('');
+}
+
+/* ============ REFRESCO EN VIVO (Anthropic API + MCP Smartsheet) ============ */
+async function refreshFromSmartsheet(){
+  const btn = document.getElementById('btnRefresh');
+  btn.classList.add('spinning');
+  document.getElementById('accionesStatus').className = 'ism-alert ism-alert--warn';
+  document.getElementById('accionesStatus').innerHTML = 'Consultando Smartsheet en vivo…';
+  try{
+    const sheetList = proyectos.map(p=>`- ${p.nombre} (líder: ${p.lider}): Gantt sheet_id=${p.sheets.gantt}, metadata sheet_id=${p.sheets.metadata}`).join('\n');
+    const prompt = `Eres un asistente de PMO para Industrias San Miguel. Tienes acceso al conector MCP de Smartsheet.
+Consulta estas 6 hojas Gantt de proyecto:
+${sheetList}
+Equipo a vigilar: Jennifer Ramos, Rodrigo Pérez, Aarón Alvarado, Jeferson Atoche, Juan Valverde, Claudia Espinoza, Roberto Sánchez.
+Para cada hoja, identifica tareas con fecha de vencimiento hoy o vencida, o donde alguien esté bloqueado esperando aprobación de una de las personas del equipo. También identifica tareas cerradas en los últimos 7 días.
+No inventes datos: si un campo no existe, indícalo como "Sin dato".
+Responde EXCLUSIVAMENTE con JSON válido, sin texto adicional, con esta forma exacta:
+{"urgentes":[{"titulo":"","proyecto":"","responsable":"","espera":"","por_que_importa":"","dias_abierto":0}],"resueltas":[{"titulo":"","proyecto":"","fecha_cierre":""}]}`;
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }],
+        mcp_servers: [{ type: "url", url: "https://mcp.smartsheet.com", name: "smartsheet-mcp" }]
+      })
+    });
+    const data = await response.json();
+    const textBlocks = (data.content || []).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    const clean = textBlocks.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    liveActionItems = parsed;
+    liveMode = true;
+    renderAcciones();
+    document.getElementById('lastUpdatedMeta').textContent = 'Actualizado en vivo: ' + new Date().toLocaleString('es-PE');
+    document.getElementById('dataModeLabel').textContent = 'datos: en vivo (Smartsheet)';
+  }catch(err){
+    document.getElementById('accionesStatus').className = 'ism-alert ism-alert--warn';
+    document.getElementById('accionesStatus').innerHTML = '⚠️ No se pudo conectar en vivo con Smartsheet (esto ocurre si el archivo se abre fuera de Claude.ai, sin conexión, o file:// local). Se mantiene el último snapshot embebido del 06 Ago 2026.';
+  }finally{
+    btn.classList.remove('spinning');
+  }
+}
+function renderAcciones(){
+  const badge = document.getElementById('badgeAcciones');
+  if(!liveActionItems){
+    badge.textContent = '–';
+    return;
+  }
+  badge.textContent = liveActionItems.urgentes ? liveActionItems.urgentes.length : '0';
+  document.getElementById('accionesStatus').className = 'ism-alert ism-alert--ok';
+  document.getElementById('accionesStatus').innerHTML = 'Datos en vivo cargados desde Smartsheet.';
+  const urg = liveActionItems.urgentes || [];
+  document.getElementById('accionesUrgentes').innerHTML = urg.length ? `<div class="ism-table-wrap"><table class="ism-table">
+    <thead><tr><th>Acción</th><th>Proyecto</th><th>Responsable</th><th>Espera respuesta de</th><th>Por qué importa</th><th>Días abierto</th></tr></thead>
+    <tbody>${urg.map(u=>`<tr><td>${u.titulo}</td><td>${u.proyecto}</td><td>${u.responsable}</td><td>${u.espera}</td><td>${u.por_que_importa}</td><td>${u.dias_abierto}</td></tr>`).join('')}</tbody>
+  </table></div>` : '<div class="ism-empty">Sin pendientes urgentes detectados.</div>';
+  const res = liveActionItems.resueltas || [];
+  document.getElementById('accionesResueltas').innerHTML = res.length ? `<div class="ism-table-wrap"><table class="ism-table">
+    <thead><tr><th>Acción</th><th>Proyecto</th><th>Fecha de cierre</th></tr></thead>
+    <tbody>${res.map(r=>`<tr><td>${r.titulo}</td><td>${r.proyecto}</td><td>${r.fecha_cierre}</td></tr>`).join('')}</tbody>
+  </table></div>` : '<div class="ism-empty">Sin cierres registrados en los últimos 7 días.</div>';
+}
+
+/* ============ ANÁLISIS IA (chat) ============ */
+function quickPrompt(text){ document.getElementById('chatInput').value = text; sendChat(); }
+async function sendChat(){
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  const box = document.getElementById('chatMessages');
+  box.innerHTML += `<div class="ism-msg ism-msg--user">${text}</div>`;
+  input.value = '';
+  const typingId = 'typing-'+Date.now();
+  box.innerHTML += `<div class="ism-ai-typing" id="${typingId}">Claude está consultando Smartsheet…</div>`;
+  box.scrollTop = box.scrollHeight;
+  try{
+    const contexto = proyectos.map(p=>`- ${p.nombre} (líder ${p.lider}, sheet_id gantt ${p.sheets.gantt}, metadata ${p.sheets.metadata})`).join('\n');
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: `Contexto — portafolio SCM Planeamiento ISM:\n${contexto}\n\nPregunta de Roberto (Jefatura Corporativa SCM): ${text}\n\nResponde en español, breve y accionable. Usa el conector de Smartsheet para verificar datos reales antes de responder; si no puedes acceder, dilo explícitamente.` }],
+        mcp_servers: [{ type: "url", url: "https://mcp.smartsheet.com", name: "smartsheet-mcp" }]
+      })
+    });
+    const data = await response.json();
+    const answer = (data.content || []).filter(b=>b.type==='text').map(b=>b.text).join('\n') || 'No obtuve respuesta.';
+    document.getElementById(typingId).remove();
+    box.innerHTML += `<div class="ism-msg ism-msg--ai">${answer}</div>`;
+  }catch(err){
+    document.getElementById(typingId).remove();
+    box.innerHTML += `<div class="ism-msg ism-msg--ai">No pude conectarme en vivo (revisa que esto se abra dentro de Claude.ai con conexión). Intenta de nuevo con "Actualizar datos".</div>`;
+  }
+  box.scrollTop = box.scrollHeight;
+}
+
+/* ============ ACCORDION ============ */
+function toggleAccordion(el){ el.parentElement.classList.toggle('open'); }
+
+/* ============ EXPORTAR ============ */
+let selectedFormat = 'xlsx';
+function selectExportFormat(el){
+  document.querySelectorAll('.ism-export-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedFormat = el.dataset.fmt;
+}
+function logExport(desc){
+  const hist = document.getElementById('exportHistory');
+  const line = document.createElement('div');
+  line.textContent = `${new Date().toLocaleTimeString('es-PE')} — ${desc}`;
+  if(hist.textContent.includes('Sin exportaciones')) hist.innerHTML='';
+  hist.appendChild(line);
+}
+function runExport(){
+  if(selectedFormat === 'print'){ window.print(); logExport('Exportado a PDF (impresión de navegador).'); return; }
+  const scope = [...document.querySelectorAll('.ism-checkbox-group input:checked')].map(c=>c.value);
+  if(selectedFormat === 'csv'){
+    let csv = 'Proyecto,Líder,Tipo,País(es),Fecha Fin Planificada,Semáforo\n';
+    proyectos.forEach(p=>{
+      const s = computeSemaforo(p);
+      csv += `"${p.nombre}","${p.lider}","${p.tipo}","${p.paises.join('; ')}","${p.fechaFinPlan||''}","${s.label}"\n`;
+    });
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'portafolio_scm_ism.csv'; a.click();
+    logExport('Exportado CSV — tabla de proyectos.');
+    return;
+  }
+  // xlsx
+  const wb = XLSX.utils.book_new();
+  if(scope.includes('proyectos')){
+    const rows = proyectos.map(p=>{
+      const s = computeSemaforo(p);
+      return {Proyecto:p.nombre, Codigo:p.codigo, Lider:p.lider, LiderCoincideSmartsheet:p.liderCoincide?'Sí':'No', Tipo:p.tipo, Paises:p.paises.join('; '), FechaFinPlanificada:p.fechaFinPlan||'', Semaforo:s.label, Motivo:s.motivo};
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Proyectos');
+  }
+  if(scope.includes('auditoria')){
+    const ws2 = XLSX.utils.json_to_sheet(auditFindings.map(f=>({Proyecto:f.proyecto, Tipo:f.tipo, Severidad:f.severidad, Detalle:f.detalle, Accion:f.accion})));
+    XLSX.utils.book_append_sheet(wb, ws2, 'Auditoria');
+  }
+  if(scope.includes('resumen')){
+    const counts = {critical:0,warning:0,ok:0,nd:0};
+    proyectos.forEach(p=>counts[computeSemaforo(p).clase]++);
+    const ws3 = XLSX.utils.json_to_sheet([{Rojo:counts.critical, Amarillo:counts.warning, Verde:counts.ok, ND:counts.nd, Total:proyectos.length, Snapshot:'06 Ago 2026'}]);
+    XLSX.utils.book_append_sheet(wb, ws3, 'Resumen');
+  }
+  XLSX.writeFile(wb, 'Portafolio_Proyectos_SCM_ISM.xlsx');
+  logExport('Exportado Excel — hojas: ' + scope.join(', '));
+}
+
+/* ============ INIT ============ */
+populateFilterOptions();
+renderProyectos();
+renderAuditoria();
+renderKPIs();
+renderAccionesReales();
+buildEmails();
+renderSources();
+document.getElementById('badgeAcciones').textContent = proyectos.reduce((sum,p)=>sum+(p.rojoCount||0),0);
+// Intento de refresco automático al abrir (silencioso si falla)
+window.addEventListener('load', ()=>{ refreshFromSmartsheet(); });
+</script>
+</body>
+</html>
