@@ -1,1 +1,2357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Control Presupuestal Supply Chain</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  /* Paleta de marca (twine.net) — usada en botones, encabezados, pestañas, acentos */
+  --azul-principal:#00537A;
+  --azul-oscuro:#013C58;
+  --azul-claro:#A8E8F9;
+  --naranja:#F5A201;
+  --naranja-claro:#FFBA42;
+  --amarillo-marca:#FFD35B;
+  /* Semaforización — siempre rojo/ámbar/verde reales, independiente de la marca */
+  --verde:#2E7D32;
+  --verde-claro:#E5F3E0;
+  --amarillo:#F5A201;
+  --amarillo-claro:#FFF3DC;
+  --rojo:#D64545;
+  --rojo-claro:#FBE1E1;
+  --gris-sub:#E6E6E6;
+  --gris-texto:#4D4D4D;
+  --blanco:#FFFFFF;
+  --gris-fondo:#F5F7FA;
+  --borde:#D8DEE6;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:var(--gris-fondo);color:var(--gris-texto);}
+header.topbar{background:linear-gradient(135deg,var(--azul-oscuro),var(--azul-principal));color:#fff;padding:14px 24px;}
+header.topbar h1{margin:0;font-size:20px;font-weight:700;}
+header.topbar p{margin:2px 0 0;font-size:12.5px;opacity:.9;}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#fff;padding:10px 24px;border-bottom:1px solid var(--borde);position:sticky;top:0;z-index:20;}
+.toolbar .status-pill{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:600;}
+.status-demo{background:var(--amarillo);color:#5c4600;}
+.status-real{background:var(--verde-claro);color:#1c6b1c;}
+.btn{background:var(--azul-principal);color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:12.5px;cursor:pointer;font-weight:600;}
+.btn.secondary{background:#fff;color:var(--azul-principal);border:1px solid var(--azul-principal);}
+.btn.ghost{background:transparent;color:var(--gris-texto);border:1px solid var(--borde);}
+.btn:hover{opacity:.9;}
+input[type=file]{display:none;}
+.note{font-size:11.5px;background:var(--azul-claro);color:#04324f;padding:6px 10px;border-radius:6px;margin:8px 24px 0;}
+.tabs{display:flex;gap:2px;background:#fff;padding:0 24px;border-bottom:1px solid var(--borde);overflow-x:auto;}
+.tab{padding:10px 14px;font-size:12.5px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;color:var(--gris-texto);font-weight:600;}
+.tab.active{border-bottom-color:var(--azul-principal);color:var(--azul-principal);}
+.container{padding:18px 24px 60px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.kpi-card{background:#fff;border:1px solid var(--borde);border-radius:8px;padding:12px 14px;}
+.kpi-card .label{font-size:11px;color:#7a7a7a;text-transform:uppercase;letter-spacing:.03em;}
+.kpi-card .value{font-size:20px;font-weight:700;margin-top:4px;}
+.kpi-card .sub{font-size:11px;margin-top:4px;display:flex;align-items:center;gap:6px;}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+.dot-VERDE{background:var(--verde);} .dot-AMARILLO{background:var(--amarillo);} .dot-ROJO{background:var(--rojo);} .dot-GRIS{background:#bbb;}
+.panel{background:#fff;border:1px solid var(--borde);border-radius:8px;padding:14px;margin-bottom:18px;}
+.panel h3{margin:0 0 10px;font-size:14px;color:var(--azul-principal);}
+.filters-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;}
+.filters-grid label{font-size:11px;font-weight:600;display:block;margin-bottom:3px;color:#555;}
+.filters-grid select{width:100%;font-size:12px;padding:5px;border-radius:5px;border:1px solid var(--borde);}
+.msel{position:relative;}
+.msel-btn{width:100%;text-align:left;font-size:12px;padding:6px 8px;border-radius:5px;border:1px solid var(--borde);background:#fff;cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--gris-texto);}
+.msel-btn:hover{border-color:var(--azul-principal);}
+.msel-btn .caret{font-size:9px;color:#999;margin-left:6px;}
+.msel-panel{position:absolute;top:calc(100% + 4px);left:0;min-width:100%;width:max-content;max-width:280px;background:#fff;border:1px solid var(--borde);border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.12);z-index:50;max-height:240px;overflow-y:auto;padding:6px 0;}
+.msel-actions{padding:4px 10px 6px;font-size:11px;border-bottom:1px solid #eee;margin-bottom:4px;}
+.msel-actions a{color:var(--azul-principal);cursor:pointer;text-decoration:underline;}
+.msel-option{display:flex;align-items:center;gap:6px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap;}
+.msel-option:hover{background:#f2f6fa;}
+.msel-option input{margin:0;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{background:var(--azul-oscuro);color:#fff;padding:7px 8px;text-align:right;position:sticky;top:0;font-size:11.5px;white-space:nowrap;}
+th.left,td.left{text-align:left;}
+td{padding:6px 8px;text-align:right;border-bottom:1px solid #eef1f4;white-space:nowrap;}
+tr.row-area{background:var(--gris-sub);font-weight:700;cursor:pointer;}
+tr.row-total{background:var(--azul-principal);color:#fff;font-weight:700;}
+tr.row-total td{border-bottom-color:var(--azul-principal);}
+tr.row-total .txt-VERDE{color:#8BE28B;}
+tr.row-total .txt-AMARILLO{color:#FFD98A;}
+tr.row-total .txt-ROJO{color:#FF9B9B;}
+tr.row-total .txt-GRIS{color:#cfd8e3;}
+tr.row-concepto:hover, tr.row-data:hover{background:#f7fafc;}
+.txt-VERDE{color:var(--verde);font-weight:600;} .txt-AMARILLO{color:#9c6f00;font-weight:600;} .txt-ROJO{color:var(--rojo);font-weight:600;} .txt-GRIS{color:#8a8a8a;}
+.expand-icon{display:inline-block;width:14px;}
+.table-scroll{overflow-x:auto;max-height:520px;overflow-y:auto;}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.chart-box{background:#fff;border:1px solid var(--borde);border-radius:8px;padding:12px;}
+.chart-box h4{margin:0 0 8px;font-size:13px;color:var(--azul-principal);}
+.chart-box .chart-wrap{position:relative;height:320px;width:100%;}
+canvas{max-height:100%;}
+.var-box-l{border-left:2px solid #000 !important;}
+.var-box-r{border-right:2px solid #000 !important;}
+.badge{padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:700;}
+.badge-VERDE{background:var(--verde-claro);color:#1c6b1c;}
+.badge-AMARILLO{background:#fff6dc;color:#8a6d00;}
+.badge-ROJO{background:var(--rojo-claro);color:#a12b2b;}
+.badge-GRIS{background:#eee;color:#666;}
+.search-bar{display:flex;gap:8px;margin-bottom:10px;}
+.search-bar input{flex:1;padding:6px 10px;border:1px solid var(--borde);border-radius:6px;font-size:12.5px;}
+.pagination{display:flex;gap:6px;align-items:center;margin-top:10px;font-size:12px;justify-content:flex-end;}
+.severity-Crítico{color:#a12b2b;font-weight:700;}
+.severity-Advertencia{color:#8a6d00;font-weight:700;}
+.severity-Informativo{color:#00537A;font-weight:700;}
+.empty-state{padding:40px;text-align:center;color:#999;font-size:13px;}
+.small-note{font-size:11px;color:#888;margin-top:6px;}
+.sortable{cursor:pointer;}
+.sortable:after{content:' ⇅';opacity:.5;font-size:9px;}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <h1>Control Presupuestal Supply Chain</h1>
+  <p>Seguimiento de gastos reales vs presupuesto inicial, presupuesto ajustado y presupuesto disponible</p>
+</header>
 
+<div class="toolbar">
+  <span id="statusPill" class="status-pill status-demo">Datos: Demo</span>
+  <span id="fileInfo" style="font-size:11.5px;color:#666;">Sin archivo cargado</span>
+  <span style="flex:1"></span>
+  <span id="timeFilterControls" style="display:flex;gap:8px;align-items:center;"></span>
+  <label style="font-size:11px;font-weight:600;color:#555;">Moneda:</label>
+  <select id="currencySelect" onchange="App.setDisplayCurrency(this.value)" style="font-size:12px;padding:5px 8px;border-radius:5px;border:1px solid var(--borde);">
+    <option value="USD" selected>USD (US$)</option>
+    <option value="PEN">PEN (S/)</option>
+  </select>
+  <label class="btn" for="fileUpload">Cargar Excel</label>
+  <input type="file" id="fileUpload" accept=".xlsx,.xls" />
+  <button class="btn secondary" onclick="App.resetToDemo()">Volver a Demo</button>
+  <button class="btn secondary" onclick="App.exportExcel()">Descargar Excel</button>
+  <button class="btn secondary" onclick="App.exportCsvCurrentView()">Descargar CSV (vista actual)</button>
+  <button class="btn ghost" onclick="App.clearFilters()">Limpiar filtros</button>
+</div>
+<div class="note">Los análisis que involucran SIPRE se realizan a nivel <b>Sociedad + Centro de costo + Cuenta contable</b>, debido a que SIPRE no contiene proyecto asignado por fila. La moneda base de todas las comparativas es <b>USD</b>: Ppto V0 y REALES BI ya llegan en USD; SIPRE llega en PEN y se convierte con su propio tipo de cambio (USD = Monto original / TC). El selector de moneda solo cambia cómo se muestran los montos. El selector <b>Año / Mes de corte / Periodo</b> recalcula todas las métricas: <b>YTD</b> = Enero hasta el mes de corte, <b>YTG</b> = mes de corte+1 hasta Diciembre, <b>Full Year</b> = año completo. Solo se incluyen filas marcadas "SI" en <b>INCLUIDO EN PPTO V0</b> (SIPRE y REALES BI).</div>
+
+<div class="tabs" id="tabs"></div>
+<div class="container" id="viewContainer"></div>
+
+<script>
+/* =========================================================================
+   CONTROL PRESUPUESTAL SUPPLY CHAIN
+   App autónoma (sin backend). Lógica basada en el prompt maestro provisto.
+   ========================================================================= */
+
+/* ---------------------- 1. UTILIDADES GENERALES ---------------------- */
+
+function stripAccents(s){
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+// TIPO_CAMBIO: Ppto V0 llega en USD; SIPRE y REALES BI llegan en PEN. Todas las
+// comparativas se hacen en PEN (moneda base), convirtiendo Ppto V0 con esta tasa.
+// Moneda base de todas las comparativas: USD. Ppto V0 y REALES BI ya llegan en USD.
+// SIPRE (y cualquier otra fuente) puede llegar en otra moneda; se convierte con su
+// propio tipo de cambio (columna TC): USD = Valor en moneda original / TC.
+var TIPO_CAMBIO_USD_PEN = 3.4; // referencia de respaldo solo para el toggle de visualización
+
+// convertToUsd(): aplica división por TC cuando la moneda de origen no es USD.
+function convertToUsd(monto, moneda, tc){
+  var m = normalizeText(moneda);
+  if(!m || m==='USD') return monto;
+  var rate = parseAmount(tc);
+  if(!rate) return monto; // sin TC disponible: no se puede convertir, se deja tal cual (se flagea en calidad de datos)
+  return monto/rate;
+}
+function normalizeText(s){
+  if(s===null||s===undefined) return '';
+  return stripAccents(String(s)).toUpperCase().trim().replace(/\s+/g,' ');
+}
+function formatNumber(n){
+  if(n===null||n===undefined||isNaN(n)) return '-';
+  return Math.round(n).toLocaleString('es-PE');
+}
+// formatMoney(): los montos se calculan y almacenan siempre en PEN (moneda base
+// de comparación). Esta función solo cambia cómo se MUESTRAN, convirtiendo a USD
+// si el usuario eligió ver el dashboard en dólares.
+function formatMoney(nUsd){
+  if(nUsd===null||nUsd===undefined||isNaN(nUsd)) return '-';
+  var cur = (typeof App!=='undefined' && App.state.displayCurrency) || 'USD';
+  if(cur==='PEN'){
+    return 'S/ '+formatNumber(nUsd*TIPO_CAMBIO_USD_PEN);
+  }
+  return 'US$ '+formatNumber(nUsd);
+}
+function formatPercent(n, decimals){
+  if(n===null||n===undefined||isNaN(n)) return '-';
+  decimals = decimals===undefined?1:decimals;
+  return (n*100).toFixed(decimals)+'%';
+}
+function safeDiv(numerator, denom){
+  if(denom===0||denom===null||denom===undefined) return null;
+  return numerator/denom;
+}
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+// CECO_CODE_PATTERN: los códigos reales de centro de costo tienen forma alfanumérica
+// (ej. "21L00401"). Si el valor no calza con ese patrón, se asume que en realidad
+// es el nombre del Área/Gerencia (algunos archivos usan la columna "CECO" para eso).
+var CECO_CODE_PATTERN = /^[0-9]+[A-Z]+[0-9]+$/i;
+function splitCecoOrArea(raw){
+  if(raw===null||raw===undefined||raw==='') return {ceco:null, area:null};
+  var s = String(raw).replace(/[\u00A0\uFEFF]/g,' ').trim();
+  if(!s) return {ceco:null, area:null};
+  if(CECO_CODE_PATTERN.test(s.replace(/\s+/g,''))) return {ceco:s, area:null};
+  return {ceco:null, area:s};
+}
+
+// sumMonthColumns(): si la hoja no trae una columna Total/Monto, suma las columnas
+// mensuales (ENE..DIC) presentes en la fila.
+function sumMonthColumns(row){
+  var total = 0, found = false;
+  ['M01','M02','M03','M04','M05','M06','M07','M08','M09','M10','M11','M12'].forEach(function(k){
+    if(row[k]!==undefined && row[k]!==null && row[k]!==''){ total += parseAmount(row[k]); found = true; }
+  });
+  return found ? total : null;
+}
+
+function parseAmount(v){
+  if(typeof v === 'number') return v;
+  if(v===null||v===undefined) return 0;
+  var raw = String(v).trim();
+  if(raw==='') return 0;
+  var neg = false;
+  if(/^\(.*\)$/.test(raw)){ neg = true; raw = raw.slice(1,-1); }
+  if(/^-/.test(raw)) neg = true;
+  raw = raw.replace(/[^0-9.,-]/g,'');
+  raw = raw.replace(/^-/,'');
+  if(raw.includes(',') && raw.includes('.')){
+    if(raw.lastIndexOf(',') > raw.lastIndexOf('.')){
+      raw = raw.replace(/\./g,'').replace(',', '.');
+    } else {
+      raw = raw.replace(/,/g,'');
+    }
+  } else if(raw.includes(',')){
+    var parts = raw.split(',');
+    if(parts.length>1 && parts[parts.length-1].length===3){
+      raw = raw.replace(/,/g,'');
+    } else {
+      raw = raw.replace(',', '.');
+    }
+  }
+  var num = parseFloat(raw);
+  if(isNaN(num)) return 0;
+  return neg ? -Math.abs(num) : num;
+}
+function download(filename, blob){
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function toCsv(headers, rows){
+  var lines = [headers.join(',')];
+  rows.forEach(function(r){
+    lines.push(r.map(function(v){
+      if(v===null||v===undefined) return '';
+      var s = String(v);
+      if(s.includes(',')||s.includes('"')||s.includes('\n')){ s = '"'+s.replace(/"/g,'""')+'"'; }
+      return s;
+    }).join(','));
+  });
+  return lines.join('\n');
+}
+
+/* ---------------------- 2. NORMALIZACIÓN DE COLUMNAS ---------------------- */
+
+// normalizeColumnName(): homologa encabezados variables del Excel a campos canónicos
+// HEADER_ALIASES: mapeos exactos para encabezados reales que no siguen el patrón
+// genérico (abreviaturas propias del archivo del cliente, ej. "CC" = Cuenta contable,
+// "Soc.CO (SOC_CO)" = Sociedad, "Cod_Proy" = Proyecto, etc.)
+var HEADER_ALIASES = {
+  'SOC': 'SOCIEDAD',
+  'SOC CO SOC_CO': 'SOCIEDAD',
+  'CC': 'CUENTA',
+  'COD_PROY': 'PROYECTO',
+  'NOMBRE DEL PROY PLAN': 'NOMBRE_PROYECTO',
+  'GRUPO_PROY': 'GRUPO_PROYECTO',
+  'DUENO DEL PROYECTO': 'AREA',
+  'GASTOS ASUMIDOS POR': 'PAIS',
+  'SUBGRUPOS DE GASTOS': 'CONCEPTO',
+  'DESCRIPCION GASTO': 'DESCRIPCION',
+  'NOMBRE DE LA EMPRESA': 'NOMBRE_SOCIEDAD',
+  'DESC_SOCIEDAD': 'NOMBRE_SOCIEDAD',
+  'DESC_CUENTA': 'NOMBRE_CUENTA',
+  'DESC_GRUPO_DRE': 'DESC_GRUPO_CUENTA',
+  'DESC_ SUBGRUPO DE GASTOS EST': 'SUBGRUPO_GASTOS_EST',
+  'DES_GASTO_EST': 'GASTO_EST',
+  'COD_SUBGRUPO_CUENTA': 'SUBGRUPO_CUENTA',
+  'GRUPO_CUENTA': 'GRUPO_CUENTA',
+  'PROYECTO O PLAN DE ACCION': 'FLAG_TIPO_PROYECTO',
+  'COD AGRUPACION PROYECTO': 'COD_AGRUPACION_PROYECTO',
+  'EJERCICIO GJAHR': 'ANIO',
+  'ANO': 'ANIO',
+  'GRUPO DE CUENTA': 'GRUPO_CUENTA',
+  'CONCAT_SOCIEDAD_CECO': 'CONCAT_SOC_CECO',
+  'CONCAT_SOCIEDAD_CUENTA': 'CONCAT_SOC_CUENTA',
+  'INCLUIDO EN PPTO V0': 'INCLUIDO_PPTO_V0',
+  // Columnas mensuales (REALES BI usa abreviaturas ENE..DIC; SIPRE usa nombres completos)
+  'ENE':'M01', 'FEB':'M02', 'MAR':'M03', 'ABR':'M04', 'MAY':'M05', 'JUN':'M06',
+  'JUL':'M07', 'AGO':'M08', 'SEP':'M09', 'OCT':'M10', 'NOV':'M11', 'DIC':'M12',
+  'ENERO FIX_VAL_PER01':'M01', 'FEBRERO FIX_VAL_PER02':'M02', 'MARZO FIX_VAL_PER03':'M03',
+  'ABRIL FIX_VAL_PER04':'M04', 'MAYO FIX_VAL_PER05':'M05', 'JUNIO FIX_VAL_PER06':'M06',
+  'JULIO FIX_VAL_PER07':'M07', 'AGOSTO FIX_VAL_PER08':'M08', 'SEPTIEMBRE FIX_VAL_PER09':'M09',
+  'OCTUBRE FIX_VAL_PER10':'M10', 'NOVIEMBRE FIX_VAL_PER11':'M11', 'DICIEMBRE FIX_VAL_PER12':'M12'
+};
+
+var MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+var MONTH_NUMS = ['M01','M02','M03','M04','M05','M06','M07','M08','M09','M10','M11','M12'];
+
+// specialHeaderMatch(): reconoce por subcadena encabezados estilo Power BI/DAX
+// (con corchetes y prefijos de tabla) que no calzan con un alias exacto, por
+// ejemplo "Base_Cecos_Consolidado[Ce.coste (KOSTL_TEXT1)]" o "[Actual_KSB1]".
+function specialHeaderMatch(h){
+  if(h.indexOf('KOSTL_TEXT1')>=0) return 'CECO_AREA_TEXTO';
+  if(h.indexOf('DESCRIPCION CUENTA')>=0) return 'NOMBRE_CUENTA';
+  if(h.indexOf('TEXTO DE POSICION')>=0) return 'GLOSA';
+  if(h.indexOf('NUMERO DE DOCUMENTO')>=0) return 'DOCUMENTO';
+  if(h.indexOf('MESABREVIADO')>=0) return 'MES_ABREV';
+  if(h.indexOf('MESN')>=0) return 'MES_NUM';
+  if(h.indexOf('ACTUAL_KSB1')>=0) return 'MONTO';
+  return null;
+}
+
+function normalizeColumnName(header){
+  var raw = String(header||'');
+  var h = normalizeText(raw).replace(/[().?:/\[\]]/g,' ').replace(/\s+/g,' ').trim();
+  if(HEADER_ALIASES[h]) return HEADER_ALIASES[h];
+  var special = specialHeaderMatch(h);
+  if(special) return special;
+  var isConceptoSipre = /CONCEPTO/.test(h) && (raw.indexOf('(')>=0 || /CONCEPTO SIPRE/.test(h) || /TIPO CONCEPTO/.test(h));
+  if(isConceptoSipre) return 'CONCEPTO_SIPRE';
+  if(/CONCEPTO/.test(h)) return 'CONCEPTO';
+  if(/CENTRO DE COST|CECO/.test(h)){
+    if(/NOMBRE/.test(h)) return 'NOMBRE_CECO';
+    return 'CECO';
+  }
+  if(/CUENTA/.test(h)){
+    if(/NOMBRE/.test(h)) return 'NOMBRE_CUENTA';
+    return 'CUENTA';
+  }
+  if(/AGRUPACION.*PROYECT/.test(h)) return 'AGRUPACION_PROYECTO';
+  if(/PROYECTO/.test(h)){
+    if(/NOMBRE/.test(h)) return 'NOMBRE_PROYECTO';
+    return 'PROYECTO';
+  }
+  if(/SOCIEDAD/.test(h)){
+    if(/NOMBRE/.test(h)) return 'NOMBRE_SOCIEDAD';
+    return 'SOCIEDAD';
+  }
+  if(/^PAIS$|PAIS/.test(h)) return 'PAIS';
+  if(/SUB\s?AREA/.test(h)) return 'SUBAREA';
+  if(/AREA|GERENCIA/.test(h)) return 'AREA';
+  if(/RESPONSABLE/.test(h)) return 'RESPONSABLE';
+  if(/PERIODO/.test(h)) return 'PERIODO';
+  if(/^MES/.test(h)) return 'MES';
+  if(/FECHA/.test(h)) return 'FECHA';
+  if(/CODIGO SOCIEDAD/.test(h)) return 'SOCIEDAD';
+  if(/CODIGO PROYECTO/.test(h)) return 'PROYECTO';
+  if(/CODIGO AGRUPACION/.test(h)) return 'AGRUPACION_PROYECTO';
+  if(/MONTO|IMPORTE|VALOR|TOTAL/.test(h)) return 'MONTO';
+  if(/ESTADO/.test(h)) return 'ESTADO_PROYECTO';
+  if(/PROVEEDOR/.test(h)) return 'PROVEEDOR';
+  if(/DOCUMENTO/.test(h)) return 'DOCUMENTO';
+  if(/GLOSA|TEXTO/.test(h)) return 'GLOSA';
+  if(/USUARIO/.test(h)) return 'USUARIO';
+  return h.replace(/\s+/g,'_');
+}
+
+// detectHeaderRowIndex(): busca en las primeras filas cuál realmente contiene los
+// encabezados de columna, para no desalinear datos cuando el Excel trae filas de
+// título, encabezados combinados o filas en blanco antes de la tabla real.
+function detectHeaderRowIndex(aoa){
+  var maxScore = -1, idx = 0;
+  var scanLimit = Math.min(8, aoa.length);
+  for(var i=0;i<scanLimit;i++){
+    var row = aoa[i]||[];
+    var score = 0;
+    row.forEach(function(cell){
+      var t = normalizeText(cell);
+      if(!t) return;
+      if(/SOCIEDAD|CUENTA|CECO|CENTRO DE COST|PROYECTO|CONCEPTO|MONTO|IMPORTE|VALOR|^AREA$|AREA|PERIODO|^MES$|FECHA|RESPONSABLE/.test(t)) score++;
+    });
+    if(score>maxScore){ maxScore = score; idx = i; }
+  }
+  return idx;
+}
+
+// sheetToNormalizedRows(): convierte una hoja a filas con campos canónicos,
+// detectando automáticamente la fila de encabezado real.
+// cleanCellValue(): limpia espacios no separables (NBSP), BOM y espacios duplicados
+// en valores de texto provenientes del Excel, para evitar duplicados como
+// "Área X" vs "Área X " (con espacio invisible al final).
+function cleanCellValue(v){
+  if(typeof v !== 'string') return v;
+  return v.replace(/[\u00A0\uFEFF]/g,' ').replace(/\s+/g,' ').trim();
+}
+
+function sheetToNormalizedRows(sheet){
+  var aoa = XLSX.utils.sheet_to_json(sheet, {header:1, raw:true, defval:null});
+  if(aoa.length===0) return {rows:[], headerMap:{}, rawHeaders:[], monthYears:{}};
+  var headerIdx = detectHeaderRowIndex(aoa);
+  var rawHeaderCells = aoa[headerIdx]||[];
+  var map = {};
+  var rawHeaders = [];
+  var monthYears = {};
+  rawHeaderCells.forEach(function(hCell){
+    var canonical, label;
+    if(hCell instanceof Date && !isNaN(hCell.getTime())){
+      var m = hCell.getMonth()+1;
+      canonical = 'M'+(m<10?'0'+m:m);
+      monthYears[canonical] = hCell.getFullYear();
+      label = MONTH_NAMES[m-1]+' '+hCell.getFullYear();
+    } else {
+      label = hCell===null||hCell===undefined?'':String(hCell).trim();
+      canonical = label ? normalizeColumnName(label) : '';
+    }
+    rawHeaders.push(label);
+    if(label) map[label] = canonical;
+  });
+  var rows = [];
+  for(var i=headerIdx+1;i<aoa.length;i++){
+    var arr = aoa[i];
+    if(!arr || arr.every(function(c){ return c===null||c===undefined||c===''; })) continue;
+    var out = {};
+    rawHeaders.forEach(function(h, colIdx){
+      if(h) out[map[h]] = cleanCellValue(arr[colIdx]!==undefined ? arr[colIdx] : null);
+    });
+    rows.push(out);
+  }
+  return {rows: rows, headerMap: map, rawHeaders: rawHeaders, monthYears: monthYears};
+}
+
+function findSheetName(workbook, patterns){
+  var names = workbook.SheetNames;
+  for(var i=0;i<names.length;i++){
+    var n = normalizeText(names[i]);
+    for(var j=0;j<patterns.length;j++){
+      if(n.indexOf(patterns[j])>=0) return names[i];
+    }
+  }
+  return null;
+}
+
+// detectSheetNames(): localiza las 8 pestañas esperadas de forma tolerante
+function detectSheetNames(workbook){
+  return {
+    maestroSociedades: findSheetName(workbook, ['MAESTRO SOCIEDAD']),
+    maestroCuentas: findSheetName(workbook, ['MAESTRO CUENTA']),
+    maestroGrupoCuentas: findSheetName(workbook, ['MAESTRO GRUPO CUENTA']),
+    maestroAgrupacion: findSheetName(workbook, ['MAESTRO AGRUPACION']),
+    maestroProyectos: findSheetName(workbook, ['MAESTRO PROYECTO']),
+    maestroCeco: findSheetName(workbook, ['MAESTRO CECO']),
+    pptoV0: findSheetName(workbook, ['PPTO V0','PRESUPUESTO V0']),
+    sipre: findSheetName(workbook, ['SIPRE']),
+    realesBiCorp: findSheetName(workbook, ['REALES BI CORP']),
+    realesBiPais: findSheetName(workbook, ['REALES BI PA']), // cubre 'PAÍS'/'PAIS' sin depender del acento
+    realesBi: findSheetName(workbook, ['REALES BI','REALES','REAL BI']) // formato antiguo (una sola pestaña), respaldo
+  };
+}
+
+/* ---------------------- 3. CLASIFICACIÓN CONCEPTO SIPRE ---------------------- */
+
+// classifySipreConcept(): heurística para separar ajustado / disponible / futuro / otro
+// classifySipreConcept(): heurística para separar ajustado / disponible / comprometido /
+// real (propio de SIPRE) / futuro / otro, cubriendo tanto nombres genéricos como las
+// categorías reales observadas en archivos de SIPRE ("Presupuesto", "Disponible",
+// "Comprometido", "Traslados", "Real").
+function classifySipreConcept(value){
+  var t = normalizeText(value);
+  if(!t) return 'OTRO';
+  if(/DISPON/.test(t)) return 'DISPONIBLE';
+  if(/PROXIM|FUTUR|SIGUIENT/.test(t)) return 'FUTURO';
+  if(/COMPROMETID/.test(t)) return 'COMPROMETIDO';
+  if(/^REAL$/.test(t)) return 'REAL_SIPRE';
+  if(/PRESUPUESTO|TRASLAD|ACTUAL|AJUST|VIGENT/.test(t)) return 'AJUSTADO';
+  return 'OTRO';
+}
+
+/* ---------------------- 4. DATOS DEMO ---------------------- */
+
+var DEMO_SOCIEDADES = [
+  {id:'PE01', pais:'Perú', nombre:'Operaciones Perú'},
+  {id:'CO01', pais:'Colombia', nombre:'Operaciones Colombia'},
+  {id:'MX01', pais:'México', nombre:'Operaciones México'}
+];
+var DEMO_AREAS = [
+  {area:'Compras', cecos:[{id:'CC-100',nombre:'Compras Corporativas'},{id:'CC-101',nombre:'Compras Locales'}]},
+  {area:'Excelencia Operacional', cecos:[{id:'CC-200',nombre:'Excelencia Operacional'}]},
+  {area:'Planeamiento y Logística', cecos:[{id:'CC-300',nombre:'Planeamiento'},{id:'CC-301',nombre:'Logística'}]},
+  {area:'Supply Chain', cecos:[{id:'CC-400',nombre:'Dirección Supply Chain'}]}
+];
+var DEMO_CONCEPTOS = [
+  {concepto:'Asesorías', cuenta:'61010', grupo:'Servicios Profesionales'},
+  {concepto:'Capacitación', cuenta:'61020', grupo:'Gastos de Personal'},
+  {concepto:'Licencias', cuenta:'61030', grupo:'Tecnología'},
+  {concepto:'Viajes', cuenta:'61040', grupo:'Gastos de Viaje'},
+  {concepto:'Suscripción', cuenta:'61050', grupo:'Tecnología'},
+  {concepto:'Equipos', cuenta:'61060', grupo:'Activos y Equipos'},
+  {concepto:'Otros gastos', cuenta:'61070', grupo:'Gastos Generales'},
+  {concepto:'Otros administrativos', cuenta:'61080', grupo:'Gastos Generales'}
+];
+var DEMO_PROYECTOS = [
+  {id:'PRY-01', nombre:'Digitalización S&OP', agrup:'Transformación Digital'},
+  {id:'PRY-02', nombre:'Optimización Almacenes', agrup:'Excelencia Operacional 2026'},
+  {id:'PRY-03', nombre:'Expansión CD Norte', agrup:'Expansión Regional'}
+];
+var DEMO_MESES_FULL = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07','2026-08','2026-09','2026-10','2026-11','2026-12'];
+var DEMO_MESES_YTD = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'];
+
+function buildDemoData(){
+  var rnd = mulberry32(42);
+  var records = [];
+  var pptoV0ByKey = {}; // key sociedad|ceco|cuenta -> sum (año completo)
+  var realByKey = {}; // key sociedad|ceco|cuenta -> sum (YTD, meses con actuales)
+
+  DEMO_SOCIEDADES.forEach(function(soc, si){
+    DEMO_AREAS.forEach(function(areaDef, ai){
+      areaDef.cecos.forEach(function(ceco, ci){
+        // pick 4-6 conceptos per ceco deterministically
+        var nConceptos = 4 + Math.floor(rnd()*3);
+        var conceptosSel = DEMO_CONCEPTOS.slice(0, nConceptos);
+        conceptosSel.forEach(function(cDef){
+          DEMO_MESES_FULL.forEach(function(periodo, mi){
+            var mesNum = mi+1;
+            var base = 3000 + rnd()*9000;
+            var pptoV0 = Math.round(base * (0.7+rnd()*0.6));
+            var asignaProyecto = rnd() < 0.55;
+            var proyDef = asignaProyecto ? DEMO_PROYECTOS[Math.floor(rnd()*DEMO_PROYECTOS.length)] : null;
+
+            records.push({
+              source:'PPTO_V0', sociedad:soc.id, pais:soc.pais, area:areaDef.area, subarea:null,
+              concepto:cDef.concepto, conceptoSipre:null, cuenta:cDef.cuenta, nombreCuenta:cDef.concepto+' - Cuenta '+cDef.cuenta, grupoCuenta:cDef.grupo,
+              ceco:ceco.id, nombreCeco:ceco.nombre,
+              proyecto: proyDef?proyDef.id:null, nombreProyecto: proyDef?proyDef.nombre:null,
+              agrupacionProyecto: proyDef?proyDef.agrup:null,
+              responsable:'Resp. '+ceco.id, periodo:periodo, mes:mesNum, anio:2026, fecha:periodo+'-01',
+              monto: pptoV0, montoOriginal: pptoV0, monedaOriginal:'PEN'
+            });
+
+            var key = soc.id+'|'+ceco.id+'|'+cDef.cuenta;
+            pptoV0ByKey[key] = (pptoV0ByKey[key]||0) + pptoV0;
+
+            // Solo hay ejecución real para los meses ya transcurridos (YTD)
+            if(mesNum <= DEMO_MESES_YTD.length){
+              var factorEjec = 0.55 + rnd()*0.85; // 0.55 - 1.40 -> genera sobre y sub ejecución
+              var real = Math.round(pptoV0 * factorEjec);
+              records.push({
+                source:'REALES_BI', sociedad:soc.id, pais:soc.pais, area:areaDef.area, subarea:null,
+                concepto:cDef.concepto, conceptoSipre:null, cuenta:cDef.cuenta, nombreCuenta:cDef.concepto+' - Cuenta '+cDef.cuenta, grupoCuenta:cDef.grupo,
+                ceco:ceco.id, nombreCeco:ceco.nombre,
+                proyecto: proyDef?proyDef.id:null, nombreProyecto: proyDef?proyDef.nombre:null,
+                agrupacionProyecto: proyDef?proyDef.agrup:null,
+                responsable:'Resp. '+ceco.id, periodo:periodo, mes:mesNum, anio:2026, fecha:periodo+'-'+(10+mi),
+                monto: real, montoOriginal: real, monedaOriginal:'PEN',
+                proveedor:'Proveedor '+(1+Math.floor(rnd()*20)), documento:'DOC-'+(10000+Math.floor(rnd()*9000))
+              });
+              realByKey[key] = (realByKey[key]||0) + real;
+            }
+          });
+        });
+      });
+    });
+  });
+
+  // Generar SIPRE a nivel Sociedad+CECO+Cuenta (sin proyecto), distribuido en los 12 meses
+  Object.keys(pptoV0ByKey).forEach(function(key){
+    var parts = key.split('|');
+    var socId = parts[0], cecoId = parts[1], cuenta = parts[2];
+    var socDef = DEMO_SOCIEDADES.filter(function(s){return s.id===socId;})[0];
+    var areaDef, cecoDef, cDef;
+    DEMO_AREAS.forEach(function(a){ a.cecos.forEach(function(c){ if(c.id===cecoId){ areaDef=a; cecoDef=c; } }); });
+    DEMO_CONCEPTOS.forEach(function(c){ if(c.cuenta===cuenta) cDef=c; });
+    if(!areaDef||!cecoDef||!cDef) return;
+
+    var pptoV0Sum = pptoV0ByKey[key];
+    var realSum = realByKey[key]||0;
+    var ajustadoAnual = Math.round(pptoV0Sum * (0.85 + rnd()*0.45));
+    var disponibleRawAnual = ajustadoAnual - realSum*(0.75+rnd()*0.3);
+    var disponibleAnual = Math.round(Math.max(disponibleRawAnual, ajustadoAnual*-0.15));
+
+    DEMO_MESES_FULL.forEach(function(periodo, mi){
+      var mesNum = mi+1;
+      records.push({
+        source:'SIPRE', sociedad:socId, pais:socDef.pais, area:areaDef.area, subarea:null,
+        concepto:cDef.concepto, conceptoSipre:'PRESUPUESTO ACTUALIZADO', cuenta:cuenta, nombreCuenta:cDef.concepto+' - Cuenta '+cuenta, grupoCuenta:cDef.grupo,
+        ceco:cecoId, nombreCeco:cecoDef.nombre, proyecto:null, nombreProyecto:null, agrupacionProyecto:null,
+        responsable:'Resp. '+cecoId, periodo:periodo, mes:mesNum, anio:2026, fecha:periodo+'-28',
+        monto: Math.round(ajustadoAnual/12), montoOriginal: Math.round(ajustadoAnual/12), monedaOriginal:'PEN'
+      });
+      records.push({
+        source:'SIPRE', sociedad:socId, pais:socDef.pais, area:areaDef.area, subarea:null,
+        concepto:cDef.concepto, conceptoSipre:'PRESUPUESTO DISPONIBLE', cuenta:cuenta, nombreCuenta:cDef.concepto+' - Cuenta '+cuenta, grupoCuenta:cDef.grupo,
+        ceco:cecoId, nombreCeco:cecoDef.nombre, proyecto:null, nombreProyecto:null, agrupacionProyecto:null,
+        responsable:'Resp. '+cecoId, periodo:periodo, mes:mesNum, anio:2026, fecha:periodo+'-28',
+        monto: Math.round(disponibleAnual/12), montoOriginal: Math.round(disponibleAnual/12), monedaOriginal:'PEN'
+      });
+      if(rnd()<0.3){
+        records.push({
+          source:'SIPRE', sociedad:socId, pais:socDef.pais, area:areaDef.area, subarea:null,
+          concepto:cDef.concepto, conceptoSipre:'PRESUPUESTO PROXIMOS MESES', cuenta:cuenta, nombreCuenta:cDef.concepto+' - Cuenta '+cuenta, grupoCuenta:cDef.grupo,
+          ceco:cecoId, nombreCeco:cecoDef.nombre, proyecto:null, nombreProyecto:null, agrupacionProyecto:null,
+          responsable:'Resp. '+cecoId, periodo:periodo, mes:mesNum, anio:2026, fecha:periodo+'-28',
+          monto: Math.round(ajustadoAnual*0.15*rnd()/12), montoOriginal: Math.round(ajustadoAnual*0.15*rnd()/12), monedaOriginal:'PEN'
+        });
+      }
+    });
+  });
+
+  return records;
+}
+
+/* ---------------------- 5. CARGA Y PROCESAMIENTO DE EXCEL REAL ---------------------- */
+
+function buildMasterIndex(rows, keyFields){
+  var idx = {};
+  rows.forEach(function(r){
+    var key = keyFields.map(function(f){ return normalizeText(r[f]); }).join('|');
+    idx[key] = r;
+  });
+  return idx;
+}
+
+function parseWorkbookToRecords(workbook){
+  var sheetNames = detectSheetNames(workbook);
+  var warnings = [];
+  var required = ['pptoV0','sipre','realesBi'];
+  required.forEach(function(k){
+    if(!sheetNames[k]) warnings.push({tipo:'Falta pestaña requerida: '+k, severidad:'Crítico'});
+  });
+  ['maestroSociedades','maestroCuentas','maestroAgrupacion','maestroProyectos','maestroCeco'].forEach(function(k){
+    if(!sheetNames[k]) warnings.push({tipo:'No se encontró la pestaña maestra: '+k, severidad:'Advertencia'});
+  });
+
+  var columnMappings = {};
+  var monthYearsGlobal = {};
+  function getRows(name, diagKey){
+    if(!name) return [];
+    var parsed = sheetToNormalizedRows(workbook.Sheets[name]);
+    if(diagKey) columnMappings[diagKey] = {sheet:name, map: parsed.headerMap};
+    if(parsed.monthYears){
+      Object.keys(parsed.monthYears).forEach(function(k){ if(!monthYearsGlobal[k]) monthYearsGlobal[k] = parsed.monthYears[k]; });
+    }
+    return parsed.rows;
+  }
+
+  var mCeco = getRows(sheetNames.maestroCeco);
+  var mCuentas = getRows(sheetNames.maestroCuentas);
+  var mProyectos = getRows(sheetNames.maestroProyectos);
+  var mAgrupacion = getRows(sheetNames.maestroAgrupacion);
+  var mSociedades = getRows(sheetNames.maestroSociedades);
+
+  var sociedadNombreIdx = {};
+  var sociedadPorAbrevIdx = {}; // clave SOC_ABREV -> {codigo, nombre}, para resolver "Gastos asumidos por?"
+  mSociedades.forEach(function(r){
+    if(r.SOCIEDAD) sociedadNombreIdx[normalizeText(r.SOCIEDAD)] = r.NOMBRE_SOCIEDAD || r.SOCIEDAD;
+    if(r.SOC_ABREV) sociedadPorAbrevIdx[normalizeText(r.SOC_ABREV)] = {codigo:r.SOCIEDAD, nombre:r.NOMBRE_SOCIEDAD};
+  });
+
+  var cecoIdx = {}; // key SOCIEDAD|CECO -> {area, nombreCeco, subarea, responsable}
+  mCeco.forEach(function(r){
+    var key = normalizeText(r.SOCIEDAD)+'|'+normalizeText(r.CECO);
+    cecoIdx[key] = r;
+    cecoIdx['|'+normalizeText(r.CECO)] = r; // fallback sin sociedad
+  });
+  var cuentaIdx = {};
+  var grupoPorDescCuentaIdx = {}; // clave Sociedad+DESC_CUENTA -> GRUPO_CUENTA real del maestro
+  mCuentas.forEach(function(r){
+    var key = normalizeText(r.SOCIEDAD)+'|'+normalizeText(r.CUENTA);
+    cuentaIdx[key] = r;
+    cuentaIdx['|'+normalizeText(r.CUENTA)] = r;
+    if(r.NOMBRE_CUENTA && r.GRUPO_CUENTA){
+      var keyDesc = normalizeText(r.SOCIEDAD)+'|'+normalizeText(r.NOMBRE_CUENTA);
+      grupoPorDescCuentaIdx[keyDesc] = {grupoCuenta:r.GRUPO_CUENTA, subgrupoGastosEst:r.SUBGRUPO_GASTOS_EST||null, gastoEst:r.GASTO_EST||null};
+    }
+  });
+  var proyectoIdx = {};
+  mProyectos.forEach(function(r){ proyectoIdx[normalizeText(r.PROYECTO)] = r; });
+  var agrupacionIdx = {};
+  mAgrupacion.forEach(function(r){ agrupacionIdx[normalizeText(r.AGRUPACION_PROYECTO)] = r; });
+  var sociedadIdx = {};
+  mSociedades.forEach(function(r){ sociedadIdx[normalizeText(r.SOCIEDAD)] = r; });
+
+  // lookupSociedadFuzzy(): además del match exacto, prueba código+'01' (ej. 'BR' -> 'BR01'),
+  // patrón usado en el maestro de sociedades para operaciones por país.
+  function lookupSociedadFuzzy(idx, code){
+    if(!idx || code===null || code===undefined) return null;
+    var key = normalizeText(code);
+    if(idx[key]) return idx[key];
+    if(key.length<=3 && idx[key+'01']) return idx[key+'01'];
+    return null;
+  }
+
+  // cuentaConceptoFromPptoIdx: algunas hojas de REALES BI / SIPRE no traen una columna
+  // de concepto propia; se resuelve usando el concepto que sí trae Ppto V0 para la misma
+  // combinación Sociedad+Cuenta.
+  var cuentaConceptoFromPptoIdx = {};
+
+  // resolveMonto(): usa la columna de monto/total si existe; si no, suma columnas
+  // mensuales (ENE..DIC) presentes en la fila.
+  function resolveMonto(r){
+    if(r.MONTO!==undefined && r.MONTO!==null && r.MONTO!==''){ return parseAmount(r.MONTO); }
+    var s = sumMonthColumns(r);
+    return s!==null ? s : 0;
+  }
+
+  function enrich(rec){
+    if(!rec.area){
+      var key1 = normalizeText(rec.sociedad)+'|'+normalizeText(rec.ceco);
+      var found = cecoIdx[key1] || cecoIdx['|'+normalizeText(rec.ceco)];
+      if(found){ rec.area = found.AREA || rec.area; rec.subarea = found.SUBAREA||rec.subarea; rec.nombreCeco = found.NOMBRE_CECO||rec.nombreCeco; }
+    }
+    if(!rec.concepto || !rec.nombreCuenta || !rec.grupoCuenta || !rec.subgrupoGastosEst || !rec.gastoEst){
+      var key2 = normalizeText(rec.sociedad)+'|'+normalizeText(rec.cuenta);
+      var fromPpto = cuentaConceptoFromPptoIdx[key2];
+      var foundC = cuentaIdx[key2];
+      if(!rec.concepto) rec.concepto = fromPpto || (foundC && foundC.CONCEPTO) || rec.concepto;
+      if(!rec.nombreCuenta && foundC) rec.nombreCuenta = foundC.NOMBRE_CUENTA;
+      if(!rec.grupoCuenta && foundC){
+        rec.grupoCuenta = foundC.DESC_GRUPO_CUENTA || foundC.GRUPO_CUENTA ||
+          (foundC.SUBGRUPO_CUENTA ? ('Subgrupo '+foundC.SUBGRUPO_CUENTA) : null);
+      }
+      if(!rec.subgrupoGastosEst && foundC && foundC.SUBGRUPO_GASTOS_EST) rec.subgrupoGastosEst = foundC.SUBGRUPO_GASTOS_EST;
+      if(!rec.gastoEst && foundC && foundC.GASTO_EST) rec.gastoEst = foundC.GASTO_EST;
+    }
+    if(rec.proyecto && !rec.agrupacionProyecto){
+      var foundP = proyectoIdx[normalizeText(rec.proyecto)];
+      if(foundP){ rec.agrupacionProyecto = foundP.AGRUPACION_PROYECTO||rec.agrupacionProyecto; rec.nombreProyecto = foundP.NOMBRE_PROYECTO||rec.nombreProyecto; }
+    }
+    if(!rec.pais){
+      var foundS = lookupSociedadFuzzy(sociedadIdx, rec.sociedad);
+      if(foundS) rec.pais = foundS.PAIS;
+    }
+    rec.area = rec.area || 'SIN ÁREA';
+    rec.concepto = rec.concepto || 'SIN CONCEPTO';
+    rec.ceco = rec.ceco || 'SIN CECO';
+    rec.sociedad = rec.sociedad || 'SIN SOCIEDAD';
+    rec.agrupacionProyecto = rec.agrupacionProyecto || (rec.proyecto ? 'SIN AGRUPACIÓN' : null);
+    rec.nombreCuenta = rec.nombreCuenta || (rec.cuenta ? ('Cuenta '+rec.cuenta+' (sin descripción en maestro)') : 'SIN DESCRIPCIÓN');
+    rec.grupoCuenta = rec.grupoCuenta || 'SIN AGRUPACIÓN';
+    rec.subgrupoGastosEst = rec.subgrupoGastosEst || rec.grupoCuenta;
+    rec.gastoEst = rec.gastoEst || rec.grupoCuenta;
+    return rec;
+  }
+
+  // unpivotMonths(): convierte una fila con columnas M01..M12 en un registro por cada
+  // mes presente, para poder filtrar luego por Año + YTD/YTG/Full Year.
+  function unpivotMonths(baseRec, row, year, currencyMultiplier){
+    var out = [];
+    currencyMultiplier = currencyMultiplier || 1;
+    MONTH_NUMS.forEach(function(key, idx){
+      if(row[key]===undefined || row[key]===null || row[key]==='') return;
+      var mesNum = idx+1;
+      var montoOriginal = parseAmount(row[key]);
+      var copy = {};
+      for(var f in baseRec) copy[f] = baseRec[f];
+      copy.mes = mesNum;
+      copy.anio = year;
+      copy.periodo = year+'-'+(mesNum<10?'0'+mesNum:mesNum);
+      copy.montoOriginal = montoOriginal;
+      copy.monto = montoOriginal*currencyMultiplier;
+      out.push(copy);
+    });
+    return out;
+  }
+
+  var records = [];
+
+  var pptoV0Rows = getRows(sheetNames.pptoV0, 'Ppto V0');
+  // Año fiscal: se detecta a partir de las columnas de fecha (meses) de Ppto V0;
+  // si no se detecta ninguna, usa el año actual como respaldo.
+  var FISCAL_YEAR = (function(){
+    var vals = Object.keys(monthYearsGlobal).map(function(k){ return monthYearsGlobal[k]; });
+    return vals.length ? vals[0] : new Date().getFullYear();
+  })();
+
+// derivarCecoDesdeProyecto(): en PPTO V0, "Cod_Proy" es en realidad una llave compuesta
+// "{COD_CECO}-{sufijo de proyecto}" (ej. "21L00402-PG4"). El prefijo antes del guion
+// coincide exactamente con los códigos de "0 MAESTRO CeCo", así que se usa para darle a
+// PPTO V0 un CECO real (antes no lo tenía, solo el área en texto).
+function derivarCecoDesdeProyecto(proyecto){
+  if(!proyecto) return null;
+  var prefix = String(proyecto).split('-')[0];
+  return CECO_CODE_PATTERN.test(prefix) ? prefix : null;
+}
+
+  pptoV0Rows.forEach(function(r){
+    // Filas de pie de tabla (ej. "Total USD" / "Total PEN") sin ninguna dimensión real:
+    // no son transacciones, se excluyen para no inflar los totales.
+    if(!r.SOCIEDAD && !r.CECO && !r.PROYECTO) return;
+    var cecoInfo = splitCecoOrArea(r.CECO);
+    var cecoDesdeProyecto = derivarCecoDesdeProyecto(r.PROYECTO);
+    if(cecoDesdeProyecto) cecoInfo.ceco = cecoDesdeProyecto;
+    var base = enrich({
+      source:'PPTO_V0', sociedad:r.SOCIEDAD, pais:r.PAIS, area:r.AREA||cecoInfo.area, subarea:r.SUBAREA,
+      concepto:r.CONCEPTO, conceptoSipre:null, cuenta:r.CUENTA, nombreCuenta:r.NOMBRE_CUENTA,
+      ceco:cecoInfo.ceco, nombreCeco:r.NOMBRE_CECO, proyecto: r.PROYECTO || null, nombreProyecto:r.NOMBRE_PROYECTO,
+      agrupacionProyecto:r.AGRUPACION_PROYECTO, codAgrupacionProyecto:r.COD_AGRUPACION_PROYECTO, responsable:r.RESPONSABLE, fecha:r.FECHA, monedaOriginal:'USD'
+    });
+    if(!base.proyecto) base.proyecto = 'SIN PROYECTO';
+    if(base.concepto && base.concepto!=='SIN CONCEPTO'){
+      var ck = normalizeText(base.sociedad)+'|'+normalizeText(base.cuenta);
+      if(!cuentaConceptoFromPptoIdx[ck]) cuentaConceptoFromPptoIdx[ck] = base.concepto;
+      var ck2 = '|'+normalizeText(base.cuenta);
+      if(!cuentaConceptoFromPptoIdx[ck2]) cuentaConceptoFromPptoIdx[ck2] = base.concepto;
+    }
+    var monthly = unpivotMonths(base, r, FISCAL_YEAR, 1);
+    if(monthly.length===0){
+      // Respaldo: no se detectaron columnas mensuales, se usa el Total de la fila.
+      var montoUsd = resolveMonto(r);
+      var rec = {}; for(var f in base) rec[f]=base[f];
+      rec.mes = null; rec.anio = null; rec.periodo = null;
+      rec.montoOriginal = montoUsd; rec.monto = montoUsd;
+      records.push(rec);
+    } else {
+      monthly.forEach(function(rec){ records.push(rec); });
+    }
+  });
+
+  var realesBiExcluidosNoIncluido = 0;
+
+  // processRealesBiRow(): procesa una fila de REALES BI CORP o PAÍS (formato nuevo,
+  // ya transaccional: una fila = un mes, sin necesidad de "unpivot").
+  function processRealesBiRow(r){
+    if(normalizeText(r.INCLUIDO_PPTO_V0)!=='SI'){ realesBiExcluidosNoIncluido++; return; }
+    if(!r.SOCIEDAD && !r.CECO) return;
+    var moneda = r.MONEDA || 'USD';
+    var montoOriginal = parseAmount(r.MONTO);
+    var montoUsd = convertToUsd(montoOriginal, moneda, r.TC);
+    var mesNum = r.MES_NUM!=null ? parseInt(r.MES_NUM,10) : null;
+    var anioNum = r.ANIO!=null ? parseInt(r.ANIO,10) : FISCAL_YEAR;
+    // En REALES BI CORP/PAÍS, las columnas "COD AGRUPACIÓN PROYECTO" y "AGRUPACIÓN PROYECTO"
+    // vienen con los valores invertidos (el código está bajo el encabezado del nombre y
+    // viceversa); se corrige aquí para que calcen con la convención de PPTO V0.
+    // "GRUPO DE CUENTA" en REALES BI suele ser en realidad la descripción de cuenta (no una
+    // agrupación real). Se intenta resolver la agrupación real del maestro cruzando por
+    // Sociedad + Descripción de Cuenta; si no hay match, se usa el valor crudo como respaldo.
+    var resuelto = grupoPorDescCuentaIdx[normalizeText(r.SOCIEDAD)+'|'+normalizeText(r.NOMBRE_CUENTA)];
+    var base = enrich({
+      source:'REALES_BI', sociedad:r.SOCIEDAD, pais:r.PAIS, area:null, subarea:null,
+      concepto:null, conceptoSipre:null, cuenta:null, nombreCuenta:r.NOMBRE_CUENTA,
+      grupoCuenta: (resuelto && resuelto.grupoCuenta) || r.GRUPO_CUENTA || null,
+      subgrupoGastosEst: (resuelto && resuelto.subgrupoGastosEst) || null,
+      gastoEst: (resuelto && resuelto.gastoEst) || null,
+      ceco:r.CECO, nombreCeco:null, proyecto:null, nombreProyecto:null,
+      agrupacionProyecto: r.COD_AGRUPACION_PROYECTO||null, codAgrupacionProyecto: r.AGRUPACION_PROYECTO||null,
+      responsable:null, fecha:null, monedaOriginal:moneda,
+      proveedor:null, documento:r.DOCUMENTO, glosa:r.GLOSA
+    });
+    if((base.area==='SIN ÁREA'||!base.area) && r.CECO_AREA_TEXTO) base.area = r.CECO_AREA_TEXTO;
+    base.proyecto = 'SIN PROYECTO';
+    base.mes = mesNum; base.anio = anioNum;
+    base.periodo = (mesNum && anioNum) ? (anioNum+'-'+(mesNum<10?'0'+mesNum:mesNum)) : null;
+    base.montoOriginal = montoOriginal;
+    base.monto = montoUsd;
+    records.push(base);
+  }
+
+  if(sheetNames.realesBiCorp || sheetNames.realesBiPais){
+    getRows(sheetNames.realesBiCorp, 'REALES BI CORP').forEach(processRealesBiRow);
+    getRows(sheetNames.realesBiPais, 'REALES BI PAÍS').forEach(processRealesBiRow);
+  } else {
+    // Formato antiguo (una sola pestaña "REALES BI", ancha por mes) — respaldo.
+    getRows(sheetNames.realesBi, 'REALES BI').forEach(function(r){
+      if(!r.SOCIEDAD && !r.CECO && !r.PROYECTO) return;
+      var cecoInfo = splitCecoOrArea(r.CECO);
+      var base = enrich({
+        source:'REALES_BI', sociedad:r.SOCIEDAD, pais:r.PAIS, area:r.AREA||cecoInfo.area, subarea:r.SUBAREA,
+        concepto:r.CONCEPTO, conceptoSipre:null, cuenta:r.CUENTA, nombreCuenta:r.NOMBRE_CUENTA,
+        ceco:cecoInfo.ceco, nombreCeco:r.NOMBRE_CECO, proyecto: r.PROYECTO || null, nombreProyecto:r.NOMBRE_PROYECTO,
+        agrupacionProyecto:r.AGRUPACION_PROYECTO, codAgrupacionProyecto:r.COD_AGRUPACION_PROYECTO, responsable:r.RESPONSABLE, fecha:r.FECHA, monedaOriginal:r.MONEDA||'USD',
+        proveedor:r.PROVEEDOR, documento:r.DOCUMENTO
+      });
+      if(!base.proyecto) base.proyecto = 'SIN PROYECTO';
+      var year = r.ANIO || FISCAL_YEAR;
+      var monthly = unpivotMonths(base, r, year, 1);
+      if(monthly.length===0){
+        var montoOriginal = resolveMonto(r);
+        var rec = {}; for(var f in base) rec[f]=base[f];
+        rec.mes = null; rec.anio = null; rec.periodo = null;
+        rec.montoOriginal = montoOriginal; rec.monto = montoOriginal;
+        records.push(rec);
+      } else {
+        monthly.forEach(function(rec){ records.push(rec); });
+      }
+    });
+  }
+
+  var sipreExcluidosNoIncluido = 0;
+  var sipreSinTC = 0;
+  getRows(sheetNames.sipre, 'SIPRE').forEach(function(r){
+    if(!r.SOCIEDAD && !r.CECO) return;
+    if(normalizeText(r.INCLUIDO_PPTO_V0)!=='SI'){ sipreExcluidosNoIncluido++; return; }
+    var cecoInfo = splitCecoOrArea(r.CECO);
+    var moneda = r.MONEDA || 'PEN';
+    var esUsd = normalizeText(moneda)==='USD';
+    if(!esUsd && !r.TC) sipreSinTC++;
+    var multiplicador = esUsd ? 1 : (r.TC ? (1/parseAmount(r.TC)) : 1);
+    var base = enrich({
+      source:'SIPRE', sociedad:r.SOCIEDAD, pais:r.PAIS, area:r.AREA||cecoInfo.area, subarea:r.SUBAREA,
+      concepto:r.CONCEPTO, conceptoSipre:r.CONCEPTO_SIPRE || 'SIN CONCEPTO SIPRE', cuenta:r.CUENTA, nombreCuenta:r.NOMBRE_CUENTA,
+      ceco:cecoInfo.ceco, nombreCeco:r.NOMBRE_CECO, proyecto: null, nombreProyecto:null,
+      agrupacionProyecto:null, responsable:r.RESPONSABLE, fecha:r.FECHA, monedaOriginal:moneda
+    });
+    var year = r.ANIO || FISCAL_YEAR;
+    var monthly = unpivotMonths(base, r, year, multiplicador);
+    if(monthly.length===0){
+      var montoOriginal = resolveMonto(r);
+      var rec = {}; for(var f in base) rec[f]=base[f];
+      rec.mes = null; rec.anio = null; rec.periodo = null;
+      rec.montoOriginal = montoOriginal; rec.monto = montoOriginal*multiplicador;
+      records.push(rec);
+    } else {
+      // SIPRE nunca lleva proyecto, permitido
+      monthly.forEach(function(rec){ records.push(rec); });
+    }
+  });
+
+  // Normalización final de agrupaciones de cuenta: el mismo texto puede llegar con o sin
+  // tildes según la fuente (maestro vs. REALES BI); se unifica bajo una sola etiqueta por
+  // grupo (accent-insensitive) para no fragmentar las tablas ni los filtros.
+  function canonicalizarCampo(fieldName){
+    var canon = {};
+    records.forEach(function(rec){
+      if(!rec[fieldName]) return;
+      var key = normalizeText(rec[fieldName]);
+      var actual = canon[key];
+      var esMejor = !actual || (/[^\x00-\x7F]/.test(rec[fieldName]) && !/[^\x00-\x7F]/.test(actual)) || rec[fieldName].length > actual.length;
+      if(esMejor) canon[key] = rec[fieldName];
+    });
+    records.forEach(function(rec){
+      if(rec[fieldName]) rec[fieldName] = canon[normalizeText(rec[fieldName])];
+    });
+  }
+  canonicalizarCampo('grupoCuenta');
+  canonicalizarCampo('subgrupoGastosEst');
+  canonicalizarCampo('gastoEst');
+
+  // Si un registro de REALES BI no tiene CECO (no cruza con el maestro), su "Área" queda
+  // como el texto crudo del BI, que suele venir truncado (ej. "Gerencia Supply Chai") y no
+  // calza con el Área real de Ppto V0 para el mismo proyecto — fragmentando el mismo
+  // proyecto en varias filas de "Dueño del Proyecto". Se hereda el Área desde Ppto V0
+  // usando la Agrupación de Proyecto como puente.
+  var areaPorAgrupacionProyecto = {};
+  records.forEach(function(rec){
+    if(rec.source==='PPTO_V0' && rec.codAgrupacionProyecto && rec.area && rec.area!=='SIN ÁREA'){
+      var keyAP = normalizeText(rec.sociedad)+'|'+normalizeText(rec.codAgrupacionProyecto);
+      if(!areaPorAgrupacionProyecto[keyAP]) areaPorAgrupacionProyecto[keyAP] = rec.area;
+    }
+  });
+  records.forEach(function(rec){
+    if(rec.source==='REALES_BI' && rec.ceco==='SIN CECO' && rec.codAgrupacionProyecto){
+      var keyAP2 = normalizeText(rec.sociedad)+'|'+normalizeText(rec.codAgrupacionProyecto);
+      var areaHeredada = areaPorAgrupacionProyecto[keyAP2];
+      if(areaHeredada) rec.area = areaHeredada;
+    }
+  });
+
+  return {records: records, warnings: warnings, sheetNames: sheetNames, columnMappings: columnMappings, masters:{sociedadNombre: sociedadNombreIdx, sociedadPorAbrev: sociedadPorAbrevIdx},
+    stats: {sipreExcluidosNoIncluido: sipreExcluidosNoIncluido, sipreSinTC: sipreSinTC, realesBiExcluidosNoIncluido: realesBiExcluidosNoIncluido}};
+}
+
+/* ---------------------- 6. AGREGACIÓN Y MÉTRICAS ---------------------- */
+
+function sipreBucketAmount(rec){
+  var bucket = classifySipreConcept(rec.conceptoSipre);
+  return bucket;
+}
+
+// aggregate(): agrupa registros por llave y acumula montos por métrica
+function aggregate(records, keyFn){
+  var map = {};
+  records.forEach(function(rec){
+    var key = keyFn(rec);
+    if(!map[key]){
+      map[key] = {key:key, pptoV0:0, realYtd:0, ajustado:0, disponible:0, futuro:0, comprometidoSipre:0, realSipre:0, otro:0, sample:rec};
+    }
+    var g = map[key];
+    if(rec.source==='PPTO_V0') g.pptoV0 += rec.monto;
+    else if(rec.source==='REALES_BI') g.realYtd += rec.monto;
+    else if(rec.source==='SIPRE'){
+      var bucket = sipreBucketAmount(rec);
+      if(bucket==='AJUSTADO') g.ajustado += rec.monto;
+      else if(bucket==='DISPONIBLE') g.disponible += rec.monto;
+      else if(bucket==='FUTURO') g.futuro += rec.monto;
+      else if(bucket==='COMPROMETIDO') g.comprometidoSipre += rec.monto;
+      else if(bucket==='REAL_SIPRE') g.realSipre += rec.monto;
+      else g.otro += rec.monto; // categoría SIPRE no reconocida: se mantiene aparte, no distorsiona ajustado/disponible
+    }
+  });
+  return map;
+}
+
+// Ratios de cumplimiento (% ejecución): <90% rojo, 90%-95% ámbar, >95% verde.
+function getTrafficLightExecV0(pct){
+  if(pct===null) return 'GRIS';
+  if(pct<0.90) return 'ROJO';
+  if(pct<0.95) return 'AMARILLO';
+  return 'VERDE';
+}
+function getTrafficLightAdherencia(idx){
+  if(idx===null) return 'GRIS';
+  if(idx>=0.95 && idx<=1.05) return 'VERDE';
+  if((idx>=0.90&&idx<0.95)||(idx>1.05&&idx<=1.10)) return 'AMARILLO';
+  return 'ROJO';
+}
+function getTrafficLightDisponibilidad(pct){
+  if(pct===null) return 'GRIS';
+  if(pct>=0.25) return 'VERDE';
+  if(pct>=0.10) return 'AMARILLO';
+  return 'ROJO';
+}
+function getTrafficLightExecSipre(pct){
+  if(pct===null) return 'GRIS';
+  if(pct<0.90) return 'ROJO';
+  if(pct<0.95) return 'AMARILLO';
+  return 'VERDE';
+}
+
+function buildSummaryRow(g){
+  var pptoV0=g.pptoV0, realYtd=g.realYtd, ajustado=g.ajustado, disponible=g.disponible;
+  var varV0Real = realYtd - pptoV0;
+  var pctVarV0Real = safeDiv(varV0Real, pptoV0);
+  var pctEjecV0 = safeDiv(realYtd, pptoV0);
+  var saldoV0 = pptoV0 - realYtd;
+
+  var varV0Ajustado = ajustado - pptoV0;
+  var pctVarV0Ajustado = safeDiv(varV0Ajustado, pptoV0);
+  var indiceAdherencia = safeDiv(ajustado, pptoV0);
+
+  var varRealAjustado = realYtd - ajustado;
+  var pctVarRealAjustado = safeDiv(varRealAjustado, ajustado);
+  var pctEjecAjustado = safeDiv(realYtd, ajustado);
+  var saldoAjustado = ajustado - realYtd;
+  var pctDisponible = safeDiv(disponible, ajustado);
+  var comprometido = ajustado - disponible;
+
+  var estadoV0 = (pptoV0===0 && realYtd>0) ? 'ROJO' : getTrafficLightExecV0(pctEjecV0);
+  var estadoAjustado = (ajustado===0 && realYtd>0) ? 'ROJO' : getTrafficLightExecSipre(pctEjecAjustado);
+  var estadoAdherencia = getTrafficLightAdherencia(indiceAdherencia);
+  var estadoDisponibilidad = getTrafficLightDisponibilidad(pctDisponible);
+
+  var validacion = 'Sin movimiento';
+  if(ajustado>0 && realYtd>0){
+    validacion = realYtd>ajustado ? 'Real excede SIPRE' : 'OK';
+  } else if(ajustado===0 && realYtd>0){ validacion = 'Real sin SIPRE'; }
+  else if(ajustado>0 && realYtd===0){ validacion = 'SIPRE sin real'; }
+
+  return {
+    pptoV0:pptoV0, realYtd:realYtd, pptoAjustadoSipre:ajustado, pptoDisponibleSipre:disponible,
+    pptoComprometidoSipreCategoria: g.comprometidoSipre||0, pptoRealSipreCategoria: g.realSipre||0,
+    varPptoV0VsReal:varV0Real, pctVarPptoV0VsReal:pctVarV0Real, pctEjecucionVsPptoV0:pctEjecV0, saldoVsPptoV0:saldoV0,
+    varPptoV0VsPptoAjustadoSipre:varV0Ajustado, pctVarPptoV0VsPptoAjustadoSipre:pctVarV0Ajustado, indiceAdherencia:indiceAdherencia,
+    varRealVsPptoAjustadoSipre:varRealAjustado, pctVarRealVsPptoAjustadoSipre:pctVarRealAjustado, pctEjecucionVsSipre:pctEjecAjustado,
+    saldoDisponibleVsSipre:saldoAjustado, pctDisponibleSipre:pctDisponible, comprometido:comprometido,
+    estadoV0:estadoV0, estadoAjustado:estadoAjustado, estadoAdherencia:estadoAdherencia, estadoDisponibilidad:estadoDisponibilidad,
+    validacion:validacion
+  };
+}
+
+/* ---------------------- 7. ESTADO GLOBAL DE LA APP ---------------------- */
+
+var App = {
+  state:{
+    records: [],
+    source: 'demo',
+    fileName: null,
+    loadedAt: null,
+    warnings: [],
+    filters:{sociedad:[], area:[], grupoCuenta:[], nombreCuenta:[], cuenta:[], ceco:[], proyecto:[], agrupacionProyecto:[], conceptoSipre:[], pais:[]},
+    activeTab: 'dashboard',
+    detailSearch:'', detailPage:1, detailSort:null, detailSortDir:1,
+    matrixExpanded:{}, // clave de grupo -> true/false si el usuario la tocó individualmente
+    tableLevelCap:{}, // tabla -> nivel máximo expandido (null = todo expandido por defecto)
+    masters:{sociedadNombre:{}, sociedadPorAbrev:{}},
+    columnMappings:{},
+    parseStats:{},
+    openFilterField: null,
+    displayCurrency: 'USD',
+    timeFilter: {anio:null, mesCorte:6, modo:'YTD'}
+  },
+
+  setDisplayCurrency:function(cur){
+    this.state.displayCurrency = cur;
+    this.render();
+  },
+
+  setTimeFilter:function(key, value){
+    this.state.timeFilter[key] = (key==='modo') ? value : parseInt(value,10);
+    this.render();
+  },
+
+  // toggleGroup(): expande/colapsa un grupo de subtotal (por clave única) en cualquier tabla.
+  // isGroupExpanded(): un override individual (clic en una fila puntual) siempre manda;
+  // si no hay override, se usa el "nivel máximo" configurado para esa tabla (por defecto,
+  // todo expandido).
+  isGroupExpanded:function(key, tableId, levelNum){
+    if(this.state.matrixExpanded[key]!==undefined) return this.state.matrixExpanded[key];
+    if(tableId && levelNum!=null){
+      var cap = this.state.tableLevelCap[tableId];
+      if(cap!=null) return levelNum<=cap;
+    }
+    return true;
+  },
+  toggleGroup:function(key){
+    this.state.matrixExpanded[key] = !this.isGroupExpanded(key);
+    this.render();
+  },
+  // setTableLevel(): expande hasta el nivel indicado y colapsa los más profundos, para una
+  // tabla completa (limpia los overrides individuales de esa tabla para que el nivel mande).
+  setTableLevel:function(tableId, level){
+    var self = this;
+    var cfg = TABLE_PREFIXES[tableId];
+    if(cfg) Object.keys(this.state.matrixExpanded).forEach(function(k){
+      if(cfg.prefixes.some(function(p){ return k.indexOf(p)===0; })) delete self.state.matrixExpanded[k];
+    });
+    this.state.tableLevelCap[tableId] = level;
+    this.render();
+  },
+  expandAllTable:function(tableId){ this.setTableLevel(tableId, 99); },
+  collapseAllTable:function(tableId){ this.setTableLevel(tableId, 0); },
+
+  // controlesExpandir(): botones "Expandir todo"/"Contraer todo" + selector de nivel,
+  // al estilo de una tabla dinámica de Excel, para una tabla específica.
+  controlesExpandir:function(tableId){
+    var cfg = TABLE_PREFIXES[tableId];
+    if(!cfg) return '';
+    var cap = this.state.tableLevelCap[tableId];
+    var opciones = '';
+    for(var i=1;i<=cfg.levels;i++){
+      opciones += '<option value="'+i+'" '+(cap===i?'selected':'')+'>Nivel '+i+'</option>';
+    }
+    return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">'+
+      '<button class="btn ghost" style="font-size:11px;padding:4px 10px;" onclick="App.expandAllTable(\''+tableId+'\')">Expandir todo</button>'+
+      '<button class="btn ghost" style="font-size:11px;padding:4px 10px;" onclick="App.collapseAllTable(\''+tableId+'\')">Contraer todo</button>'+
+      '<label style="font-size:11px;color:#666;">Expandir hasta:</label>'+
+      '<select style="font-size:11px;padding:3px 6px;border-radius:5px;border:1px solid var(--borde);" onchange="App.setTableLevel(\''+tableId+'\', parseInt(this.value,10))">'+
+      '<option value="99" '+(cap==null||cap>=99?'selected':'')+'>Todo</option>'+opciones+'</select>'+
+      '</div>';
+  },
+
+  // Años disponibles en los datos cargados (para poblar el selector de Año)
+  availableYears:function(){
+    var set = {};
+    this.state.records.forEach(function(r){ if(r.anio!=null) set[r.anio]=true; });
+    var years = Object.keys(set).map(Number).sort(function(a,b){return a-b;});
+    return years.length ? years : [new Date().getFullYear()];
+  },
+
+  renderTimeFilterControls:function(){
+    var years = this.availableYears();
+    if(this.state.timeFilter.anio===null || years.indexOf(this.state.timeFilter.anio)===-1){
+      this.state.timeFilter.anio = years[years.length-1];
+    }
+    var tf = this.state.timeFilter;
+    var html = '';
+    html += '<label style="font-size:11px;font-weight:600;color:#555;">Año:</label>';
+    html += '<select onchange="App.setTimeFilter(\'anio\', this.value)" style="font-size:12px;padding:5px 8px;border-radius:5px;border:1px solid var(--borde);">'+
+      years.map(function(y){ return '<option value="'+y+'" '+(y===tf.anio?'selected':'')+'>'+y+'</option>'; }).join('')+'</select>';
+    html += '<label style="font-size:11px;font-weight:600;color:#555;">Mes de corte:</label>';
+    html += '<select onchange="App.setTimeFilter(\'mesCorte\', this.value)" style="font-size:12px;padding:5px 8px;border-radius:5px;border:1px solid var(--borde);">'+
+      MONTH_NAMES.map(function(name,i){ var m=i+1; return '<option value="'+m+'" '+(m===tf.mesCorte?'selected':'')+'>'+name+'</option>'; }).join('')+'</select>';
+    html += '<label style="font-size:11px;font-weight:600;color:#555;">Periodo:</label>';
+    html += '<select onchange="App.setTimeFilter(\'modo\', this.value)" style="font-size:12px;padding:5px 8px;border-radius:5px;border:1px solid var(--borde);">'+
+      [['YTD','YTD (Año a la fecha)'],['YTG','YTG (Resto del año)'],['FY','Full Year (Año completo)']].map(function(o){
+        return '<option value="'+o[0]+'" '+(o[0]===tf.modo?'selected':'')+'>'+o[1]+'</option>';
+      }).join('')+'</select>';
+    document.getElementById('timeFilterControls').innerHTML = html;
+  },
+
+  demoSociedadNombreIdx:function(){
+    var idx = {};
+    DEMO_SOCIEDADES.forEach(function(s){ idx[normalizeText(s.id)] = s.nombre; });
+    return idx;
+  },
+
+  init:function(){
+    this.state.records = buildDemoData();
+    this.state.source = 'demo';
+    this.state.masters = {sociedadNombre: this.demoSociedadNombreIdx(), sociedadPorAbrev:{}};
+    this.renderTabs();
+    this.render();
+    document.getElementById('fileUpload').addEventListener('change', this.handleFileUpload.bind(this));
+    document.addEventListener('click', function(e){
+      if(!e.target.closest('.msel') && App.state.openFilterField){
+        App.state.openFilterField = null;
+        App.render();
+      }
+    });
+  },
+
+  resetToDemo:function(){
+    this.state.records = buildDemoData();
+    this.state.source = 'demo';
+    this.state.masters = {sociedadNombre: this.demoSociedadNombreIdx(), sociedadPorAbrev:{}};
+    this.state.columnMappings = {};
+    this.state.parseStats = {};
+    this.state.fileName = null; this.state.loadedAt = null; this.state.warnings=[];
+    this.state.filters = {sociedad:[], area:[], grupoCuenta:[], nombreCuenta:[], cuenta:[], ceco:[], proyecto:[], agrupacionProyecto:[], conceptoSipre:[], pais:[]};
+    document.getElementById('fileUpload').value = '';
+    this.render();
+  },
+
+  handleFileUpload:function(ev){
+    var file = ev.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    var self = this;
+    reader.onload = function(e){
+      try{
+        var data = new Uint8Array(e.target.result);
+        var workbook = XLSX.read(data, {type:'array', cellDates:true});
+        var result = parseWorkbookToRecords(workbook);
+        if(result.records.length===0){
+          alert('No se pudo procesar el archivo porque falta Ppto V0, SIPRE o REALES BI, o las pestañas están vacías.');
+          return;
+        }
+        self.state.records = result.records;
+        self.state.warnings = result.warnings;
+        self.state.source = 'archivo';
+        self.state.fileName = file.name;
+        self.state.loadedAt = new Date().toLocaleString('es-PE');
+        self.state.masters = result.masters || {sociedadNombre:{}, sociedadPorAbrev:{}};
+        self.state.columnMappings = result.columnMappings || {};
+        self.state.parseStats = result.stats || {};
+        self.state.filters = {sociedad:[], area:[], grupoCuenta:[], nombreCuenta:[], cuenta:[], ceco:[], proyecto:[], agrupacionProyecto:[], conceptoSipre:[], pais:[]};
+        self.render();
+      }catch(err){
+        alert('Error al leer el archivo Excel: '+err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  },
+
+  clearFilters:function(){
+    this.state.filters = {sociedad:[], area:[], grupoCuenta:[], nombreCuenta:[], cuenta:[], ceco:[], proyecto:[], agrupacionProyecto:[], conceptoSipre:[], pais:[]};
+    this.render();
+  },
+
+  setFilter:function(field, values){
+    this.state.filters[field] = values;
+    this.render();
+  },
+
+  getFilteredRecords:function(){
+    var f = this.state.filters;
+    var tf = this.state.timeFilter;
+    // inFilter(): los checkboxes de filtro siempre guardan strings (atributo value de HTML),
+    // pero campos como Sociedad o Cuenta pueden venir como número crudo de Excel (ej. 2100).
+    // Sin esta conversión a texto, la comparación estricta nunca calzaba para valores numéricos
+    // y el filtro de Sociedad quedaba "roto" en silencio para todo lo que no fuera texto (ej. 'A100').
+    function inFilter(arr, val){ return arr.length===0 || arr.indexOf(String(val))>=0; }
+    return this.state.records.filter(function(r){
+      var dimMatch = inFilter(f.sociedad, r.sociedad) && inFilter(f.area, r.area) && inFilter(f.grupoCuenta, r.grupoCuenta) && inFilter(f.nombreCuenta, r.nombreCuenta) &&
+             inFilter(f.cuenta, r.cuenta) && inFilter(f.ceco, r.ceco) &&
+             (r.proyecto? inFilter(f.proyecto, r.proyecto) : (f.proyecto.length===0)) &&
+             (r.agrupacionProyecto? inFilter(f.agrupacionProyecto, r.agrupacionProyecto) : (f.agrupacionProyecto.length===0)) &&
+             (r.conceptoSipre? inFilter(f.conceptoSipre, r.conceptoSipre) : true) &&
+             (r.pais? inFilter(f.pais, r.pais) : (f.pais.length===0));
+      if(!dimMatch) return false;
+      // Registros sin quiebre mensual (respaldo cuando no hay columnas de mes en el archivo)
+      // siempre se incluyen, para no perder información.
+      if(r.anio==null || r.mes==null) return true;
+      if(tf.anio!=null && r.anio!==tf.anio) return false;
+      if(tf.modo==='YTD') return r.mes<=tf.mesCorte;
+      if(tf.modo==='YTG') return r.mes>tf.mesCorte;
+      return true; // FY: todo el año seleccionado
+    });
+  },
+
+  uniqueValues:function(field){
+    var set = {};
+    this.state.records.forEach(function(r){ if(r[field]) set[r[field]]=true; });
+    return Object.keys(set).sort();
+  },
+
+  setTab:function(tab){
+    this.state.activeTab = tab;
+    this.render();
+  },
+
+  render:function(){
+    this.renderStatusBar();
+    this.renderTimeFilterControls();
+    this.renderTabs();
+    var container = document.getElementById('viewContainer');
+    var tab = this.state.activeTab;
+    if(tab==='dashboard') container.innerHTML = Views.dashboard();
+    else if(tab==='proyecto') container.innerHTML = Views.proyecto();
+    else if(tab==='v0vssipre') container.innerHTML = Views.v0vssipre();
+    else if(tab==='sipredisponible') container.innerHTML = Views.sipreDisponible();
+    else if(tab==='sirevsreal') container.innerHTML = Views.sipreVsReal();
+    else if(tab==='detalle') container.innerHTML = Views.detalle();
+    else if(tab==='calidad') container.innerHTML = Views.calidad();
+    else if(tab==='glosario') container.innerHTML = Views.glosario();
+    // post-render hooks (charts, listeners)
+    if(tab==='dashboard') Views.dashboardPostRender();
+  },
+
+  renderStatusBar:function(){
+    var pill = document.getElementById('statusPill');
+    var info = document.getElementById('fileInfo');
+    if(this.state.source==='demo'){
+      pill.className='status-pill status-demo'; pill.textContent='Datos: Demo';
+      info.textContent = 'Los datos mostrados corresponden a información demo.';
+    } else {
+      pill.className='status-pill status-real'; pill.textContent='Datos: Archivo cargado';
+      info.textContent = this.state.fileName + ' · cargado '+this.state.loadedAt+' · '+this.state.records.length.toLocaleString('es-PE')+' registros';
+    }
+  },
+
+  renderTabs:function(){
+    var tabs = [
+      ['dashboard','Dashboard Ejecutivo'],
+      ['proyecto','Ppto V0 vs Real por Proyecto'],
+      ['v0vssipre','Ppto V0 vs Ppto VF'],
+      ['sipredisponible','Ppto Disponible VF'],
+      ['sirevsreal','Real vs Ppto VF / Disponible'],
+      ['detalle','Detalle Transaccional'],
+      ['calidad','Calidad de Datos'],
+      ['glosario','Glosario']
+    ];
+    var self = this;
+    document.getElementById('tabs').innerHTML = tabs.map(function(t){
+      return '<div class="tab '+(self.state.activeTab===t[0]?'active':'')+'" onclick="App.setTab(\''+t[0]+'\')">'+t[1]+'</div>';
+    }).join('');
+  },
+
+  exportExcel:function(){
+    var f = this.getFilteredRecords();
+    var wb = XLSX.utils.book_new();
+
+    // Resumen ejecutivo
+    var g = aggregate(f, function(){ return 'TOTAL'; });
+    var s = buildSummaryRow(g['TOTAL']||{pptoV0:0,realYtd:0,ajustado:0,disponible:0});
+    var resumen = [
+      ['Métrica','Valor'],
+      ['Nota', 'Todos los montos en USD. Fuentes que no llegan en USD (ej. SIPRE en PEN) se convierten con su propio tipo de cambio (USD = Monto original / TC).'],
+      ['Ppto V0', s.pptoV0], ['Real YTD', s.realYtd], ['Ppto VF', s.pptoAjustadoSipre],
+      ['Ppto Disponible VF', s.pptoDisponibleSipre], ['Saldo disponible vs SIPRE', s.saldoDisponibleVsSipre],
+      ['% Ejecución vs Ppto V0', s.pctEjecucionVsPptoV0], ['% Ejecución vs Ppto VF', s.pctEjecucionVsSipre],
+      ['Índice de adherencia', s.indiceAdherencia]
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'Resumen Ejecutivo');
+
+    // Matriz Área/Concepto
+    var matrixRows = Aggregations.matrixAreaConcepto(f).filter(function(r){
+      return r.s.pptoV0!==0 || r.s.realYtd!==0 || r.s.pptoAjustadoSipre!==0 || r.s.pptoDisponibleSipre!==0;
+    });
+    var matrixData = [['Área','Subgrupo de Gastos','Gasto','Ppto V0','Real YTD','Ppto VF','Ppto Disponible VF','VAR V0 vs Real','%VAR','VAR V0 vs VF','%VAR','VAR Real vs VF','%VAR']];
+    matrixRows.forEach(function(row){
+      matrixData.push([row.area, row.subgrupoGastosEst, row.gastoEst, row.s.pptoV0, row.s.realYtd, row.s.pptoAjustadoSipre, row.s.pptoDisponibleSipre,
+        row.s.varPptoV0VsReal, row.s.pctVarPptoV0VsReal, row.s.varPptoV0VsPptoAjustadoSipre, row.s.pctVarPptoV0VsPptoAjustadoSipre,
+        row.s.varRealVsPptoAjustadoSipre, row.s.pctVarRealVsPptoAjustadoSipre]);
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(matrixData), 'Matriz Presupuestal');
+
+    // Ppto V0 vs Real (con proyecto)
+    var v0real = Aggregations.v0vsRealRows(f);
+    var v0realData = [['Sociedad','Cód. Agrupación Proyecto','Agrupación Proyecto','CECO (código)','CECO (descripción)','Ppto V0','Real YTD','VAR','%VAR','%Ejecución','Saldo','Estado']];
+    v0real.forEach(function(r){ v0realData.push([r.sociedad,r.codAgrupacion,r.agrupacionProyecto,r.ceco,r.nombreCeco,r.s.pptoV0,r.s.realYtd,r.s.varPptoV0VsReal,r.s.pctVarPptoV0VsReal,r.s.pctEjecucionVsPptoV0,r.s.saldoVsPptoV0,r.s.estadoV0]); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(v0realData), 'Ppto V0 vs Real');
+
+    // Ppto V0 vs SIPRE
+    var v0sipre = Aggregations.v0vsSipreRows(f);
+    var v0sipreData = [['Área','Subgrupo de Gastos','Gasto','Ppto V0','Ppto VF','VAR','%VAR','Índice Adherencia','Estado']];
+    v0sipre.forEach(function(r){ v0sipreData.push([r.area,r.subgrupoGastosEst,r.gastoEst,r.s.pptoV0,r.s.pptoAjustadoSipre,r.s.varPptoV0VsPptoAjustadoSipre,r.s.pctVarPptoV0VsPptoAjustadoSipre,r.s.indiceAdherencia,r.s.estadoAdherencia]); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(v0sipreData), 'Ppto V0 vs SIPRE');
+
+    // SIPRE Disponible
+    var sipreDisp = Aggregations.sipreDisponibleRows(f);
+    var sipreDispData = [['Sociedad','Área','CECO','Cuenta','Ppto VF','Ppto Disponible VF','%Disponible','Estado']];
+    sipreDisp.forEach(function(r){ sipreDispData.push([r.sociedad,r.area,r.ceco,r.cuenta,r.s.pptoAjustadoSipre,r.s.pptoDisponibleSipre,r.s.pctDisponibleSipre,r.s.estadoDisponibilidad]); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sipreDispData), 'SIPRE Disponible');
+
+    // SIPRE vs Real
+    var sipreReal = Aggregations.sipreVsRealRows(f);
+    var sipreRealData = [['Sociedad','Área','Cuenta','CECO','Ppto VF','Ppto Disponible VF','%Disponible','Real YTD','VAR','%VAR','%Ejecución','Saldo','Validación']];
+    sipreReal.forEach(function(r){ sipreRealData.push([r.sociedad,r.area,r.cuenta,r.ceco,r.s.pptoAjustadoSipre,r.s.pptoDisponibleSipre,r.s.pctDisponibleSipre,r.s.realYtd,r.s.varRealVsPptoAjustadoSipre,r.s.pctVarRealVsPptoAjustadoSipre,r.s.pctEjecucionVsSipre,r.s.saldoDisponibleVsSipre,r.s.validacion]); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sipreRealData), 'SIPRE vs Real');
+
+    // Detalle consolidado
+    var detalleData = [['Fuente','Sociedad','Área','Concepto','Concepto SIPRE','Cuenta','CECO','Proyecto','Agrupación Proyecto','Periodo','Monto']];
+    f.forEach(function(r){ detalleData.push([r.source,r.sociedad,r.area,r.concepto,r.conceptoSipre,r.cuenta,r.ceco,r.proyecto,r.agrupacionProyecto,r.periodo,r.monto]); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detalleData), 'Detalle Consolidado');
+
+    // Calidad de datos
+    var dq = Aggregations.dataQuality(this.state.records, this.state.warnings, this.state.parseStats);
+    var dqData = [['Tipo Alerta','Fuente','Campo','Descripción','Cantidad Registros','Severidad']];
+    dq.forEach(function(r){ dqData.push([r.tipo, r.fuente, r.campo, r.descripcion, r.cantidad, r.severidad]); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dqData), 'Calidad de Datos');
+
+    // Ppto V0 vs Real por Agrupación de Proyecto
+    var porProyectoExp = Aggregations.v0vsRealPorProyecto(f);
+    var porProyectoData = [['Cód. Agrupación Proyecto','Agrupación Proyecto','Dueño del Proyecto','Ppto V0','Real YTD','VAR','%VAR','%Ejecución','Saldo']];
+    porProyectoExp.forEach(function(r){ porProyectoData.push([r.codAgrupacion,r.agrupacionProyecto,r.duenoProyecto,r.s.pptoV0,r.s.realYtd,r.s.varPptoV0VsReal,r.s.pctVarPptoV0VsReal,r.s.pctEjecucionVsPptoV0,r.s.saldoVsPptoV0]); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(porProyectoData), 'Ppto V0 vs Real x Proyecto');
+
+    // Ppto V0 vs Real por Sociedad/País y Proyecto
+    var porSociedadExp = Aggregations.v0vsRealPorSociedadProyecto(f);
+    var porSociedadData = [['País','Dueño del Proyecto','Agrupación de Proyecto','Subgrupo de Gastos','Gasto','Ppto V0','Real YTD','VAR','%VAR','%Ejecución','Saldo']];
+    porSociedadExp.forEach(function(r){ porSociedadData.push([r.sociedadProyecto,r.duenoProyecto,r.agrupacionProyecto,r.subgrupoGastosEst,r.gastoEst,r.s.pptoV0,r.s.realYtd,r.s.varPptoV0VsReal,r.s.pctVarPptoV0VsReal,r.s.pctEjecucionVsPptoV0,r.s.saldoVsPptoV0]); });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(porSociedadData), 'Ppto V0 vs Real x Soc-Proy');
+
+    // Glosario
+    var glosarioData = [
+      ['Sección','Término','Explicación'],
+      ['Fuentes','Ppto V0','Presupuesto inicial del año, en USD. Columnas mensuales (fechas) se usan tal cual.'],
+      ['Fuentes','SIPRE','Presupuesto actualizado/vigente, en PEN. Se convierte con USD = Monto / TC. Campo Concepto indica Presupuesto/Disponible/Comprometido/Traslados/Real.'],
+      ['Fuentes','REALES BI CORP','Gasto real de la sociedad de la gerencia, en USD. Cada fila ya es de un mes específico.'],
+      ['Fuentes','REALES BI PAÍS','Gasto real de operaciones país, en USD. Solo se incluyen filas con INCLUIDO EN PPTO V0 = SI.'],
+      ['Fuentes','0 MAESTRO GRUPO CUENTAS','Tabla de validación (no se usa para cruces automáticos).'],
+      ['Filtro','INCLUIDO EN PPTO V0','Solo se incluyen filas con valor exactamente SI. Aplica a SIPRE y REALES BI (CORP y PAÍS). No aplica a Ppto V0.'],
+      ['Moneda','Moneda base','USD. Todo cálculo interno ocurre en USD.'],
+      ['Moneda','Fórmula de conversión','USD = Monto en moneda original / TC (tipo de cambio de esa fila).'],
+      ['Moneda','Selector de moneda','Solo cambia cómo se muestran los montos (USD o PEN); no afecta ningún cálculo.'],
+      ['Agrupación','GRUPO_CUENTA (Ppto V0 / SIPRE)','Se obtiene cruzando Sociedad + Cuenta contra 0 MAESTRO CUENTAS.'],
+      ['Agrupación','GRUPO_CUENTA (REALES BI)','Viene directo en la columna "GRUPO DE CUENTA" de esas hojas.'],
+      ['Agrupación','Normalización de tildes','Variantes con/sin tilde del mismo texto se unifican bajo una sola etiqueta.'],
+      ['Periodo','YTD','Enero hasta el mes de corte seleccionado, del año seleccionado.'],
+      ['Periodo','YTG','Mes de corte + 1 hasta Diciembre, del año seleccionado.'],
+      ['Periodo','Full Year','Los 12 meses del año seleccionado.'],
+      ['Fórmula','VAR Ppto V0 vs Real','Real YTD - Ppto V0'],
+      ['Fórmula','%VAR Ppto V0 vs Real','(Real YTD - Ppto V0) / Ppto V0'],
+      ['Fórmula','% Ejecución vs Ppto V0','Real YTD / Ppto V0'],
+      ['Fórmula','Saldo vs Ppto V0','Ppto V0 - Real YTD'],
+      ['Fórmula','VAR Ppto V0 vs Ppto VF','Ppto VF - Ppto V0'],
+      ['Fórmula','Índice de adherencia presupuestal','Ppto VF / Ppto V0'],
+      ['Fórmula','VAR Real vs Ppto VF','Real YTD - Ppto VF'],
+      ['Fórmula','% Ejecución vs Ppto VF','Real YTD / Ppto VF'],
+      ['Fórmula','Ppto Disponible VF','Suma mensualizada de filas SIPRE con Concepto = Disponible'],
+      ['Fórmula','% Disponible sobre VF','Ppto Disponible VF / Ppto VF'],
+      ['Fórmula','Comprometido (VF)','Suma mensualizada de filas SIPRE con Concepto = Comprometido (aparte, no se mezcla con VF)'],
+      ['Fórmula','Traslados','Se suma dentro de Ppto VF (modifican el presupuesto vigente)'],
+      ['Semáforo','% Ejecución vs Ppto V0 / VF','ROJO <90% · ÁMBAR 90-95% · VERDE >95%'],
+      ['Semáforo','Índice de adherencia','VERDE 95-105% · ÁMBAR 90-95% o 105-110% · ROJO fuera de rango'],
+      ['Semáforo','% Disponible sobre VF','VERDE ≥25% · ÁMBAR 10-25% · ROJO <10%'],
+      ['Validación','OK','Hay VF y Real, Real no excede VF'],
+      ['Validación','Real excede SIPRE','El real superó el presupuesto ajustado vigente'],
+      ['Validación','Real sin SIPRE','Hay real pero no hay ajustado SIPRE'],
+      ['Validación','SIPRE sin real','Hay ajustado SIPRE pero aún no hay ejecución real'],
+      ['Validación','Sin movimiento','No hay ni ajustado ni real en el periodo seleccionado']
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(glosarioData), 'Glosario');
+
+    XLSX.writeFile(wb, 'Control_Presupuestal_SupplyChain.xlsx');
+  },
+
+  exportCsvCurrentView:function(){
+    var f = this.getFilteredRecords();
+    var tab = this.state.activeTab;
+    var headers, rows;
+    if(tab==='v0vssipre'){
+      headers=['Área','Subgrupo de Gastos','Gasto','Ppto V0','Ppto VF','VAR','%VAR','Índice Adherencia','Estado'];
+      rows = Aggregations.v0vsSipreRows(f).map(function(r){ return [r.area,r.subgrupoGastosEst,r.gastoEst,r.s.pptoV0,r.s.pptoAjustadoSipre,r.s.varPptoV0VsPptoAjustadoSipre,formatPercent(r.s.pctVarPptoV0VsPptoAjustadoSipre),formatPercent(r.s.indiceAdherencia),r.s.estadoAdherencia]; });
+    } else if(tab==='sipredisponible'){
+      headers=['Sociedad','Área','CECO','Cuenta','Ppto VF','Ppto Disponible VF','%Disponible','Estado'];
+      rows = Aggregations.sipreDisponibleRows(f).map(function(r){ return [r.sociedad,r.area,r.ceco,r.cuenta,r.s.pptoAjustadoSipre,r.s.pptoDisponibleSipre,formatPercent(r.s.pctDisponibleSipre),r.s.estadoDisponibilidad]; });
+    } else if(tab==='sirevsreal'){
+      headers=['Sociedad','Área','Cuenta','CECO','Ppto VF','Ppto Disponible VF','%Disponible','Real YTD','VAR','%VAR','%Ejecución','Saldo','Validación'];
+      rows = Aggregations.sipreVsRealRows(f).map(function(r){ return [r.sociedad,r.area,r.cuenta,r.ceco,r.s.pptoAjustadoSipre,r.s.pptoDisponibleSipre,formatPercent(r.s.pctDisponibleSipre),r.s.realYtd,r.s.varRealVsPptoAjustadoSipre,formatPercent(r.s.pctVarRealVsPptoAjustadoSipre),formatPercent(r.s.pctEjecucionVsSipre),r.s.saldoDisponibleVsSipre,r.s.validacion]; });
+    } else if(tab==='calidad'){
+      headers=['Tipo Alerta','Fuente','Campo','Descripción','Cantidad','Severidad'];
+      rows = Aggregations.dataQuality(this.state.records, this.state.warnings, this.state.parseStats).map(function(r){ return [r.tipo,r.fuente,r.campo,r.descripcion,r.cantidad,r.severidad]; });
+    } else if(tab==='proyecto'){
+      headers=['Cód. Agrupación Proyecto','Agrupación Proyecto','Dueño del Proyecto','Ppto V0','Real YTD','VAR','%VAR','%Ejecución','Saldo'];
+      rows = Aggregations.v0vsRealPorProyecto(f).map(function(r){ return [r.codAgrupacion,r.agrupacionProyecto,r.duenoProyecto,r.s.pptoV0,r.s.realYtd,r.s.varPptoV0VsReal,formatPercent(r.s.pctVarPptoV0VsReal),formatPercent(r.s.pctEjecucionVsPptoV0),r.s.saldoVsPptoV0]; });
+    } else {
+      headers=['Fuente','Sociedad','Área','Concepto','Concepto SIPRE','Cuenta','CECO','Proyecto','Periodo','Monto'];
+      rows = f.map(function(r){ return [r.source,r.sociedad,r.area,r.concepto,r.conceptoSipre,r.cuenta,r.ceco,r.proyecto,r.periodo,r.monto]; });
+    }
+    var csv = toCsv(headers, rows);
+    download('vista_'+tab+'.csv', new Blob(["\uFEFF"+csv], {type:'text/csv;charset=utf-8'}));
+  }
+};
+
+/* ---------------------- 8. AGREGACIONES POR VISTA ---------------------- */
+
+var Aggregations = {
+  matrixAreaConcepto:function(records){
+    var g = aggregate(records, function(r){ return [r.area,r.subgrupoGastosEst,r.gastoEst].join('|||'); });
+    var rows = Object.keys(g).map(function(k){
+      var parts = k.split('|||');
+      return {area:parts[0], subgrupoGastosEst:parts[1], gastoEst:parts[2], s: buildSummaryRow(g[k])};
+    });
+    rows.sort(function(a,b){ return a.area.localeCompare(b.area) || a.subgrupoGastosEst.localeCompare(b.subgrupoGastosEst) || a.gastoEst.localeCompare(b.gastoEst); });
+    return rows;
+  },
+  // v0vsRealRows(): agrupa por Sociedad + Agrupación de Proyecto + CECO (código y su
+  // descripción según "0 MAESTRO CeCo"). PPTO V0 obtiene su CECO real a partir del prefijo
+  // de "Cod_Proy" (ver derivarCecoDesdeProyecto), lo que permite que cruce correctamente
+  // contra el CECO real de REALES BI.
+  v0vsRealRows:function(records){
+    var relevant = records.filter(function(r){ return r.source==='PPTO_V0'||r.source==='REALES_BI'; });
+    var g = aggregate(relevant, function(r){
+      var cod = r.codAgrupacionProyecto || 'SIN AGRUPACIÓN';
+      var nombre = r.agrupacionProyecto || 'SIN AGRUPACIÓN';
+      return [r.sociedad,cod,nombre,r.ceco].join('|||');
+    });
+    return Object.keys(g).map(function(k){
+      var p = k.split('|||');
+      return {sociedad:p[0], codAgrupacion:p[1], agrupacionProyecto:p[2], ceco:p[3], nombreCeco:g[k].sample.area, s:buildSummaryRow(g[k])};
+    }).sort(function(a,b){ return Math.abs(b.s.varPptoV0VsReal)-Math.abs(a.s.varPptoV0VsReal); });
+  },
+  v0vsSipreRows:function(records){
+    var relevant = records.filter(function(r){ return r.source==='PPTO_V0'||r.source==='SIPRE'; });
+    var g = aggregate(relevant, function(r){ return [r.area,r.subgrupoGastosEst,r.gastoEst].join('|||'); });
+    return Object.keys(g).map(function(k){
+      var p = k.split('|||');
+      return {area:p[0],subgrupoGastosEst:p[1],gastoEst:p[2], s:buildSummaryRow(g[k])};
+    }).sort(function(a,b){ return Math.abs(b.s.varPptoV0VsPptoAjustadoSipre)-Math.abs(a.s.varPptoV0VsPptoAjustadoSipre); });
+  },
+  sipreDisponibleRows:function(records){
+    var relevant = records.filter(function(r){ return r.source==='SIPRE'; });
+    var g = aggregate(relevant, function(r){ return [r.sociedad,r.area,r.ceco,r.cuenta].join('|||'); });
+    return Object.keys(g).map(function(k){
+      var p = k.split('|||');
+      return {sociedad:p[0],area:p[1],ceco:p[2],cuenta:p[3], s:buildSummaryRow(g[k])};
+    }).sort(function(a,b){ var pa=a.s.pctDisponibleSipre===null?1:a.s.pctDisponibleSipre; var pb=b.s.pctDisponibleSipre===null?1:b.s.pctDisponibleSipre; return pa-pb; });
+  },
+  sipreVsRealRows:function(records){
+    var relevant = records.filter(function(r){ return r.source==='SIPRE'||r.source==='REALES_BI'; });
+    var g = aggregate(relevant, function(r){ return [r.sociedad,r.area,r.cuenta,r.ceco].join('|||'); });
+    return Object.keys(g).map(function(k){
+      var p = k.split('|||');
+      return {sociedad:p[0],area:p[1],cuenta:p[2],ceco:p[3], s:buildSummaryRow(g[k])};
+    }).sort(function(a,b){ return Math.abs(b.s.varRealVsPptoAjustadoSipre)-Math.abs(a.s.varRealVsPptoAjustadoSipre); });
+  },
+  byArea:function(records){
+    var g = aggregate(records, function(r){ return r.area; });
+    return Object.keys(g).map(function(k){ return {area:k, s:buildSummaryRow(g[k])}; }).sort(function(a,b){return a.area.localeCompare(b.area);});
+  },
+  // v0vsRealPorProyecto(): Ppto V0 vs Real agrupado por Agrupación de Proyecto (COD AGRUPACIÓN
+  // PROYECTO). Se agrupa solo a nivel Agrupación (no por Proyecto individual) porque REALES BI
+  // no trae el código de proyecto individual, solo la Agrupación; agrupar por proyecto individual
+  // impediría que el real cruce contra el presupuesto.
+  // rankingDesviacionesPorProyecto(): para el gráfico de Top 10 del dashboard. Se agrupa
+  // ÚNICAMENTE por Agrupación de Proyecto (sin CECO ni Área), para que cada proyecto
+  // aparezca una sola vez y no se repita por cada CECO donde tiene actividad.
+  rankingDesviacionesPorProyecto:function(records){
+    var relevant = records.filter(function(r){ return r.source==='PPTO_V0'||r.source==='REALES_BI'; });
+    var g = aggregate(relevant, function(r){
+      var cod = r.codAgrupacionProyecto || 'SIN AGRUPACIÓN';
+      var nombre = r.agrupacionProyecto || 'SIN AGRUPACIÓN';
+      return [cod,nombre].join('|||');
+    });
+    // Recolecta los CECO distintos de cada grupo, para mostrarlos en el tooltip del gráfico.
+    var cecosPorGrupo = {};
+    relevant.forEach(function(r){
+      var cod = r.codAgrupacionProyecto || 'SIN AGRUPACIÓN';
+      var nombre = r.agrupacionProyecto || 'SIN AGRUPACIÓN';
+      var key = [cod,nombre].join('|||');
+      if(!cecosPorGrupo[key]) cecosPorGrupo[key] = {};
+      if(r.ceco && r.ceco!=='SIN CECO') cecosPorGrupo[key][r.ceco] = true;
+    });
+    return Object.keys(g).map(function(k){
+      var p = k.split('|||');
+      return {codAgrupacion:p[0], agrupacionProyecto:p[1], cecos:Object.keys(cecosPorGrupo[k]||{}), s:buildSummaryRow(g[k])};
+    }).sort(function(a,b){ return Math.abs(b.s.varPptoV0VsReal)-Math.abs(a.s.varPptoV0VsReal); });
+  },
+  v0vsRealPorProyecto:function(records){
+    var relevant = records.filter(function(r){ return r.source==='PPTO_V0'||r.source==='REALES_BI'; });
+    var g = aggregate(relevant, function(r){
+      var cod = r.codAgrupacionProyecto || 'SIN AGRUPACIÓN';
+      var nombre = r.agrupacionProyecto || 'SIN AGRUPACIÓN';
+      var area = r.area || 'SIN ÁREA';
+      return [cod,nombre,area].join('|||');
+    });
+    return Object.keys(g).map(function(k){
+      var p = k.split('|||');
+      return {codAgrupacion:p[0], agrupacionProyecto:p[1], duenoProyecto:p[2], s:buildSummaryRow(g[k])};
+    }).sort(function(a,b){ return Math.abs(b.s.varPptoV0VsReal)-Math.abs(a.s.varPptoV0VsReal); });
+  },
+  // v0vsRealPorSociedadProyecto(): Ppto V0 vs Real agrupado por la sociedad/país donde se
+  // implementa el proyecto (campo "Gastos asumidos por?", canónico PAIS) + Agrupación de Proyecto
+  // + Dueño del Proyecto (Área).
+  v0vsRealPorSociedadProyecto:function(records){
+    var relevant = records.filter(function(r){ return r.source==='PPTO_V0'||r.source==='REALES_BI'; });
+    var g = aggregate(relevant, function(r){
+      var soc = r.pais || 'SIN SOCIEDAD';
+      var nombre = r.agrupacionProyecto || 'SIN AGRUPACIÓN';
+      var area = r.area || 'SIN ÁREA';
+      var subgrupo = r.subgrupoGastosEst || 'SIN AGRUPACIÓN';
+      var gasto = r.gastoEst || 'SIN AGRUPACIÓN';
+      return [soc,area,nombre,subgrupo,gasto].join('|||');
+    });
+    return Object.keys(g).map(function(k){
+      var p = k.split('|||');
+      return {sociedadProyecto:p[0], duenoProyecto:p[1], agrupacionProyecto:p[2], subgrupoGastosEst:p[3], gastoEst:p[4], s:buildSummaryRow(g[k])};
+    }).sort(function(a,b){ return a.sociedadProyecto.localeCompare(b.sociedadProyecto) || a.agrupacionProyecto.localeCompare(b.agrupacionProyecto); });
+  },
+  dataQuality:function(records, warnings, stats){
+    stats = stats || {};
+    var out = [];
+    (warnings||[]).forEach(function(w){ out.push({tipo:w.tipo, fuente:'Archivo', campo:'-', descripcion:w.tipo, cantidad:1, severidad:w.severidad}); });
+    if(stats.sipreExcluidosNoIncluido){
+      out.push({tipo:'SIPRE excluido por INCLUIDO EN PPTO V0', fuente:'SIPRE', campo:'INCLUIDO_PPTO_V0', descripcion:'Filas sin "SI" en INCLUIDO EN PPTO V0 (excluidas de todo cálculo)', cantidad: stats.sipreExcluidosNoIncluido, severidad:'Informativo'});
+    }
+    if(stats.realesBiExcluidosNoIncluido){
+      out.push({tipo:'REALES BI excluido por INCLUIDO EN PPTO V0', fuente:'REALES_BI', campo:'INCLUIDO_PPTO_V0', descripcion:'Filas sin "SI" en INCLUIDO EN PPTO V0 (excluidas de todo cálculo)', cantidad: stats.realesBiExcluidosNoIncluido, severidad:'Informativo'});
+    }
+    if(stats.sipreSinTC){
+      out.push({tipo:'SIPRE sin TC para convertir', fuente:'SIPRE', campo:'TC', descripcion:'Moneda distinta de USD sin tipo de cambio; no se pudo convertir', cantidad: stats.sipreSinTC, severidad:'Advertencia'});
+    }
+
+    function countBy(source, field, testEmptyOrDefault){
+      return records.filter(function(r){ return r.source===source && testEmptyOrDefault(r[field]); }).length;
+    }
+    var isMissing = function(v){ return !v || v==='SIN CECO' || v==='SIN CONCEPTO' || v==='SIN ÁREA' || v==='SIN SOCIEDAD' || v==='SIN PROYECTO'; };
+
+    var pptoV0SinProyecto = countBy('PPTO_V0','proyecto', function(v){return v==='SIN PROYECTO'||!v;});
+    var realesSinProyecto = countBy('REALES_BI','proyecto', function(v){return v==='SIN PROYECTO'||!v;});
+    var sipreSinProyecto = records.filter(function(r){return r.source==='SIPRE';}).length; // 100% esperado
+    var sinCeco = records.filter(function(r){return r.ceco==='SIN CECO';}).length;
+    var sinConcepto = records.filter(function(r){return r.concepto==='SIN CONCEPTO';}).length;
+    var sinSociedad = records.filter(function(r){return r.sociedad==='SIN SOCIEDAD';}).length;
+    var montosNulos = records.filter(function(r){return !r.monto && r.monto!==0;}).length;
+    var montosNegativos = records.filter(function(r){return r.monto<0;}).length;
+    var sinDescCuentaPptoV0 = countBy('PPTO_V0','nombreCuenta', function(v){return !v || String(v).indexOf('sin descripción en maestro')>=0 || v==='SIN DESCRIPCIÓN';});
+    var sinDescCuentaReales = countBy('REALES_BI','nombreCuenta', function(v){return !v || String(v).indexOf('sin descripción en maestro')>=0 || v==='SIN DESCRIPCIÓN';});
+    var sinDescCuentaSipre = countBy('SIPRE','nombreCuenta', function(v){return !v || String(v).indexOf('sin descripción en maestro')>=0 || v==='SIN DESCRIPCIÓN';});
+
+    out.push({tipo:'Registros Ppto V0', fuente:'PPTO_V0', campo:'-', descripcion:'Total de registros cargados', cantidad: records.filter(function(r){return r.source==='PPTO_V0';}).length, severidad:'Informativo'});
+    out.push({tipo:'Registros SIPRE', fuente:'SIPRE', campo:'-', descripcion:'Total de registros cargados', cantidad: records.filter(function(r){return r.source==='SIPRE';}).length, severidad:'Informativo'});
+    out.push({tipo:'Registros REALES BI', fuente:'REALES_BI', campo:'-', descripcion:'Total de registros cargados', cantidad: records.filter(function(r){return r.source==='REALES_BI';}).length, severidad:'Informativo'});
+    out.push({tipo:'Ppto V0 sin proyecto', fuente:'PPTO_V0', campo:'PROYECTO', descripcion:'Registros sin proyecto asignado', cantidad: pptoV0SinProyecto, severidad:'Advertencia'});
+    out.push({tipo:'REALES BI sin proyecto', fuente:'REALES_BI', campo:'PROYECTO', descripcion:'Registros sin proyecto asignado', cantidad: realesSinProyecto, severidad:'Advertencia'});
+    out.push({tipo:'SIPRE sin proyecto', fuente:'SIPRE', campo:'PROYECTO', descripcion:'Esperado: SIPRE no trae proyecto por fila', cantidad: sipreSinProyecto, severidad:'Informativo'});
+    out.push({tipo:'Registros sin CECO', fuente:'Todas', campo:'CECO', descripcion:'CECO no encontrado o vacío', cantidad: sinCeco, severidad: sinCeco>0?'Advertencia':'Informativo'});
+    out.push({tipo:'Registros sin concepto/cuenta', fuente:'Todas', campo:'CONCEPTO', descripcion:'Cuenta no encontrada en maestro', cantidad: sinConcepto, severidad: sinConcepto>0?'Advertencia':'Informativo'});
+    out.push({tipo:'Ppto V0 sin descripción de cuenta', fuente:'PPTO_V0', campo:'CUENTA', descripcion:'Código de cuenta no encontrado en 0 MAESTRO CUENTAS', cantidad: sinDescCuentaPptoV0, severidad: sinDescCuentaPptoV0>0?'Advertencia':'Informativo'});
+    out.push({tipo:'REALES BI sin descripción de cuenta', fuente:'REALES_BI', campo:'CUENTA', descripcion:'Código de cuenta no encontrado en 0 MAESTRO CUENTAS', cantidad: sinDescCuentaReales, severidad: sinDescCuentaReales>0?'Advertencia':'Informativo'});
+    out.push({tipo:'SIPRE sin descripción de cuenta', fuente:'SIPRE', campo:'CUENTA', descripcion:'Código de cuenta no encontrado en 0 MAESTRO CUENTAS', cantidad: sinDescCuentaSipre, severidad: sinDescCuentaSipre>0?'Advertencia':'Informativo'});
+    out.push({tipo:'Registros sin sociedad', fuente:'Todas', campo:'SOCIEDAD', descripcion:'Sociedad vacía o no identificada', cantidad: sinSociedad, severidad: sinSociedad>0?'Crítico':'Informativo'});
+    out.push({tipo:'Montos nulos', fuente:'Todas', campo:'MONTO', descripcion:'Registros con monto nulo', cantidad: montosNulos, severidad: montosNulos>0?'Advertencia':'Informativo'});
+    out.push({tipo:'Montos negativos', fuente:'Todas', campo:'MONTO', descripcion:'Registros con monto negativo (notas de crédito u ajustes)', cantidad: montosNegativos, severidad:'Informativo'});
+    return out;
+  }
+};
+
+/* ---------------------- 9. VISTAS (RENDER) ---------------------- */
+
+// socLabel(): muestra "código - nombre" cuando el maestro de sociedades permite resolverlo
+// paisLabel(): resuelve el código de "Gastos asumidos por?" contra el campo SOC_ABREV
+// de "0 MAESTRO SOCIEDADES" (no contra el código de Sociedad SAP).
+function paisLabel(abrev){
+  if(abrev===null||abrev===undefined||abrev==='') return '-';
+  var idx = App.state.masters && App.state.masters.sociedadPorAbrev;
+  var found = idx ? idx[normalizeText(abrev)] : null;
+  return found && found.nombre ? (abrev+' - '+found.nombre) : String(abrev);
+}
+
+function socLabel(code){
+  if(code===null||code===undefined||code==='') return '-';
+  var idx = App.state.masters && App.state.masters.sociedadNombre;
+  var nombre = null;
+  if(idx){
+    var key = normalizeText(code);
+    nombre = idx[key] || (key.length<=3 ? idx[key+'01'] : null);
+  }
+  return nombre && normalizeText(nombre)!==normalizeText(code) ? (code+' - '+nombre) : String(code);
+}
+
+function badge(estado){
+  return '<span class="badge badge-'+estado+'"><span class="dot dot-'+estado+'" style="width:7px;height:7px;margin-right:4px;"></span>'+estado+'</span>';
+}
+// TABLE_PREFIXES: define, para cada tabla con subtotales colapsables, los prefijos de
+// clave usados por nivel y la profundidad total (para los controles tipo "tabla dinámica").
+var TABLE_PREFIXES = {
+  dashboard: {prefixes:['dash:','dash-sub:'], levels:2, label:'Matriz presupuestal'},
+  v0vssipre: {prefixes:['v0vf:','v0vf-sub:'], levels:2, label:'Ppto V0 vs Ppto VF'},
+  proy1: {prefixes:['proy1:'], levels:1, label:'Ppto V0 vs Real por Agrupación de Proyecto'},
+  proy2: {prefixes:['proy2dueno:','proy2agrup:','proy2subgrupo:','proy2gasto:'], levels:4, label:'Ppto V0 vs Real por Sociedad/País y Proyecto'}
+};
+
+function txtClass(estado){ return 'txt-'+(estado||'GRIS'); }
+// varSemaforo(): para columnas de VARIACIÓN (VAR), semáforo simple por signo:
+// positivo = rojo (gastó/presupuestó de más), negativo = verde (ahorro), cero = gris.
+function varSemaforo(valor){
+  if(valor>0) return 'ROJO';
+  if(valor<0) return 'VERDE';
+  return 'GRIS';
+}
+
+function filterPanel(fieldsList){
+  var self = App;
+  var html = '<div class="panel"><h3>Filtros</h3><div class="filters-grid">';
+  fieldsList.forEach(function(f){
+    var opts = self.uniqueValues(f.field);
+    var current = self.state.filters[f.field]||[];
+    var displayFn = f.field==='sociedad' ? socLabel : function(o){return o;};
+    html += '<div>'+renderMultiSelect(f.field, f.label, opts, current, displayFn)+'</div>';
+  });
+  html += '</div></div>';
+  return html;
+}
+
+// renderMultiSelect(): botón desplegable con casillas de verificación para elegir varias opciones
+function renderMultiSelect(field, label, options, selected, displayFn){
+  displayFn = displayFn || function(o){ return o; };
+  var isOpen = App.state.openFilterField === field;
+  var btnLabel = label + (selected.length ? ' ('+selected.length+')' : '');
+  var optionsHtml = options.map(function(o){
+    var checked = selected.indexOf(o)>=0 ? 'checked' : '';
+    var safeVal = String(o).replace(/'/g,"\\'");
+    return '<label class="msel-option"><input type="checkbox" '+checked+' onchange="Views.mselToggle(\''+field+'\',\''+safeVal+'\',this.checked)"/> '+displayFn(o)+'</label>';
+  }).join('');
+  return '<label>'+label+'</label>'+
+    '<div class="msel">'+
+      '<button type="button" class="msel-btn" onclick="event.stopPropagation();Views.toggleMsel(\''+field+'\')">'+btnLabel+'<span class="caret">▾</span></button>'+
+      (isOpen ? '<div class="msel-panel" onclick="event.stopPropagation()">'+
+        '<div class="msel-actions"><a onclick="Views.mselSelectAll(\''+field+'\')">Todos</a> · <a onclick="Views.mselClear(\''+field+'\')">Ninguno</a></div>'+
+        (optionsHtml || '<div class="msel-option">Sin opciones</div>') +
+      '</div>' : '') +
+    '</div>';
+}
+
+var Views = {
+
+  periodLabel:function(){
+    var tf = App.state.timeFilter;
+    var mesNombre = MONTH_NAMES[tf.mesCorte-1];
+    if(tf.modo==='YTD') return '<b>YTD '+tf.anio+':</b> Enero – '+mesNombre+' '+tf.anio;
+    if(tf.modo==='YTG'){
+      if(tf.mesCorte>=12) return '<b>YTG '+tf.anio+':</b> no quedan meses después de Diciembre.';
+      return '<b>YTG '+tf.anio+':</b> '+MONTH_NAMES[tf.mesCorte]+' – Diciembre '+tf.anio+' (proyectado/restante)';
+    }
+    return '<b>Full Year '+tf.anio+':</b> Enero – Diciembre '+tf.anio;
+  },
+
+  dashboard:function(){
+    var f = App.getFilteredRecords();
+    var totalG = aggregate(f, function(){return 'T';});
+    var s = buildSummaryRow(totalG['T']||{pptoV0:0,realYtd:0,ajustado:0,disponible:0});
+    var matrix = Aggregations.matrixAreaConcepto(f).filter(function(r){
+      return r.s.pptoV0!==0 || r.s.realYtd!==0 || r.s.pptoAjustadoSipre!==0 || r.s.pptoDisponibleSipre!==0;
+    });
+
+    // agrupar matrix por area
+    var byArea = {};
+    matrix.forEach(function(r){ (byArea[r.area]=byArea[r.area]||[]).push(r); });
+
+    // Total general calculado primero, para poder mostrarlo justo debajo del encabezado.
+    var totalPptoV0=0, totalReal=0, totalAjustado=0, totalDisponible=0;
+    matrix.forEach(function(r){
+      totalPptoV0+=r.s.pptoV0; totalReal+=r.s.realYtd; totalAjustado+=r.s.pptoAjustadoSipre; totalDisponible+=r.s.pptoDisponibleSipre;
+    });
+    var totalS = buildSummaryRow({pptoV0:totalPptoV0, realYtd:totalReal, ajustado:totalAjustado, disponible:totalDisponible});
+    var filaTotalHtml = '<tr class="row-total"><td class="left">Total general</td><td>'+formatMoney(totalS.pptoV0)+'</td><td>'+formatMoney(totalS.realYtd)+'</td>'+
+      '<td>'+formatMoney(totalS.pptoAjustadoSipre)+'</td><td>'+formatMoney(totalS.pptoDisponibleSipre)+'</td>'+
+      '<td class="var-box var-box-l">'+formatMoney(totalS.varPptoV0VsReal)+'</td><td class="var-box var-box-r">'+formatPercent(totalS.pctVarPptoV0VsReal)+'</td>'+
+      '<td class="var-box var-box-l">'+formatMoney(totalS.varPptoV0VsPptoAjustadoSipre)+'</td><td class="var-box var-box-r">'+formatPercent(totalS.pctVarPptoV0VsPptoAjustadoSipre)+'</td>'+
+      '<td class="var-box var-box-l">'+formatMoney(totalS.varRealVsPptoAjustadoSipre)+'</td><td class="var-box var-box-r">'+formatPercent(totalS.pctVarRealVsPptoAjustadoSipre)+'</td>'+
+      '<td>'+badge(varSemaforo(totalS.varRealVsPptoAjustadoSipre))+'</td></tr>';
+
+    var tableHtml = '<div class="table-scroll"><table><thead><tr>'+
+      '<th class="left">Área / Subgrupo de Gastos / Gasto</th><th>Ppto V0</th><th>Real YTD</th><th>Ppto VF</th><th>Ppto Disponible VF</th>'+
+      '<th class="var-box-l">VAR V0 vs Real</th><th class="var-box-r">%VAR</th><th class="var-box-l">VAR V0 vs VF</th><th class="var-box-r">%VAR</th><th class="var-box-l">VAR Real vs VF</th><th class="var-box-r">%VAR</th><th>Estado</th>'+
+      '</tr></thead><tbody>'+filaTotalHtml;
+
+    Object.keys(byArea).sort().forEach(function(area){
+      var rows = byArea[area];
+      var groupKey = 'dash:'+area;
+      var expanded = App.isGroupExpanded(groupKey, 'dashboard', 1);
+      var areaSum = {pptoV0:0,realYtd:0,pptoAjustadoSipre:0,pptoDisponibleSipre:0};
+      rows.forEach(function(r){
+        areaSum.pptoV0+=r.s.pptoV0; areaSum.realYtd+=r.s.realYtd; areaSum.pptoAjustadoSipre+=r.s.pptoAjustadoSipre; areaSum.pptoDisponibleSipre+=r.s.pptoDisponibleSipre;
+      });
+      var areaS = buildSummaryRow({pptoV0:areaSum.pptoV0, realYtd:areaSum.realYtd, ajustado:areaSum.pptoAjustadoSipre, disponible:areaSum.pptoDisponibleSipre});
+
+      tableHtml += '<tr class="row-area" onclick="App.toggleGroup(\''+groupKey+'\')"><td class="left"><span class="expand-icon">'+(expanded?'▾':'▸')+'</span>'+area+'</td><td>'+formatMoney(areaS.pptoV0)+'</td><td>'+formatMoney(areaS.realYtd)+'</td>'+
+        '<td>'+formatMoney(areaS.pptoAjustadoSipre)+'</td><td>'+formatMoney(areaS.pptoDisponibleSipre)+'</td>'+
+        '<td class="var-box var-box-l '+txtClass(varSemaforo(areaS.varPptoV0VsReal))+'">'+formatMoney(areaS.varPptoV0VsReal)+'</td><td class="var-box var-box-r">'+formatPercent(areaS.pctVarPptoV0VsReal)+'</td>'+
+        '<td class="var-box var-box-l '+txtClass(varSemaforo(areaS.varPptoV0VsPptoAjustadoSipre))+'">'+formatMoney(areaS.varPptoV0VsPptoAjustadoSipre)+'</td><td class="var-box var-box-r">'+formatPercent(areaS.pctVarPptoV0VsPptoAjustadoSipre)+'</td>'+
+        '<td class="var-box var-box-l '+txtClass(varSemaforo(areaS.varRealVsPptoAjustadoSipre))+'">'+formatMoney(areaS.varRealVsPptoAjustadoSipre)+'</td><td class="var-box var-box-r">'+formatPercent(areaS.pctVarRealVsPptoAjustadoSipre)+'</td>'+
+        '<td>'+badge(varSemaforo(areaS.varRealVsPptoAjustadoSipre))+'</td></tr>';
+
+      if(expanded) {
+        var bySubgrupo = {};
+        rows.forEach(function(r){ var sg = r.subgrupoGastosEst||'SIN AGRUPACIÓN'; (bySubgrupo[sg]=bySubgrupo[sg]||[]).push(r); });
+        Object.keys(bySubgrupo).sort().forEach(function(subgrupo){
+          var subRows = bySubgrupo[subgrupo];
+          var subKey = 'dash-sub:'+area+'|'+subgrupo;
+          var subExpanded = App.isGroupExpanded(subKey, 'dashboard', 2);
+          var subSum = {pptoV0:0,realYtd:0,pptoAjustadoSipre:0,pptoDisponibleSipre:0};
+          subRows.forEach(function(r){ subSum.pptoV0+=r.s.pptoV0; subSum.realYtd+=r.s.realYtd; subSum.pptoAjustadoSipre+=r.s.pptoAjustadoSipre; subSum.pptoDisponibleSipre+=r.s.pptoDisponibleSipre; });
+          var subS = buildSummaryRow({pptoV0:subSum.pptoV0, realYtd:subSum.realYtd, ajustado:subSum.pptoAjustadoSipre, disponible:subSum.pptoDisponibleSipre});
+          tableHtml += '<tr style="background:#f0f3f6;font-weight:600;cursor:pointer;" onclick="App.toggleGroup(\''+subKey+'\')"><td class="left" style="padding-left:22px;"><span class="expand-icon">'+(subExpanded?'▾':'▸')+'</span>'+subgrupo+'</td><td>'+formatMoney(subS.pptoV0)+'</td><td>'+formatMoney(subS.realYtd)+'</td>'+
+            '<td>'+formatMoney(subS.pptoAjustadoSipre)+'</td><td>'+formatMoney(subS.pptoDisponibleSipre)+'</td>'+
+            '<td class="var-box var-box-l '+txtClass(varSemaforo(subS.varPptoV0VsReal))+'">'+formatMoney(subS.varPptoV0VsReal)+'</td><td class="var-box var-box-r">'+formatPercent(subS.pctVarPptoV0VsReal)+'</td>'+
+            '<td class="var-box var-box-l '+txtClass(varSemaforo(subS.varPptoV0VsPptoAjustadoSipre))+'">'+formatMoney(subS.varPptoV0VsPptoAjustadoSipre)+'</td><td class="var-box var-box-r">'+formatPercent(subS.pctVarPptoV0VsPptoAjustadoSipre)+'</td>'+
+            '<td class="var-box var-box-l '+txtClass(varSemaforo(subS.varRealVsPptoAjustadoSipre))+'">'+formatMoney(subS.varRealVsPptoAjustadoSipre)+'</td><td class="var-box var-box-r">'+formatPercent(subS.pctVarRealVsPptoAjustadoSipre)+'</td>'+
+            '<td>'+badge(varSemaforo(subS.varRealVsPptoAjustadoSipre))+'</td></tr>';
+
+          if(subExpanded) subRows.forEach(function(r){
+            tableHtml += '<tr class="row-concepto"><td class="left" style="padding-left:40px;">'+r.gastoEst+'</td><td>'+formatMoney(r.s.pptoV0)+'</td><td>'+formatMoney(r.s.realYtd)+'</td>'+
+              '<td>'+formatMoney(r.s.pptoAjustadoSipre)+'</td><td>'+formatMoney(r.s.pptoDisponibleSipre)+'</td>'+
+              '<td class="var-box var-box-l '+txtClass(varSemaforo(r.s.varPptoV0VsReal))+'">'+formatMoney(r.s.varPptoV0VsReal)+'</td><td class="var-box var-box-r">'+formatPercent(r.s.pctVarPptoV0VsReal)+'</td>'+
+              '<td class="var-box var-box-l '+txtClass(varSemaforo(r.s.varPptoV0VsPptoAjustadoSipre))+'">'+formatMoney(r.s.varPptoV0VsPptoAjustadoSipre)+'</td><td class="var-box var-box-r">'+formatPercent(r.s.pctVarPptoV0VsPptoAjustadoSipre)+'</td>'+
+              '<td class="var-box var-box-l '+txtClass(varSemaforo(r.s.varRealVsPptoAjustadoSipre))+'">'+formatMoney(r.s.varRealVsPptoAjustadoSipre)+'</td><td class="var-box var-box-r">'+formatPercent(r.s.pctVarRealVsPptoAjustadoSipre)+'</td>'+
+              '<td>'+badge(varSemaforo(r.s.varRealVsPptoAjustadoSipre))+'</td></tr>';
+          });
+        });
+      }
+    });
+
+    tableHtml += '</tbody></table></div>';
+
+    var filters = filterPanel([
+      {field:'sociedad', label:'Sociedad'}, {field:'area', label:'Área'}, {field:'grupoCuenta', label:'Agrupación de Cuenta'},
+      {field:'nombreCuenta', label:'Descripción de cuenta'}, {field:'cuenta', label:'Código de cuenta'}, {field:'ceco', label:'Centro de costo'},
+      {field:'proyecto', label:'Proyecto (solo Ppto V0 / Real)'}
+    ]);
+
+    return filters +
+      '<div style="font-size:12px;color:#555;margin:-4px 0 12px;">'+Views.periodLabel()+'</div>'+
+      '<div class="kpi-grid">'+
+      kpiCard('Ppto V0', formatMoney(s.pptoV0)) +
+      kpiCard('Real YTD', formatMoney(s.realYtd)) +
+      kpiCard('Ppto VF', formatMoney(s.pptoAjustadoSipre)) +
+      kpiCard('Ppto Disponible VF', formatMoney(s.pptoDisponibleSipre)) +
+      kpiCard('Saldo disponible vs SIPRE', formatMoney(s.saldoDisponibleVsSipre)) +
+      kpiCard('% Ejecución vs Ppto V0', formatPercent(s.pctEjecucionVsPptoV0), s.estadoV0) +
+      kpiCard('% Ejecución vs Ppto VF', formatPercent(s.pctEjecucionVsSipre), s.estadoAjustado) +
+      kpiCard('Índice de adherencia presupuestal', formatPercent(s.indiceAdherencia), s.estadoAdherencia) +
+      '</div>'+
+      '<div class="panel"><h3>Matriz presupuestal (Área → Subgrupo de Gastos → Gasto)</h3>'+App.controlesExpandir('dashboard')+tableHtml+'</div>'+
+      '<div class="chart-grid">'+
+      '<div class="chart-box"><h4>Presupuesto vs Real por Área ('+(App.state.displayCurrency==='PEN'?'S/':'US$')+')</h4><div class="chart-wrap"><canvas id="chartByArea"></canvas></div></div>'+
+      '<div class="chart-box"><h4>Top 10 desviaciones absolutas (Ppto V0 vs Real, '+(App.state.displayCurrency==='PEN'?'S/':'US$')+')</h4><div class="chart-wrap"><canvas id="chartRanking"></canvas></div></div>'+
+      '<div class="chart-box"><h4>Variación Ppto V0 → Ppto VF → Real YTD</h4><div class="chart-wrap"><canvas id="chartWaterfall"></canvas></div></div>'+
+      '</div>';
+  },
+
+  dashboardPostRender:function(){
+    var f = App.getFilteredRecords();
+    var byArea = Aggregations.byArea(f);
+    var cx = function(v){ return App.state.displayCurrency==='PEN' ? v*TIPO_CAMBIO_USD_PEN : v; };
+    var curLabel = App.state.displayCurrency==='PEN' ? 'S/' : 'US$';
+
+    if(window.__chartArea) window.__chartArea.destroy();
+    var ctx1 = document.getElementById('chartByArea');
+    if(ctx1){
+      window.__chartArea = new Chart(ctx1, {
+        type:'bar',
+        data:{ labels: byArea.map(function(r){return r.area;}),
+          datasets:[
+            {label:'Ppto V0', data: byArea.map(function(r){return cx(r.s.pptoV0);}), backgroundColor:'#013C58'},
+            {label:'Real YTD', data: byArea.map(function(r){return cx(r.s.realYtd);}), backgroundColor:'#F5A201'},
+            {label:'Ppto VF', data: byArea.map(function(r){return cx(r.s.pptoAjustadoSipre);}), backgroundColor:'#00537A'},
+            {label:'Ppto Disponible VF', data: byArea.map(function(r){return cx(r.s.pptoDisponibleSipre);}), backgroundColor:'#FFBA42'}
+          ]},
+        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{font:{size:10}}}}, scales:{x:{ticks:{font:{size:10}}}, y:{ticks:{font:{size:10}}}}}
+      });
+    }
+
+    var v0real = Aggregations.rankingDesviacionesPorProyecto(f).slice(0,10);
+    if(window.__chartRanking) window.__chartRanking.destroy();
+    var ctx2 = document.getElementById('chartRanking');
+    if(ctx2){
+      window.__chartRanking = new Chart(ctx2, {
+        type:'bar',
+        data:{ labels: v0real.map(function(r){return r.agrupacionProyecto||'';}),
+          datasets:[{label:'VAR Ppto V0 vs Real', data:v0real.map(function(r){return cx(r.s.varPptoV0VsReal);}),
+            backgroundColor: v0real.map(function(r){return r.s.varPptoV0VsReal>0 ? '#D64545':'#2E7D32';})}]},
+        options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},
+          tooltip:{callbacks:{ afterLabel: function(context){
+            var cecos = v0real[context.dataIndex].cecos;
+            return cecos && cecos.length ? 'CECO: '+cecos.join(', ') : 'CECO: SIN CECO';
+          }}}}, scales:{x:{ticks:{font:{size:10}}}, y:{ticks:{font:{size:11}}}}}
+      });
+    }
+
+    var totalG = aggregate(f, function(){return 'T';});
+    var s = buildSummaryRow(totalG['T']||{pptoV0:0,realYtd:0,ajustado:0,disponible:0});
+    if(window.__chartWaterfall) window.__chartWaterfall.destroy();
+    var ctx4 = document.getElementById('chartWaterfall');
+    if(ctx4){
+      var steps = [
+        {label:'Ppto V0', from:0, to:cx(s.pptoV0)},
+        {label:'Ajuste', from:cx(s.pptoV0), to:cx(s.pptoAjustadoSipre)},
+        {label:'Ppto VF', from:0, to:cx(s.pptoAjustadoSipre)},
+        {label:'Ejecución', from: Math.min(cx(s.pptoAjustadoSipre), cx(s.realYtd)), to: Math.max(cx(s.pptoAjustadoSipre), cx(s.realYtd))},
+        {label:'Real YTD', from:0, to:cx(s.realYtd)}
+      ];
+      window.__chartWaterfall = new Chart(ctx4, {
+        type:'bar',
+        data:{ labels: steps.map(function(s){return s.label;}),
+          datasets:[{label:'Monto', data: steps.map(function(s){return [s.from, s.to];}), backgroundColor:'#00537A'}]},
+        options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{ticks:{font:{size:10}}}}}
+      });
+    }
+  },
+
+  v0vsreal:function(){
+    var f = App.getFilteredRecords();
+    var rows = Aggregations.v0vsRealRows(f);
+    var filters = filterPanel([
+      {field:'sociedad', label:'Sociedad'},{field:'ceco', label:'CECO'}
+    ]);
+    var body = rows.map(function(r){
+      return '<tr class="row-data"><td class="left">'+r.agrupacionProyecto+'</td>'+
+        '<td class="left">'+r.ceco+'</td><td class="left">'+(r.nombreCeco||'-')+'</td>'+
+        '<td>'+formatMoney(r.s.pptoV0)+'</td><td>'+formatMoney(r.s.realYtd)+'</td>'+
+        '<td class="'+txtClass(varSemaforo(r.s.varPptoV0VsReal))+'">'+formatMoney(r.s.varPptoV0VsReal)+'</td>'+
+        '<td>'+formatPercent(r.s.pctVarPptoV0VsReal)+'</td>'+
+        '<td>'+formatPercent(r.s.pctEjecucionVsPptoV0)+'</td><td>'+formatMoney(r.s.saldoVsPptoV0)+'</td><td>'+badge(r.s.estadoV0)+'</td></tr>';
+    }).join('');
+    return filters+'<div class="panel"><h3>Ppto V0 vs Real YTD (Agrupación de Proyecto + CECO)</h3>'+
+      '<div class="table-scroll"><table><thead><tr><th class="left">Agrupación Proyecto</th>'+
+      '<th class="left">CECO (código)</th><th class="left">CECO (descripción)</th><th>Ppto V0</th><th>Real YTD</th>'+
+      '<th>VAR</th><th>%VAR</th><th>%Ejecución</th><th>Saldo</th><th>Estado</th></tr></thead><tbody>'+
+      (body||'<tr><td colspan="10" class="empty-state">Sin datos para los filtros seleccionados</td></tr>')+'</tbody></table></div></div>';
+  },
+
+  proyecto:function(){
+    var f = App.getFilteredRecords();
+    var porProyecto = Aggregations.v0vsRealPorProyecto(f);
+    var porSociedad = Aggregations.v0vsRealPorSociedadProyecto(f);
+    var filters = filterPanel([
+      {field:'pais', label:'País'}, {field:'agrupacionProyecto', label:'Proyecto'}, {field:'area', label:'Área (Dueño del Proyecto)'}
+    ]);
+
+    var tieneRealesConProyecto = f.some(function(r){ return r.source==='REALES_BI' && r.agrupacionProyecto && r.agrupacionProyecto!=='SIN AGRUPACIÓN'; });
+    var avisoDatos = tieneRealesConProyecto ? '<div class="small-note" style="margin-bottom:12px;">REALES BI (CORP/PAÍS) trae Agrupación de Proyecto pero no un código de Proyecto individual; por eso la comparativa se hace a nivel Agrupación, no por proyecto puntual.</div>' :
+      '<div class="note" style="margin:0 0 12px;">REALES BI (CORP/PAÍS) no trae hoy un campo de Proyecto/Agrupación de Proyecto propio, así que el "Real" de estas tablas aparecerá en 0 hasta que esa columna exista en esas hojas. Ppto V0 sí se calcula correctamente.</div>';
+
+    var totProy = {pptoV0:0, realYtd:0};
+    porProyecto.forEach(function(r){ totProy.pptoV0+=r.s.pptoV0; totProy.realYtd+=r.s.realYtd; });
+    var totProyS = buildSummaryRow({pptoV0:totProy.pptoV0, realYtd:totProy.realYtd, ajustado:0, disponible:0});
+    var filaTotalProy = '<tr class="row-total"><td class="left" colspan="3">Total general</td>'+
+      '<td>'+formatMoney(totProyS.pptoV0)+'</td><td>'+formatMoney(totProyS.realYtd)+'</td>'+
+      '<td>'+formatMoney(totProyS.varPptoV0VsReal)+'</td><td>'+formatPercent(totProyS.pctVarPptoV0VsReal)+'</td>'+
+      '<td>'+formatPercent(totProyS.pctEjecucionVsPptoV0)+'</td><td>'+formatMoney(totProyS.saldoVsPptoV0)+'</td></tr>';
+
+    // Agrupa por Dueño del Proyecto, con subtotal por cada uno.
+    function sumRowV0Real(list){
+      var t = {pptoV0:0, realYtd:0};
+      list.forEach(function(r){ t.pptoV0 += r.s.pptoV0; t.realYtd += r.s.realYtd; });
+      return buildSummaryRow({pptoV0:t.pptoV0, realYtd:t.realYtd, ajustado:0, disponible:0});
+    }
+    var metricCellsV0Real = function(s){
+      return '<td>'+formatMoney(s.pptoV0)+'</td><td>'+formatMoney(s.realYtd)+'</td>'+
+        '<td class="'+txtClass(varSemaforo(s.varPptoV0VsReal))+'">'+formatMoney(s.varPptoV0VsReal)+'</td><td>'+formatPercent(s.pctVarPptoV0VsReal)+'</td>'+
+        '<td>'+formatPercent(s.pctEjecucionVsPptoV0)+'</td><td>'+formatMoney(s.saldoVsPptoV0)+'</td>';
+    };
+    var byDueno1 = {};
+    porProyecto.forEach(function(r){
+      var dueno = r.duenoProyecto || 'SIN ÁREA';
+      byDueno1[dueno] = byDueno1[dueno] || [];
+      byDueno1[dueno].push(r);
+    });
+    var body1 = filaTotalProy;
+    Object.keys(byDueno1).sort().forEach(function(dueno){
+      var list = byDueno1[dueno];
+      var groupKey = 'proy1:'+dueno;
+      var expanded = App.isGroupExpanded(groupKey, 'proy1', 1);
+      body1 += '<tr class="row-area" onclick="App.toggleGroup(\''+groupKey+'\')"><td class="left" colspan="3"><span class="expand-icon">'+(expanded?'▾':'▸')+'</span>'+dueno+'</td>'+metricCellsV0Real(sumRowV0Real(list))+'</tr>';
+      if(expanded) list.forEach(function(r){
+        body1 += '<tr class="row-data"><td class="left"></td><td class="left">'+r.codAgrupacion+'</td><td class="left">'+r.agrupacionProyecto+'</td>'+metricCellsV0Real(r.s)+'</tr>';
+      });
+    });
+
+    // Agrupa por País -> Dueño del Proyecto, con subtotales en ambos niveles.
+    function sumRow(rows){
+      var t = {pptoV0:0, realYtd:0};
+      rows.forEach(function(r){ t.pptoV0 += r.s.pptoV0; t.realYtd += r.s.realYtd; });
+      return buildSummaryRow({pptoV0:t.pptoV0, realYtd:t.realYtd, ajustado:0, disponible:0});
+    }
+    var metricCells = function(s){
+      return '<td>'+formatMoney(s.pptoV0)+'</td><td>'+formatMoney(s.realYtd)+'</td>'+
+        '<td class="'+txtClass(varSemaforo(s.varPptoV0VsReal))+'">'+formatMoney(s.varPptoV0VsReal)+'</td><td>'+formatPercent(s.pctVarPptoV0VsReal)+'</td>'+
+        '<td>'+formatPercent(s.pctEjecucionVsPptoV0)+'</td><td>'+formatMoney(s.saldoVsPptoV0)+'</td>';
+    };
+    var byDueno2 = {};
+    porSociedad.forEach(function(r){
+      var dueno = r.duenoProyecto || 'SIN ÁREA';
+      var agrup = r.agrupacionProyecto || 'SIN AGRUPACIÓN';
+      var subgrupo = r.subgrupoGastosEst || 'SIN AGRUPACIÓN';
+      var gasto = r.gastoEst || 'SIN AGRUPACIÓN';
+      byDueno2[dueno] = byDueno2[dueno] || {};
+      byDueno2[dueno][agrup] = byDueno2[dueno][agrup] || {};
+      byDueno2[dueno][agrup][subgrupo] = byDueno2[dueno][agrup][subgrupo] || {};
+      byDueno2[dueno][agrup][subgrupo][gasto] = byDueno2[dueno][agrup][subgrupo][gasto] || [];
+      byDueno2[dueno][agrup][subgrupo][gasto].push(r);
+    });
+    var totSocProy = sumRow(porSociedad);
+    var body2 = '<tr class="row-total"><td class="left" colspan="5">Total general</td>'+metricCells(totSocProy)+'</tr>';
+
+    Object.keys(byDueno2).sort().forEach(function(dueno){
+      var agrupMap = byDueno2[dueno];
+      var todasFilasDueno = [];
+      Object.keys(agrupMap).forEach(function(a){ Object.keys(agrupMap[a]).forEach(function(sg){ Object.keys(agrupMap[a][sg]).forEach(function(g){ todasFilasDueno = todasFilasDueno.concat(agrupMap[a][sg][g]); }); }); });
+      var duenoS = sumRow(todasFilasDueno);
+      var duenoKey = 'proy2dueno:'+dueno;
+      var duenoExpanded = App.isGroupExpanded(duenoKey, 'proy2', 1);
+      body2 += '<tr class="row-area" onclick="App.toggleGroup(\''+duenoKey+'\')"><td class="left"><span class="expand-icon">'+(duenoExpanded?'▾':'▸')+'</span>'+dueno+'</td><td class="left" colspan="4"></td>'+metricCells(duenoS)+'</tr>';
+
+      if(duenoExpanded) Object.keys(agrupMap).sort().forEach(function(agrup){
+        var subgrupoMap = agrupMap[agrup];
+        var todasFilasAgrup = [];
+        Object.keys(subgrupoMap).forEach(function(sg){ Object.keys(subgrupoMap[sg]).forEach(function(g){ todasFilasAgrup = todasFilasAgrup.concat(subgrupoMap[sg][g]); }); });
+        var agrupS = sumRow(todasFilasAgrup);
+        var agrupKey = 'proy2agrup:'+dueno+'|'+agrup;
+        var agrupExpanded = App.isGroupExpanded(agrupKey, 'proy2', 2);
+        body2 += '<tr style="background:#f0f3f6;font-weight:600;cursor:pointer;" onclick="App.toggleGroup(\''+agrupKey+'\')"><td class="left"></td><td class="left" style="padding-left:16px;"><span class="expand-icon">'+(agrupExpanded?'▾':'▸')+'</span>'+agrup+'</td><td class="left" colspan="3"></td>'+metricCells(agrupS)+'</tr>';
+
+        if(agrupExpanded) Object.keys(subgrupoMap).sort().forEach(function(subgrupo){
+          var gastoMap = subgrupoMap[subgrupo];
+          var todasFilasSubgrupo = [];
+          Object.keys(gastoMap).forEach(function(g){ todasFilasSubgrupo = todasFilasSubgrupo.concat(gastoMap[g]); });
+          var subgrupoS = sumRow(todasFilasSubgrupo);
+          var subgrupoKey = 'proy2subgrupo:'+dueno+'|'+agrup+'|'+subgrupo;
+          var subgrupoExpanded = App.isGroupExpanded(subgrupoKey, 'proy2', 3);
+          body2 += '<tr style="background:#f7f9fb;font-weight:600;cursor:pointer;" onclick="App.toggleGroup(\''+subgrupoKey+'\')"><td class="left"></td><td class="left"></td><td class="left" style="padding-left:16px;"><span class="expand-icon">'+(subgrupoExpanded?'▾':'▸')+'</span>'+subgrupo+'</td><td class="left" colspan="2"></td>'+metricCells(subgrupoS)+'</tr>';
+
+          if(subgrupoExpanded) Object.keys(gastoMap).sort().forEach(function(gasto){
+            var rows = gastoMap[gasto];
+            var gastoS = sumRow(rows);
+            var gastoKey = 'proy2gasto:'+dueno+'|'+agrup+'|'+subgrupo+'|'+gasto;
+            var gastoExpanded = App.isGroupExpanded(gastoKey, 'proy2', 4);
+            body2 += '<tr style="background:#fbfcfd;font-weight:600;cursor:pointer;" onclick="App.toggleGroup(\''+gastoKey+'\')"><td class="left"></td><td class="left"></td><td class="left"></td><td class="left" style="padding-left:16px;"><span class="expand-icon">'+(gastoExpanded?'▾':'▸')+'</span>'+gasto+'</td><td class="left"></td>'+metricCells(gastoS)+'</tr>';
+            if(gastoExpanded) rows.forEach(function(r){
+              body2 += '<tr class="row-data"><td class="left"></td><td class="left"></td><td class="left"></td><td class="left"></td><td class="left" style="padding-left:16px;">'+(r.sociedadProyecto||'-')+'</td>'+metricCells(r.s)+'</tr>';
+            });
+          });
+        });
+      });
+    });
+
+    return filters+avisoDatos+
+      '<div class="panel"><h3>Ppto V0 vs Real por Sociedad/País y Proyecto</h3>'+
+      '<div class="small-note">La columna "País" muestra el código tal cual aparece en el campo "Gastos asumidos por?" de Ppto V0 (el país/unidad donde se implementa el proyecto) — no es el código de Sociedad SAP. Los subtotales resaltados agrupan por Dueño del Proyecto, Agrupación de Proyecto y Subgrupo de Gastos.</div>'+
+      App.controlesExpandir('proy2')+
+      '<div class="table-scroll" style="margin-top:8px;"><table><thead><tr><th class="left">Dueño del Proyecto</th><th class="left">Agrupación de Proyecto</th><th class="left">Subgrupo de Gastos</th><th class="left">Gasto</th><th class="left">País</th>'+
+      '<th>Ppto V0</th><th>Real YTD</th><th>VAR</th><th>%VAR</th><th>%Ejecución</th><th>Saldo</th></tr></thead><tbody>'+
+      (body2||'<tr><td colspan="11" class="empty-state">Sin datos para los filtros seleccionados</td></tr>')+'</tbody></table></div></div>';
+  },
+
+  v0vssipre:function(){
+    var f = App.getFilteredRecords();
+    var rows = Aggregations.v0vsSipreRows(f);
+    var filters = filterPanel([
+      {field:'sociedad', label:'Sociedad'},{field:'area', label:'Área'}
+    ]);
+
+    function sumSipreRow(list){
+      var t = {pptoV0:0, ajustado:0};
+      list.forEach(function(r){ t.pptoV0 += r.s.pptoV0; t.ajustado += r.s.pptoAjustadoSipre; });
+      return buildSummaryRow({pptoV0:t.pptoV0, realYtd:0, ajustado:t.ajustado, disponible:0});
+    }
+    var metricCellsSipre = function(s){
+      return '<td>'+formatMoney(s.pptoV0)+'</td><td>'+formatMoney(s.pptoAjustadoSipre)+'</td>'+
+        '<td class="'+txtClass(varSemaforo(s.varPptoV0VsPptoAjustadoSipre))+'">'+formatMoney(s.varPptoV0VsPptoAjustadoSipre)+'</td>'+
+        '<td>'+formatPercent(s.pctVarPptoV0VsPptoAjustadoSipre)+'</td><td>'+formatPercent(s.indiceAdherencia)+'</td>';
+    };
+
+    var byArea = {};
+    rows.forEach(function(r){
+      var area = r.area || 'SIN ÁREA';
+      byArea[area] = byArea[area] || [];
+      byArea[area].push(r);
+    });
+    var body = '<tr class="row-total"><td class="left" colspan="3">Total general</td>'+metricCellsSipre(sumSipreRow(rows))+'</tr>';
+    Object.keys(byArea).sort().forEach(function(area){
+      var list = byArea[area];
+      var groupKey = 'v0vf:'+area;
+      var expanded = App.isGroupExpanded(groupKey, 'v0vssipre', 1);
+      body += '<tr class="row-area" onclick="App.toggleGroup(\''+groupKey+'\')"><td class="left" colspan="3"><span class="expand-icon">'+(expanded?'▾':'▸')+'</span>'+area+'</td>'+metricCellsSipre(sumSipreRow(list))+'</tr>';
+
+      if(expanded){
+        var bySubgrupo = {};
+        list.forEach(function(r){ var sg = r.subgrupoGastosEst||'SIN AGRUPACIÓN'; (bySubgrupo[sg]=bySubgrupo[sg]||[]).push(r); });
+        Object.keys(bySubgrupo).sort().forEach(function(subgrupo){
+          var subList = bySubgrupo[subgrupo];
+          var subKey = 'v0vf-sub:'+area+'|'+subgrupo;
+          var subExpanded = App.isGroupExpanded(subKey, 'v0vssipre', 2);
+          body += '<tr style="background:#f0f3f6;font-weight:600;cursor:pointer;" onclick="App.toggleGroup(\''+subKey+'\')"><td class="left"></td><td class="left" style="padding-left:16px;"><span class="expand-icon">'+(subExpanded?'▾':'▸')+'</span>'+subgrupo+'</td><td class="left"></td>'+metricCellsSipre(sumSipreRow(subList))+'</tr>';
+          if(subExpanded) subList.forEach(function(r){
+            body += '<tr class="row-data"><td class="left"></td><td class="left"></td><td class="left" style="padding-left:16px;">'+r.gastoEst+'</td>'+metricCellsSipre(r.s)+'</tr>';
+          });
+        });
+      }
+    });
+
+    return filters+'<div class="note" style="margin:0 0 12px;">Esta vista no muestra proyecto como nivel de comparación: SIPRE no contiene proyecto asignado a nivel de fila.</div>'+
+      '<div class="panel"><h3>Ppto V0 vs Ppto VF (Área → Subgrupo de Gastos → Gasto)</h3>'+App.controlesExpandir('v0vssipre')+
+      '<div class="table-scroll"><table><thead><tr><th class="left">Área</th><th class="left">Subgrupo de Gastos</th><th class="left">Gasto</th>'+
+      '<th>Ppto V0</th><th>Ppto VF</th><th>VAR</th><th>%VAR</th><th>Índice Adherencia</th></tr></thead><tbody>'+
+      (body||'<tr><td colspan="8" class="empty-state">Sin datos para los filtros seleccionados</td></tr>')+'</tbody></table></div></div>';
+  },
+
+  sipreDisponible:function(){
+    var f = App.getFilteredRecords();
+    var rows = Aggregations.sipreDisponibleRows(f);
+    var filters = filterPanel([
+      {field:'sociedad', label:'Sociedad'},{field:'area', label:'Área'},{field:'ceco', label:'CECO'},
+      {field:'cuenta', label:'Cuenta'}
+    ]);
+    var totSip = {ajustado:0, disponible:0, comprometido:0};
+    rows.forEach(function(r){ totSip.ajustado+=r.s.pptoAjustadoSipre; totSip.disponible+=r.s.pptoDisponibleSipre; totSip.comprometido+=r.s.pptoComprometidoSipreCategoria; });
+    var totSipS = buildSummaryRow({pptoV0:0, realYtd:0, ajustado:totSip.ajustado, disponible:totSip.disponible});
+    var filaTotalSip = '<tr class="row-total"><td class="left" colspan="4">Total general</td>'+
+      '<td>'+formatMoney(totSipS.pptoAjustadoSipre)+'</td><td>'+formatMoney(totSipS.pptoDisponibleSipre)+'</td>'+
+      '<td>'+formatMoney(totSip.comprometido)+'</td>'+
+      '<td>'+formatPercent(totSipS.pctDisponibleSipre)+'</td><td>'+badge(totSipS.estadoDisponibilidad)+'</td></tr>';
+    var body = filaTotalSip+rows.map(function(r){
+      return '<tr class="row-data"><td class="left">'+socLabel(r.sociedad)+'</td><td class="left">'+r.area+'</td><td class="left">'+r.ceco+'</td>'+
+        '<td class="left">'+r.cuenta+'</td>'+
+        '<td>'+formatMoney(r.s.pptoAjustadoSipre)+'</td><td>'+formatMoney(r.s.pptoDisponibleSipre)+'</td>'+
+        '<td>'+formatMoney(r.s.pptoComprometidoSipreCategoria)+'</td>'+
+        '<td>'+formatPercent(r.s.pctDisponibleSipre)+'</td><td>'+badge(r.s.estadoDisponibilidad)+'</td></tr>';
+    }).join('');
+    return filters+'<div class="panel"><h3>Ppto VF y presupuesto disponible</h3>'+
+      '<div class="table-scroll"><table><thead><tr><th class="left">Sociedad</th><th class="left">Área</th><th class="left">CECO</th>'+
+      '<th class="left">Cuenta</th><th>Ppto VF</th><th>Ppto Disponible VF</th><th>Comprometido (VF)</th><th>%Disponible</th><th>Estado</th></tr></thead><tbody>'+
+      (body||'<tr><td colspan="9" class="empty-state">Sin datos para los filtros seleccionados</td></tr>')+'</tbody></table></div></div>';
+  },
+
+  sipreVsReal:function(){
+    var f = App.getFilteredRecords();
+    var rows = Aggregations.sipreVsRealRows(f);
+    var filters = filterPanel([
+      {field:'sociedad', label:'Sociedad'},{field:'area', label:'Área'},{field:'cuenta', label:'Cuenta'},{field:'ceco', label:'CECO'}
+    ]);
+    var totSvr = {ajustado:0, disponible:0, real:0};
+    rows.forEach(function(r){ totSvr.ajustado+=r.s.pptoAjustadoSipre; totSvr.disponible+=r.s.pptoDisponibleSipre; totSvr.real+=r.s.realYtd; });
+    var totSvrS = buildSummaryRow({pptoV0:0, realYtd:totSvr.real, ajustado:totSvr.ajustado, disponible:totSvr.disponible});
+    var filaTotalSvr = '<tr class="row-total"><td class="left" colspan="4">Total general</td>'+
+      '<td>'+formatMoney(totSvrS.pptoAjustadoSipre)+'</td><td>'+formatMoney(totSvrS.pptoDisponibleSipre)+'</td><td>'+formatPercent(totSvrS.pctDisponibleSipre)+'</td><td>'+formatMoney(totSvrS.realYtd)+'</td>'+
+      '<td>'+formatMoney(totSvrS.varRealVsPptoAjustadoSipre)+'</td>'+
+      '<td>'+formatPercent(totSvrS.pctVarRealVsPptoAjustadoSipre)+'</td><td>'+formatPercent(totSvrS.pctEjecucionVsSipre)+'</td>'+
+      '<td>'+formatMoney(totSvrS.saldoDisponibleVsSipre)+'</td><td class="left">-</td></tr>';
+    var body = filaTotalSvr+rows.map(function(r){
+      return '<tr class="row-data"><td class="left">'+socLabel(r.sociedad)+'</td><td class="left">'+r.area+'</td><td class="left">'+r.cuenta+'</td><td class="left">'+r.ceco+'</td>'+
+        '<td>'+formatMoney(r.s.pptoAjustadoSipre)+'</td><td>'+formatMoney(r.s.pptoDisponibleSipre)+'</td><td>'+formatPercent(r.s.pctDisponibleSipre)+'</td><td>'+formatMoney(r.s.realYtd)+'</td>'+
+        '<td class="'+txtClass(varSemaforo(r.s.varRealVsPptoAjustadoSipre))+'">'+formatMoney(r.s.varRealVsPptoAjustadoSipre)+'</td>'+
+        '<td>'+formatPercent(r.s.pctVarRealVsPptoAjustadoSipre)+'</td><td>'+formatPercent(r.s.pctEjecucionVsSipre)+'</td>'+
+        '<td>'+formatMoney(r.s.saldoDisponibleVsSipre)+'</td><td>'+r.s.validacion+'</td></tr>';
+    }).join('');
+    return filters+'<div class="note" style="margin:0 0 12px;">Comparación a nivel Sociedad + CECO + Cuenta. No se compara a nivel proyecto. Real YTD se compara contra Ppto VF (mismo periodo seleccionado), mostrando también el Ppto Disponible VF.</div>'+
+      '<div class="panel"><h3>Real YTD BI vs Ppto VF / Disponible SIPRE</h3>'+
+      '<div class="table-scroll"><table><thead><tr><th class="left">Sociedad</th><th class="left">Área</th><th class="left">Cuenta</th><th class="left">CECO</th>'+
+      '<th>Ppto VF</th><th>Ppto Disponible VF</th><th>%Disponible</th><th>Real YTD</th><th>VAR</th><th>%VAR</th><th>%Ejecución</th><th>Saldo</th><th class="left">Validación</th></tr></thead><tbody>'+
+      (body||'<tr><td colspan="13" class="empty-state">Sin datos para los filtros seleccionados</td></tr>')+'</tbody></table></div></div>';
+  },
+
+  detalle:function(){
+    var f = App.getFilteredRecords();
+    var search = App.state.detailSearch.toLowerCase();
+    if(search){
+      f = f.filter(function(r){
+        return Object.keys(r).some(function(k){ return r[k] && String(r[k]).toLowerCase().indexOf(search)>=0; });
+      });
+    }
+    var sortField = App.state.detailSort;
+    if(sortField){
+      f = f.slice().sort(function(a,b){
+        var av=a[sortField]||'', bv=b[sortField]||'';
+        if(typeof av==='number'||typeof bv==='number') return (av-bv)*App.state.detailSortDir;
+        return String(av).localeCompare(String(bv))*App.state.detailSortDir;
+      });
+    }
+    var pageSize = 50;
+    var totalPages = Math.max(1, Math.ceil(f.length/pageSize));
+    App.state.detailPage = Math.min(App.state.detailPage, totalPages);
+    var page = App.state.detailPage;
+    var pageRows = f.slice((page-1)*pageSize, page*pageSize);
+
+    var cols = [['source','Fuente'],['sociedad','Sociedad'],['area','Área'],['concepto','Concepto'],['conceptoSipre','Concepto SIPRE'],
+      ['cuenta','Cuenta'],['nombreCuenta','Nombre Cuenta'],['ceco','CECO'],['nombreCeco','Nombre CECO'],['proyecto','Proyecto'],
+      ['agrupacionProyecto','Agrupación Proyecto'],['periodo','Periodo'],['monto','Monto']];
+
+    var thead = cols.map(function(c){ return '<th class="left sortable" onclick="Views.sortDetail(\''+c[0]+'\')">'+c[1]+'</th>'; }).join('');
+    var totalMonto = f.reduce(function(acc,r){ return acc + (r.monto||0); }, 0);
+    var filaTotalDetalle = '<tr class="row-total">'+cols.map(function(c){
+      if(c[0]==='monto') return '<td>'+formatMoney(totalMonto)+'</td>';
+      if(c[0]==='source') return '<td class="left">Total general</td>';
+      return '<td class="left"></td>';
+    }).join('')+'</tr>';
+    var body = pageRows.map(function(r){
+      return '<tr class="row-data">'+cols.map(function(c){
+        var val = r[c[0]];
+        if(c[0]==='monto') return '<td>'+formatMoney(val)+'</td>';
+        return '<td class="left">'+(val!==undefined&&val!==null?val:'-')+'</td>';
+      }).join('')+'</tr>';
+    }).join('');
+
+    return '<div class="panel"><div class="search-bar"><input type="text" placeholder="Buscar en el detalle..." value="'+App.state.detailSearch+'" oninput="Views.searchDetail(this.value)"/></div>'+
+      '<div class="table-scroll"><table><thead><tr>'+thead+'</tr></thead><tbody>'+filaTotalDetalle+
+      (body||'<tr><td colspan="'+cols.length+'" class="empty-state">Sin registros</td></tr>')+'</tbody></table></div>'+
+      '<div class="pagination">'+
+        '<button class="btn ghost" onclick="Views.gotoPage('+(page-1)+')" '+(page<=1?'disabled':'')+'>Anterior</button>'+
+        '<span>Página '+page+' de '+totalPages+' ('+f.length.toLocaleString('es-PE')+' registros)</span>'+
+        '<button class="btn ghost" onclick="Views.gotoPage('+(page+1)+')" '+(page>=totalPages?'disabled':'')+'>Siguiente</button>'+
+      '</div></div>';
+  },
+  sortDetail:function(field){
+    if(App.state.detailSort===field) App.state.detailSortDir *= -1;
+    else { App.state.detailSort = field; App.state.detailSortDir = 1; }
+    App.render();
+  },
+  searchDetail:function(val){
+    App.state.detailSearch = val; App.state.detailPage = 1; App.render();
+  },
+  gotoPage:function(p){ App.state.detailPage = p; App.render(); },
+
+  toggleMsel:function(field){
+    App.state.openFilterField = (App.state.openFilterField===field) ? null : field;
+    App.render();
+  },
+  mselToggle:function(field, value, checked){
+    var arr = App.state.filters[field] || [];
+    var idx = arr.indexOf(value);
+    if(checked && idx<0) arr.push(value);
+    if(!checked && idx>=0) arr.splice(idx,1);
+    App.state.filters[field] = arr;
+    App.state.openFilterField = field;
+    App.render();
+  },
+  mselSelectAll:function(field){
+    App.state.filters[field] = App.uniqueValues(field);
+    App.state.openFilterField = field;
+    App.render();
+  },
+  mselClear:function(field){
+    App.state.filters[field] = [];
+    App.state.openFilterField = field;
+    App.render();
+  },
+
+  calidad:function(){
+    var dq = Aggregations.dataQuality(App.state.records, App.state.warnings, App.state.parseStats);
+    var body = dq.map(function(r){
+      return '<tr class="row-data"><td class="left">'+r.tipo+'</td><td class="left">'+r.fuente+'</td><td class="left">'+r.campo+'</td>'+
+        '<td class="left">'+r.descripcion+'</td><td>'+formatNumber(r.cantidad)+'</td><td class="left severity-'+r.severidad+'">'+r.severidad+'</td></tr>';
+    }).join('');
+
+    var mappingPanel = '';
+    if(App.state.source==='archivo' && App.state.columnMappings){
+      var keys = Object.keys(App.state.columnMappings);
+      if(keys.length){
+        var rows = keys.map(function(k){
+          var m = App.state.columnMappings[k];
+          var pairs = Object.keys(m.map).map(function(orig){
+            return '<div style="display:flex;gap:6px;"><span style="color:#888;min-width:160px;">'+orig+'</span><span>→</span><span style="font-weight:600;">'+m.map[orig]+'</span></div>';
+          }).join('');
+          return '<div style="margin-bottom:12px;"><div style="font-weight:700;color:var(--azul-principal);margin-bottom:4px;">'+k+' <span style="font-weight:400;color:#888;">(pestaña: '+m.sheet+')</span></div>'+pairs+'</div>';
+        }).join('');
+        mappingPanel = '<div class="panel"><h3>Columnas detectadas por pestaña</h3>'+
+          '<div class="small-note">Verifica aquí que cada columna de tu Excel se haya interpretado correctamente. Si un campo aparece mapeado al campo equivocado (por ejemplo, Sociedad mapeada como Cuenta), revisa el nombre del encabezado en esa columna del Excel.</div>'+
+          '<div style="margin-top:10px;">'+rows+'</div></div>';
+      }
+    }
+
+    return mappingPanel+'<div class="panel"><h3>Calidad de Datos</h3>'+
+      '<div class="small-note">SIPRE sin proyecto se clasifica como <b>Informativo</b>, ya que es parte esperada de la estructura del archivo, no un error crítico.</div>'+
+      '<div class="table-scroll" style="margin-top:10px;"><table><thead><tr><th class="left">Tipo alerta</th><th class="left">Fuente</th><th class="left">Campo</th>'+
+      '<th class="left">Descripción</th><th>Cantidad</th><th class="left">Severidad</th></tr></thead><tbody>'+body+'</tbody></table></div></div>';
+  },
+
+  glosario:function(){
+    function seccion(titulo, filas){
+      return '<div class="panel"><h3>'+titulo+'</h3><table><tbody>'+
+        filas.map(function(f){
+          return '<tr><td class="left" style="font-weight:700;width:260px;vertical-align:top;">'+f[0]+'</td><td class="left" style="vertical-align:top;">'+f[1]+'</td></tr>';
+        }).join('')+'</tbody></table></div>';
+    }
+    return '<div class="small-note" style="margin-bottom:12px;">Este glosario documenta, en lenguaje simple, de dónde sale cada dato y cómo se calcula cada métrica en la aplicación.</div>'+
+
+      seccion('Fuentes de datos', [
+        ['Ppto V0', 'Presupuesto inicial aprobado del año. Llega en <b>USD</b>. Sus columnas mensuales (fechas Ene–Dic) se usan directamente; no requiere conversión de moneda.'],
+        ['SIPRE', 'Presupuesto actualizado/vigente. Llega en <b>PEN</b> y se convierte a USD con su propio tipo de cambio: <b>USD = Monto original / TC</b>. Cada fila trae un "Concepto (CONCEPTO)" que indica si es Presupuesto, Disponible, Comprometido, Traslados o Real.'],
+        ['REALES BI CORP', 'Gasto real ejecutado de la sociedad de la gerencia (siempre en USD). Cada fila ya es de un mes específico (no requiere desagregar por mes).'],
+        ['REALES BI PAÍS', 'Gasto real ejecutado de operaciones país (siempre en USD). Solo se incluyen las filas marcadas "SI" en la columna <b>INCLUIDO EN PPTO V0</b>; el resto se excluye de toda comparativa.'],
+        ['Maestros (Sociedades, Cuentas, CeCo, Proyectos)', 'Se usan para completar Área, Descripción de Cuenta, Agrupación de Cuenta, País y Nombre de Proyecto cuando la hoja transaccional no los trae directamente.'],
+        ['0 MAESTRO GRUPO CUENTAS', 'Tabla de validación (lista única de Sociedad + Agrupación de Cuenta). No se usa para cruzar datos automáticamente; sirve como referencia de las agrupaciones válidas por sociedad.']
+      ]) +
+
+      seccion('Filtro "INCLUIDO EN PPTO V0"', [
+        ['Regla', 'Solo las filas marcadas exactamente "SI" en la columna INCLUIDO EN PPTO V0 se incluyen en la aplicación. Filas en blanco o "NO" se excluyen por completo (no aparecen en ninguna vista ni cálculo).'],
+        ['Aplica a', 'SIPRE, REALES BI CORP y REALES BI PAÍS.'],
+        ['No aplica a', 'Ppto V0 (no tiene esta columna; se incluye siempre).']
+      ]) +
+
+      seccion('Conversión de moneda', [
+        ['Moneda base', 'USD. Todas las comparativas y KPIs se calculan en USD.'],
+        ['Fórmula', 'USD = Monto en moneda original ÷ TC (tipo de cambio de esa fila).'],
+        ['Selector de moneda (barra superior)', 'Solo cambia cómo se MUESTRAN los montos en pantalla (USD o PEN); no afecta ningún cálculo interno, que siempre ocurre en USD.']
+      ]) +
+
+      seccion('CECO en Ppto V0', [
+        ['Origen', 'Ppto V0 no trae un código de CECO directo; su columna "Cod_Proy" es en realidad una llave compuesta "{CECO}-{sufijo}" (ej. "21L00402-PG4"). Se extrae el CECO tomando el texto antes del guion.'],
+        ['Descripción del CECO', 'Se obtiene cruzando Sociedad + CECO contra "0 MAESTRO CeCo".'],
+        ['Ppto V0 vs Real', 'Ahora se agrupa por Sociedad + Agrupación de Proyecto + CECO (código y descripción), lo que permite que Ppto V0 y Real (que sí trae CECO real) crucen correctamente.']
+      ]) +
+
+      seccion('Agrupación de Cuenta ("GRUPO_CUENTA")', [
+        ['Ppto V0 y SIPRE', 'Se obtiene cruzando Sociedad + Código de Cuenta contra "0 MAESTRO CUENTAS" (campo GRUPO_CUENTA).'],
+        ['REALES BI CORP/PAÍS', 'Viene directo en la columna "GRUPO DE CUENTA" de esas hojas (no requiere cruce).'],
+        ['Normalización', 'Si el mismo texto llega con y sin tildes desde distintas fuentes (ej. "Alimentacion" vs "Alimentación"), la aplicación las unifica automáticamente bajo una sola etiqueta para no fragmentar la matriz.']
+      ]) +
+
+      seccion('Filtro de periodo (Año / Mes de corte / YTD / YTG / Full Year)', [
+        ['YTD (Year To Date)', 'Suma Enero hasta el mes de corte seleccionado, del año seleccionado.'],
+        ['YTG (Year To Go)', 'Suma desde el mes siguiente al de corte hasta Diciembre, del año seleccionado.'],
+        ['Full Year (FY)', 'Suma los 12 meses del año seleccionado.'],
+        ['Registros sin mes/año', 'Si una fuente no trae desagregación mensual, sus registros se incluyen siempre, sin importar el filtro de periodo activo.']
+      ]) +
+
+      seccion('Fórmulas principales', [
+        ['VAR Ppto V0 vs Real', 'Real YTD − Ppto V0'],
+        ['%VAR Ppto V0 vs Real', '(Real YTD − Ppto V0) / Ppto V0'],
+        ['% Ejecución vs Ppto V0', 'Real YTD / Ppto V0'],
+        ['Saldo vs Ppto V0', 'Ppto V0 − Real YTD'],
+        ['VAR Ppto V0 vs Ppto VF', 'Ppto VF − Ppto V0'],
+        ['Índice de adherencia presupuestal', 'Ppto VF / Ppto V0 (100% = sin cambios respecto al presupuesto inicial)'],
+        ['VAR Real vs Ppto VF', 'Real YTD − Ppto VF'],
+        ['% Ejecución vs Ppto VF', 'Real YTD / Ppto VF'],
+        ['Ppto Disponible VF', 'Suma mensualizada de las filas SIPRE cuyo Concepto = "Disponible", dentro del periodo seleccionado.'],
+        ['% Disponible sobre VF', 'Ppto Disponible VF / Ppto VF'],
+        ['Comprometido (VF)', 'Suma mensualizada de las filas SIPRE cuyo Concepto = "Comprometido" (se muestra aparte, no se mezcla con VF).'],
+        ['Categoría "Real" dentro de SIPRE', 'Se contabiliza aparte (no se mezcla con VF/Disponible); el gasto real oficial de la app siempre viene de REALES BI, no de SIPRE.'],
+        ['Categoría "Traslados"', 'Se suma dentro de Ppto VF, ya que representa transferencias que modifican el presupuesto vigente.']
+      ]) +
+
+      seccion('Semaforización', [
+        ['% Ejecución vs Ppto V0 / vs Ppto VF', '<span class="badge badge-ROJO">ROJO</span> si &lt;90% · <span class="badge badge-AMARILLO">ÁMBAR</span> si 90%–95% · <span class="badge badge-VERDE">VERDE</span> si &gt;95%'],
+        ['Índice de adherencia presupuestal', '<span class="badge badge-VERDE">VERDE</span> 95%–105% · <span class="badge badge-AMARILLO">ÁMBAR</span> 90%–95% o 105%–110% · <span class="badge badge-ROJO">ROJO</span> fuera de ese rango'],
+        ['% Disponible sobre VF', '<span class="badge badge-VERDE">VERDE</span> ≥25% · <span class="badge badge-AMARILLO">ÁMBAR</span> 10%–25% · <span class="badge badge-ROJO">ROJO</span> &lt;10%'],
+        ['Variaciones (VAR / %VAR)', 'Se colorean con el mismo semáforo de la métrica de ejecución/adherencia relacionada, no con un simple positivo/negativo.']
+      ]) +
+
+      seccion('Validación SIPRE vs Real', [
+        ['OK', 'Hay Ppto VF y Real, y Real no excede el Ppto VF.'],
+        ['Real excede SIPRE', 'El gasto real superó el presupuesto ajustado vigente.'],
+        ['Real sin SIPRE', 'Hay gasto real pero no hay presupuesto ajustado SIPRE para esa combinación.'],
+        ['SIPRE sin real', 'Hay presupuesto ajustado SIPRE pero aún no hay ejecución real.'],
+        ['Sin movimiento', 'No hay ni presupuesto ajustado ni real para esa combinación en el periodo seleccionado.']
+      ]);
+  }
+};
+
+function kpiCard(label, value, estado){
+  return '<div class="kpi-card"><div class="label">'+label+'</div><div class="value">'+value+'</div>'+
+    (estado?'<div class="sub"><span class="dot dot-'+estado+'"></span>'+estado+'</div>':'')+'</div>';
+}
+
+App.init();
+</script>
+</body>
+</html>
