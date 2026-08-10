@@ -1,1 +1,2066 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISM DRE Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  /* ── Paleta oficial ISM (Manual de Identidad Visual v1.2) ── */
+  --ism-green:#00953B;--ism-green-dark:#006B2B;--ism-green-10:#E8F5EE;
+  --ism-red:#EE3124;--ism-black:#302A1B;
+  --ism-azul:#0624BA;--ism-amarillo:#FFBC36;--ism-naranja:#EC6B00;--ism-celeste:#7CD7FC;--ism-salmon:#F47E67;
+  --ism-surface-dark:#1B2420;
+  --scm-ok:#00953B;--scm-warning:#A07800;--scm-critical:#EE3124;
+  --font-display:'Work Sans','Segoe UI',Arial,sans-serif;
+  --font-body:'Nunito','Segoe UI',Arial,sans-serif;
+  --header-height:56px;--sidebar-width:224px;--sidebar-collapsed:56px;--sidebar-reduced-width:200px;
+  --radius-sm:6px;--radius-md:10px;--radius-full:9999px;
+  /* ── NUEVO v1.2: foco de teclado y chips de header (nunca opacidad p/jerarquía de texto) ── */
+  --ism-focus-ring:#0624BA;
+  --ism-header-chip-bg:rgba(255,255,255,.16);--ism-header-chip-text:#FFFFFF;
+  /* ── NUEVO v1.2: colores de gráfico validados por contraste WCAG AA (líneas/ejes/leyendas) ──
+     Los rellenos grandes (barras/áreas) siguen usando el hex original de la paleta base. */
+  --chart-1-on-light:#00953B;--chart-2-on-light:#EE3124;--chart-3-on-light:#0624BA;
+  --chart-4-on-light:#C58300;--chart-5-on-light:#EC6B00;--chart-6-on-light:#059CDA;--chart-7-on-light:#F2664A;
+  --chart-1-on-dark:#00953B;--chart-2-on-dark:#EE3124;--chart-3-on-dark:#4260F9;
+  --chart-4-on-dark:#FFBC36;--chart-5-on-dark:#EC6B00;--chart-6-on-dark:#7CD7FC;--chart-7-on-dark:#F47E67;
+  /* ── NUEVO v1.2: Sistema de Movimiento e Interacción (Sección 07) ── */
+  --ease-out:cubic-bezier(0.23,1,0.32,1);--ease-in-out:cubic-bezier(0.77,0,0.175,1);--ease-drawer:cubic-bezier(0.32,0.72,0,1);
+  --duration-instant:100ms;--duration-fast:160ms;--duration-base:200ms;--duration-moderate:250ms;--duration-modal:300ms;
+  --theme-transition:200ms ease;
+  /* ── Mapeo interno del dashboard → paleta ISM — TEMA CLARO (default) ── */
+  --bg:#FFFFFF;--bg2:#F9FAFB;--bg3:#FFFFFF;--bg4:#F3F4F6;
+  --border:#E5E7EB;--border2:#D1D5DB;
+  --t1:var(--ism-black);--t2:#5B5648;--t3:#8A8575;
+  --orange:var(--ism-green);--blue:var(--ism-azul);--green:var(--ism-green);--red:var(--ism-red);
+  --yellow:var(--ism-amarillo);--purple:var(--ism-celeste);--teal:var(--ism-azul);
+  --sw:var(--sidebar-width);
+  /* Variables "activas" de gráfico — el JS las resuelve leyendo getComputedStyle según el tema */
+  --chart-1:var(--chart-1-on-light);--chart-2:var(--chart-2-on-light);--chart-3:var(--chart-3-on-light);
+  --chart-4:var(--chart-4-on-light);--chart-5:var(--chart-5-on-light);--chart-6:var(--chart-6-on-light);--chart-7:var(--chart-7-on-light);
+}
+/* ══ NUEVO v1.2: MODO OSCURO (toggle de tema, header siempre Verde ISM en ambos temas) ══ */
+[data-theme="dark"]{
+  --bg:#12181A;--bg2:var(--ism-surface-dark);--bg3:#212B26;--bg4:#2A3530;
+  --border:#37423C;--border2:#46524B;
+  --t1:#F3F4F1;--t2:#B7C0BA;--t3:#8A9690;
+  --chart-1:var(--chart-1-on-dark);--chart-2:var(--chart-2-on-dark);--chart-3:var(--chart-3-on-dark);
+  --chart-4:var(--chart-4-on-dark);--chart-5:var(--chart-5-on-dark);--chart-6:var(--chart-6-on-dark);--chart-7:var(--chart-7-on-dark);
+}
+[data-theme="dark"] .card{box-shadow:none;}
+[data-theme="dark"] .ism-header__logo{background:#0F1A13;}
+[data-theme="dark"] .formula-box{background:#0F1512;}
+body,.card,.tab-panel,#sidebar,#topbar{transition:background var(--theme-transition),color var(--theme-transition),border-color var(--theme-transition);}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--bg2);color:var(--t1);display:flex;min-height:100vh;font-size:13px;line-height:1.5;}
+/* ══ ISM HEADER ══ */
+.ism-header{position:fixed;top:0;left:0;right:0;height:var(--header-height);background:var(--ism-green);color:#fff;display:flex;align-items:center;gap:14px;padding:0 18px;z-index:1000;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.ism-header__logo{font-family:var(--font-display);font-weight:800;font-size:16px;letter-spacing:.5px;background:#fff;color:var(--ism-green);border-radius:5px;padding:2px 8px;line-height:1.5;}
+.ism-header__area{font-family:var(--font-display);font-size:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:700;background:var(--ism-header-chip-bg);color:var(--ism-header-chip-text);padding:2px 7px;border-radius:4px;display:inline-block;}
+.ism-header__app-name{font-family:var(--font-display);font-weight:700;font-size:14px;white-space:nowrap;color:#fff;}
+.ism-header__divider{width:1px;height:20px;background:rgba(255,255,255,.3);}
+.ism-header__country-badge{background:var(--ism-header-chip-bg);border:1px solid rgba(255,255,255,.3);border-radius:var(--radius-full);padding:3px 10px;font-size:11px;font-weight:700;white-space:nowrap;color:var(--ism-header-chip-text);}
+.ism-header__meta{font-size:10px;white-space:nowrap;background:var(--ism-header-chip-bg);color:var(--ism-header-chip-text);padding:2px 8px;border-radius:4px;font-weight:600;}
+.ism-header__spacer{flex:1;}
+.ism-header__theme-toggle{background:var(--ism-header-chip-bg);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:var(--radius-full);width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0;}
+.ism-header__avatar{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:11px;flex-shrink:0;color:#fff;}
+/* ══ SIDEBAR ══ */
+#sidebar{width:var(--sw);background:var(--bg3);border-right:1px solid var(--border);position:fixed;top:var(--header-height);left:0;bottom:0;display:flex;flex-direction:column;z-index:200;transition:width .18s;overflow:hidden;}
+#sidebar.ism-sidebar--collapsed{width:var(--sidebar-collapsed);}
+#sidebar.ism-sidebar--collapsed .sb-logo,#sidebar.ism-sidebar--collapsed .nav-label,#sidebar.ism-sidebar--collapsed .sb-footer{display:none;}
+#sidebar.ism-sidebar--collapsed .nav-btn{justify-content:center;padding:8px;}
+.sb-logo{padding:14px 16px 12px;border-bottom:1px solid var(--border);}
+.sb-brand{font-family:var(--font-display);font-size:13px;font-weight:800;letter-spacing:.3px;color:var(--ism-green);}
+.sb-sub{font-size:9px;color:var(--t3);margin-top:2px;line-height:1.3;}
+.sb-nav{padding:8px;flex:1;overflow-y:auto;}
+.sb-collapse-btn{width:100%;padding:8px;border:none;background:transparent;color:var(--t3);cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sb-collapse-btn:hover{background:var(--bg4);color:var(--ism-green);}
+.nav-btn{display:flex;align-items:center;gap:10px;width:100%;padding:8px 12px;border:none;background:transparent;color:var(--t2);cursor:pointer;border-radius:var(--radius-sm);font-size:12px;font-family:var(--font-display);font-weight:500;margin-bottom:2px;text-align:left;transition:all .15s;position:relative;}
+.nav-btn:hover{background:var(--ism-green-10);color:var(--ism-green-dark);}
+.nav-btn.active{background:var(--ism-green-10);color:var(--ism-green);font-weight:700;}
+.nav-btn.active::before{content:'';position:absolute;left:-8px;top:4px;bottom:4px;width:3px;background:var(--ism-green);border-radius:0 3px 3px 0;}
+.nav-icon{font-size:14px;width:18px;flex-shrink:0;}
+.sb-footer{padding:10px 14px;border-top:1px solid var(--border);font-size:10px;color:var(--t3);}
+/* ══ ISM FOOTER ══ */
+.ism-footer{padding:10px 20px;border-top:1px solid var(--border);background:var(--bg3);font-size:10px;color:var(--t3);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+.ism-footer b{color:var(--t2);}
+#main{margin-left:var(--sw);margin-top:var(--header-height);flex:1;display:flex;flex-direction:column;min-height:calc(100vh - var(--header-height));transition:margin-left .18s;}
+#main.ism-collapsed{margin-left:var(--sidebar-collapsed);}
+#topbar{background:var(--bg3);border-bottom:1px solid var(--border);padding:7px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;flex-wrap:wrap;}
+.tb-title{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--t1);white-space:nowrap;}
+.tb-sep{width:1px;height:18px;background:var(--border);flex-shrink:0;}
+.fg{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.fl{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;margin-right:2px;}
+.pill{padding:2px 8px;border-radius:var(--radius-full);border:1px solid var(--border);background:transparent;color:var(--t2);cursor:pointer;font-size:11px;font-family:var(--font-display);transition:all .12s;}
+.pill:hover{border-color:var(--ism-green);color:var(--ism-green);}
+.pill.on{background:var(--ism-green);border-color:var(--ism-green);color:#fff;font-weight:600;}
+.pill.year{padding:2px 10px;}.pill.year.on{background:var(--ism-green);border-color:var(--ism-green);color:#fff;}
+.ctoggle{display:flex;background:var(--bg4);border-radius:5px;border:1px solid var(--border);overflow:hidden;}
+.cbtn{padding:3px 9px;border:none;background:transparent;color:var(--t2);cursor:pointer;font-size:11px;font-family:var(--font-display);}
+.cbtn.on{background:var(--ism-green);color:#fff;}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.dstatus{font-size:10px;color:var(--t3);}.dstatus.ok{color:var(--ism-green);font-weight:600;}
+.tc-badge{font-size:9px;background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--t3);}
+#content{flex:1;padding:20px;}
+.tab-panel{display:none;}.tab-panel.active{display:block;}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.g23{display:grid;grid-template-columns:2fr 3fr;gap:14px;}
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-md);padding:15px;box-shadow:0 1px 2px rgba(48,42,27,.04);}
+.card-sm{padding:11px;}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+.ct{font-family:var(--font-display);font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;}
+.cs{font-size:10px;color:var(--t3);margin-top:2px;}
+.kpi-val{font-family:var(--font-display);font-size:20px;font-weight:700;line-height:1.1;color:var(--t1);}
+.kpi-sub{font-size:10px;color:var(--t2);margin-top:2px;}
+.kpi-row{display:flex;gap:9px;margin-top:8px;}.km{flex:1;}.kml{font-size:10px;color:var(--t3);}.kmv{font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--t1);}
+.prog{background:var(--bg4);border-radius:3px;height:4px;margin-top:4px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;transition:width .5s;}
+.tw{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{background:var(--ism-green);color:#FFFFFF;font-family:var(--font-display);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;padding:7px 9px;text-align:right;white-space:nowrap;}
+th:first-child{text-align:left;border-radius:var(--radius-sm) 0 0 0;}
+th:last-child{border-radius:0 var(--radius-sm) 0 0;}
+td{padding:5px 9px;font-size:12px;text-align:right;border-bottom:1px solid var(--border);font-family:var(--font-body);}
+td:first-child{text-align:left;color:var(--t2);}
+tbody tr:nth-child(even) td{background:#F9FAFB;}
+tr:hover td{background:var(--ism-green-10)!important;}
+.td-b{font-weight:700;color:var(--t1)!important;font-family:var(--font-display);}
+.td-section td{background:var(--ism-green-10)!important;color:var(--ism-green-dark)!important;font-size:10px;text-transform:uppercase;font-weight:700;border-top:1px solid #99D4B1;}
+.pos{color:var(--ism-green)!important;font-weight:600;}.neg{color:var(--ism-red)!important;font-weight:600;}.neu{color:var(--t3)!important;}
+.sem{display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.sem.g{background:var(--ism-green);}.sem.y{background:var(--ism-amarillo);}.sem.r{background:var(--ism-red);}.sem.n{background:var(--border2);}
+/* ══ BADGES ISM ══ */
+.ism-badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-display);font-size:10px;font-weight:700;padding:2px 9px;border-radius:var(--radius-full);border:1px solid transparent;text-transform:uppercase;letter-spacing:.3px;}
+.ism-badge--ok{background:#E8F5EE;color:#004D1E;border-color:#99D4B1;}
+.ism-badge--warning{background:#FFF8E1;color:#7A5A00;border-color:#FFBC36;}
+.ism-badge--critical{background:#FDEDEC;color:#9B1A10;border-color:#F89C95;}
+.ism-badge--nd{background:#F3F4F6;color:#374151;border-color:#D1D5DB;}
+.cw{position:relative;}.cw canvas{max-height:255px;}.cw-tall canvas{max-height:300px;}.cw-med canvas{max-height:195px;}
+.sh{margin-bottom:15px;padding-bottom:9px;border-bottom:1px solid var(--border);}
+.stitle{font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--t1);}.ssub{font-size:11px;color:var(--t3);margin-top:3px;}
+.mb8{margin-bottom:8px;}.mb12{margin-bottom:12px;}.mb16{margin-bottom:16px;}.mb20{margin-bottom:20px;}.mt8{margin-top:8px;}
+.alert{padding:8px 12px;border-radius:var(--radius-sm);font-size:12px;margin-bottom:11px;}
+.alert-i{background:#EEF2FF;border:1px solid #C7D2FE;color:var(--ism-azul);}
+.alert-w{background:#FFF8E1;border:1px solid #FFBC36;color:var(--scm-warning);}
+.alert-s{background:var(--ism-green-10);border:1px solid #99D4B1;color:var(--ism-green-dark);}
+.uzone{border:2px dashed var(--border2);border-radius:var(--radius-md);padding:24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg2);}
+.uzone:hover,.uzone.drag-over{border-color:var(--ism-green);background:var(--ism-green-10);}
+.uzone.loaded{border-color:var(--ism-green);background:var(--ism-green-10);}
+.uz-icon{font-size:26px;margin-bottom:5px;}.uz-title{font-weight:600;font-size:13px;font-family:var(--font-display);}.uz-sub{font-size:10px;color:var(--t3);margin-top:2px;}
+.btn-p{background:var(--ism-green);color:#fff;border:none;padding:7px 14px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font-display);}
+.btn-p:hover{background:var(--ism-green-dark);}
+.btn-s{background:var(--bg3);color:var(--t1);border:1px solid var(--border2);padding:7px 13px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-family:var(--font-display);}
+.btn-s:hover{border-color:var(--ism-green);color:var(--ism-green);}
+.tree-node{padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:all .15s;text-align:center;background:var(--bg3);}
+.tree-node:hover{border-color:var(--ism-green);}.tree-node.sel{border-color:var(--ism-green);background:var(--ism-green-10);}
+.tree-connector{width:1px;height:16px;background:var(--border2);margin:0 auto;}
+.tree-row{display:flex;gap:8px;justify-content:center;align-items:flex-start;}
+.tree-branch{display:flex;flex-direction:column;align-items:center;}
+.tree-label{font-size:11px;font-weight:600;font-family:var(--font-display);}.tree-sub{font-size:9px;color:var(--t3);}
+.tc-row{display:flex;gap:6px;align-items:center;margin-top:4px;}
+.tc-tag{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700;font-family:var(--font-display);}
+.tc-real{background:var(--ism-green-10);color:var(--ism-green-dark);}
+.tc-ppto{background:#EEF2FF;color:var(--ism-azul);}
+/* AI CHAT */
+.ai-wrap{display:flex;flex-direction:column;height:calc(100vh - 148px);}
+.chat-header{padding:12px 16px;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0;}
+.quick-row{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg3);flex-shrink:0;}
+.qbtn{padding:3px 10px;border-radius:14px;border:1px solid var(--border2);background:transparent;color:var(--t2);cursor:pointer;font-size:11px;white-space:nowrap;font-family:var(--font-display);}
+.qbtn:hover{border-color:var(--ism-green);color:var(--ism-green);}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--bg2);}
+.msg{max-width:84%;padding:11px 14px;border-radius:10px;font-size:12.5px;line-height:1.65;word-break:break-word;}
+.msg-user{align-self:flex-end;background:var(--ism-green);color:#fff;border-radius:10px 10px 2px 10px;}
+.msg-ai{align-self:flex-start;background:var(--bg3);border:1px solid var(--border);border-radius:2px 10px 10px 10px;color:var(--t1);}
+.msg-ai code{background:var(--bg4);padding:1px 5px;border-radius:3px;font-size:11px;}
+.msg-think{color:var(--t3);font-style:italic;}
+.chat-foot{padding:10px 14px;background:var(--bg3);border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;}
+.chat-input{flex:1;background:var(--bg3);border:1px solid var(--border2);color:var(--t1);padding:9px 13px;border-radius:var(--radius-sm);font-size:13px;resize:none;min-height:38px;max-height:100px;font-family:var(--font-body);}
+.chat-input:focus{outline:none;border-color:var(--ism-green);}
+.chat-send{background:var(--ism-green);color:#fff;border:none;padding:9px 16px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:600;flex-shrink:0;font-family:var(--font-display);}
+.chat-send:hover{background:var(--ism-green-dark);}.chat-send:disabled{opacity:.4;cursor:not-allowed;}
+.ctx-tag{display:inline-flex;align-items:center;gap:4px;background:var(--ism-green-10);border:1px solid #99D4B1;border-radius:4px;padding:2px 8px;font-size:10px;color:var(--ism-green-dark);font-family:var(--font-display);}
+.ai-avatar{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--ism-green-dark),var(--ism-green));display:inline-flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.msg-row{display:flex;gap:8px;align-items:flex-start;}
+/* LOGIC PAGE */
+.logic-section{margin-bottom:20px;}
+.logic-title{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--ism-green);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.formula-box{background:var(--ism-black);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:12px 14px;font-family:'Courier New',monospace;font-size:12px;color:#7CD7FC;margin:8px 0;line-height:1.8;}
+.def-row{display:flex;gap:8px;margin-bottom:6px;font-size:12px;}
+.def-term{color:var(--ism-green-dark);font-weight:600;min-width:160px;flex-shrink:0;font-family:var(--font-display);}
+.def-desc{color:var(--t2);}
+.badge-var{background:var(--ism-green-10);color:var(--ism-green-dark);border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700;}
+.badge-fix{background:#EEF2FF;color:var(--ism-azul);border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700;}
+.badge-res{background:#FFF8E1;color:var(--scm-warning);border-radius:4px;padding:1px 6px;font-size:11px;font-weight:700;}
+.note-box{background:#EEF2FF;border-left:3px solid var(--ism-azul);padding:8px 12px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:11px;color:var(--t2);margin:8px 0;}
+/* ══ EXPORTAR / INSIGHTS (secciones estándar) ══ */
+.ism-export-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.ism-export-card{border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg3);}
+.ism-export-card:hover{border-color:var(--ism-green);}
+.ism-export-card.selected{border-color:var(--ism-green);background:var(--ism-green-10);}
+.ism-export-card .ico{font-size:22px;margin-bottom:6px;}
+.ism-export-card .lbl{font-family:var(--font-display);font-size:11px;font-weight:600;}
+.ism-checkbox-group{display:flex;flex-direction:column;gap:8px;}
+.ism-checkbox-row{display:flex;align-items:center;gap:8px;font-size:12px;}
+.ism-insight-card{border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;background:var(--bg3);display:flex;gap:10px;align-items:flex-start;}
+.ism-insight-card .ico{font-size:16px;flex-shrink:0;}
+.ism-insight-card .txt{font-size:12px;line-height:1.5;}
+.ism-insight-card .txt b{font-family:var(--font-display);}
+.ism-empty{text-align:center;padding:40px 20px;color:var(--t3);font-size:12px;}
+@media(max-width:1300px){.g5{grid-template-columns:repeat(3,1fr);}.g4{grid-template-columns:repeat(2,1fr);}.ism-export-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:1000px){.g3,.g23{grid-template-columns:1fr;}.g2{grid-template-columns:1fr;}}
+@media print{
+  .ism-header,#sidebar,#topbar,.ism-footer,.sb-collapse-btn{display:none!important;}
+  #main{margin-left:0!important;margin-top:0!important;}
+  .tab-panel{display:none!important;}
+  .tab-panel.active{display:block!important;}
+  .card{break-inside:avoid;box-shadow:none;border:1px solid #ccc;}
+  body{background:#fff;}
+}
+/* ══ NUEVO v1.2: Sistema de Movimiento e Interacción (Sección 07) ══ */
+/* 7.6 Foco de teclado — único uso reservado del azul complementario */
+:focus-visible{outline:2px solid var(--ism-focus-ring);outline-offset:2px;border-radius:3px;}
+/* 7.4 Feedback de botones — scale(0.97) en :active, --duration-instant + --ease-out */
+.btn-p,.btn-s,.nav-btn,.pill,.cbtn,.qbtn,.chat-send,.ism-header__theme-toggle,.sb-collapse-btn,.ism-export-card,.tree-node,.ism-checkbox-row{
+  transition:transform var(--duration-instant) var(--ease-out),background var(--duration-base) var(--ease-out),border-color var(--duration-base) var(--ease-out),color var(--duration-base) var(--ease-out);
+}
+.btn-p:active,.btn-s:active,.nav-btn:active,.pill:active,.cbtn:active,.qbtn:active,.chat-send:active,.ism-header__theme-toggle:active,.sb-collapse-btn:active,.ism-export-card:active,.tree-node:active{
+  transform:scale(0.97);transition-duration:var(--duration-instant);
+}
+/* 7.2/7.5 Popovers/tooltips: anclados al disparador, nunca centrados (excepto modales) */
+.ism-tooltip{position:fixed;background:var(--ism-black);color:#fff;font-size:10px;font-family:var(--font-display);padding:4px 8px;border-radius:4px;pointer-events:none;z-index:5000;opacity:0;transform:scale(.9);transform-origin:var(--tt-origin,left center);transition:opacity var(--duration-fast) var(--ease-out),transform var(--duration-fast) var(--ease-out);white-space:nowrap;}
+.ism-tooltip.show{opacity:1;transform:scale(1);}
+/* 4.3 Skeleton loading — shimmer, nunca spinner genérico */
+.ism-skeleton{position:relative;overflow:hidden;background:var(--bg4);border-radius:var(--radius-sm);}
+.ism-skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);animation:ism-shimmer 1.4s infinite;}
+[data-theme="dark"] .ism-skeleton::after{background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);}
+@keyframes ism-shimmer{0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
+/* 7.8 Indicador de escritura — 3 puntos, rebote escalonado 120ms, ciclo 1.1s */
+.ism-ai-typing{display:inline-flex;gap:4px;align-items:center;padding:4px 2px;}
+.ism-ai-typing span{width:6px;height:6px;border-radius:50%;background:var(--t3);animation:ism-bounce 1.1s var(--ease-in-out) infinite;}
+.ism-ai-typing span:nth-child(2){animation-delay:.12s;}
+.ism-ai-typing span:nth-child(3){animation-delay:.24s;}
+@keyframes ism-bounce{0%,60%,100%{transform:translateY(0);opacity:.5;}30%{transform:translateY(-4px);opacity:1;}}
+/* 7.9 Entrada escalonada de tarjetas de insight (máx. 4 retrasos distintos) */
+.ism-insight-card{animation:ism-fade-in var(--duration-moderate) var(--ease-out) backwards;}
+.ism-insight-card:nth-child(1){animation-delay:0ms;}
+.ism-insight-card:nth-child(2){animation-delay:40ms;}
+.ism-insight-card:nth-child(3){animation-delay:80ms;}
+.ism-insight-card:nth-child(n+4){animation-delay:120ms;}
+@keyframes ism-fade-in{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+/* 7.7 Reducción de movimiento — excepción: transición de tema se mantiene en 200ms */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;}
+  body,.card,.tab-panel,#sidebar,#topbar{transition-duration:var(--theme-transition)!important;}
+}
+</style>
+</head>
+<body>
+<header class="ism-header">
+  <div class="ism-header__logo">ism</div>
+  <div>
+    <div class="ism-header__area">Supply Chain</div>
+    <div class="ism-header__app-name">DRE Analytics — ISM MDCORP</div>
+  </div>
+  <div class="ism-header__divider"></div>
+  <span class="ism-header__country-badge">5 Países</span>
+  <span class="ism-header__meta" id="ism-hdr-meta">Act. Ago 2026</span>
+  <div class="ism-header__spacer"></div>
+  <button class="ism-header__theme-toggle" id="theme-toggle" title="Cambiar tema claro/oscuro" aria-label="Cambiar tema">🌙</button>
+  <div class="ism-header__avatar" title="Roberto Sánchez — Jefatura Corporativa SCM">RS</div>
+</header>
+<aside id="sidebar">
+  <button class="sb-collapse-btn" id="sb-collapse" title="Colapsar/expandir menú">☰</button>
+  <div class="sb-logo">
+    <div class="sb-brand">ISM DRE Analytics</div>
+    <div class="sb-sub">Jefatura Corporativa de Supply Chain</div>
+  </div>
+  <nav class="sb-nav">
+    <button class="nav-btn active" data-tab="corp" title="Corporativo"><span class="nav-icon">🌎</span><span class="nav-label">Corporativo</span></button>
+    <button class="nav-btn" data-tab="vert" title="Análisis Vertical"><span class="nav-icon">📊</span><span class="nav-label">Análisis Vertical</span></button>
+    <button class="nav-btn" data-tab="horiz" title="Análisis Horizontal"><span class="nav-icon">↔️</span><span class="nav-label">Análisis Horizontal</span></button>
+    <button class="nav-btn" data-tab="pvm" title="PVM & TC"><span class="nav-icon">📈</span><span class="nav-label">PVM &amp; TC</span></button>
+    <button class="nav-btn" data-tab="sc" title="Supply Chain"><span class="nav-icon">🚛</span><span class="nav-label">Supply Chain</span></button>
+    <button class="nav-btn" data-tab="be" title="Break Even"><span class="nav-icon">⚖️</span><span class="nav-label">Break Even</span></button>
+    <button class="nav-btn" data-tab="peru" title="Perú Regional"><span class="nav-icon">🇵🇪</span><span class="nav-label">Perú Regional</span></button>
+    <div class="nav-label" style="font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;padding:12px 12px 4px;font-weight:700">Ecosistema SCM</div>
+    <button class="nav-btn" data-tab="insights" title="Insights Automáticos"><span class="nav-icon">💡</span><span class="nav-label">Insights Automáticos</span></button>
+    <button class="nav-btn" data-tab="ai" title="Análisis IA"><span class="nav-icon">🤖</span><span class="nav-label">Análisis IA</span></button>
+    <button class="nav-btn" data-tab="logic" title="Lógica de Análisis"><span class="nav-icon">📐</span><span class="nav-label">Lógica de Análisis</span></button>
+    <button class="nav-btn" data-tab="cfg" title="Cargar Archivos"><span class="nav-icon">📂</span><span class="nav-label">Cargar Archivos</span></button>
+    <button class="nav-btn" data-tab="export" title="Exportar Resultados"><span class="nav-icon">📤</span><span class="nav-label">Exportar Resultados</span></button>
+  </nav>
+  <div class="sb-footer nav-label">v2.2 · TC×Mes/Tipo · Multi-año<br><span id="last-upd">Demo Data</span></div>
+</aside>
 
+<div id="main">
+  <div id="topbar">
+    <div class="tb-title" id="tb-title">🌎 Vista Corporativa</div>
+    <div class="tb-sep"></div>
+    <div class="fg"><span class="fl">Año</span><div id="año-f">
+      <button class="pill year" data-a="2024">2024</button>
+      <button class="pill year" data-a="2025">2025</button>
+      <button class="pill year on" data-a="2026">2026</button>
+    </div></div>
+    <div class="tb-sep"></div>
+    <div class="fg"><span class="fl">País</span><div id="pais-f">
+      <button class="pill on" data-p="ALL">Todos</button>
+      <button class="pill" data-p="PE">🇵🇪 PE</button>
+      <button class="pill" data-p="RD">🇩🇴 RD</button>
+      <button class="pill" data-p="BR">🇧🇷 BR</button>
+      <button class="pill" data-p="HT">🇭🇹 HT</button>
+      <button class="pill" data-p="GT">🇬🇹 GT</button>
+    </div></div>
+    <div class="tb-sep"></div>
+    <div class="fg"><span class="fl">Período</span><div id="per-f">
+      <button class="pill on" data-m="YTD">YTD</button>
+      <button class="pill" data-m="1">Ene</button><button class="pill" data-m="2">Feb</button>
+      <button class="pill" data-m="3">Mar</button><button class="pill" data-m="4">Abr</button>
+      <button class="pill" data-m="5">May</button><button class="pill" data-m="6">Jun</button>
+      <button class="pill" data-m="7">Jul</button><button class="pill" data-m="8">Ago</button>
+      <button class="pill" data-m="9">Sep</button><button class="pill" data-m="10">Oct</button>
+      <button class="pill" data-m="11">Nov</button><button class="pill" data-m="12">Dic</button>
+    </div></div>
+    <div class="tb-sep"></div>
+    <div class="fg"><span class="fl">Moneda</span>
+      <div class="ctoggle">
+        <button class="cbtn" data-c="local">Local</button>
+        <button class="cbtn on" data-c="usd">USD</button>
+      </div>
+    </div>
+    <div class="tb-right">
+      <span class="tc-badge" id="tc-info">TC por mes/tipo</span>
+      <span class="dstatus ok" id="dstat">● Demo 2026</span>
+    </div>
+  </div>
+  <div id="content">
+    <div class="tab-panel active" id="panel-corp"></div>
+    <div class="tab-panel" id="panel-vert"></div>
+    <div class="tab-panel" id="panel-horiz"></div>
+    <div class="tab-panel" id="panel-pvm"></div>
+    <div class="tab-panel" id="panel-sc"></div>
+    <div class="tab-panel" id="panel-be"></div>
+    <div class="tab-panel" id="panel-peru"></div>
+    <div class="tab-panel" id="panel-insights"></div>
+    <div class="tab-panel" id="panel-ai"></div>
+    <div class="tab-panel" id="panel-cfg"></div>
+    <div class="tab-panel" id="panel-logic"></div>
+    <div class="tab-panel" id="panel-export"></div>
+  </div>
+  <footer class="ism-footer">
+    <span>© 2026 Industrias San Miguel — ISM. Uso interno · Jefatura Corporativa de Supply Chain.</span>
+    <span><b>DRE Analytics v2.2</b> · Act. Ago 2026 · Identidad visual conforme a Manual SCM v1.0</span>
+  </footer>
+</div>
+<input type="file" id="f-main" accept=".xlsx" style="display:none">
+
+<script>
+// ══ CONSTANTS ══
+const CC={
+  PE:{name:'Perú',cur:'PEN',flag:'🇵🇪',color:'#00953B',mainReg:'PE'},
+  RD:{name:'Rep. Dom.',cur:'DOP',flag:'🇩🇴',color:'#0624BA',mainReg:'RD'},
+  BR:{name:'Brasil',cur:'BRL',flag:'🇧🇷',color:'#FFBC36',mainReg:'BR'},
+  HT:{name:'Haití',cur:'HTG',flag:'🇭🇹',color:'#EC6B00',mainReg:'HT'},
+  GT:{name:'Guatemala',cur:'GTQ',flag:'🇬🇹',color:'#7CD7FC',mainReg:'GT'},
+};
+const CODES=['PE','RD','BR','HT','GT'];
+const MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const YEARS=[2024,2025,2026];
+const TAB_TITLES={corp:'🌎 Vista Corporativa',vert:'📊 Análisis Vertical',horiz:'↔️ Análisis Horizontal',pvm:'📈 PVM & Impacto TC',sc:'🚛 Supply Chain',be:'⚖️ Break Even',peru:'🇵🇪 Perú Regional',insights:'💡 Insights Automáticos',ai:'🤖 Análisis IA',cfg:'📂 Cargar Archivos',logic:'📐 Lógica de Análisis',export:'📤 Exportar Resultados'};
+const PE_H={
+  'PE'    :{label:'Perú Total',  short:'PE',     level:1,children:['PE-LIM','PE-PROV','PE-CH'],color:'#00953B'},
+  'PE-LIM':{label:'Lima',        short:'LIM',    level:2,parent:'PE',color:'#0624BA'},
+  'PE-CH' :{label:'Chile',       short:'CH',     level:2,parent:'PE',color:'#7CD7FC'},
+  'PE-PROV':{label:'Provincia',  short:'PROV',   level:2,parent:'PE',children:['PE-PROV-N','PE-PROV-NG','PE-PROV-S'],color:'#006B2B'},
+  'PE-PROV-N' :{label:'Prov. Norte',  short:'N',  level:3,parent:'PE-PROV',color:'#FFBC36'},
+  'PE-PROV-NG':{label:'Norte Grande', short:'NG', level:3,parent:'PE-PROV',color:'#EC6B00'},
+  'PE-PROV-S' :{label:'Prov. Sur',    short:'S',  level:3,parent:'PE-PROV',color:'#F47E67'},
+};
+
+// ══ STATE ══
+const S={data:null,tc:null,f:{paises:'ALL',periodo:'YTD',moneda:'usd',año:2026,pptoMode:'YTD',compBase:'PPTO'},tab:'corp',charts:{},peReg:'PE'};
+
+// ══ TC TABLE ══
+const TC_DATA={
+REAL:{
+  PE:{2024:{1:3.6928,2:3.8249,3:3.7056,4:3.7162,5:3.7345,6:3.7831,7:3.7712,8:3.7447,9:3.7686,10:3.7538,11:3.7836,12:3.7387},
+      2025:{1:3.7526,2:3.706,3:3.6583,4:3.7071,5:3.6665,6:3.612,7:3.559,8:3.557,9:3.5094,10:3.4649,11:3.3814,12:3.3706},
+      2026:{1:3.3535,2:3.361,3:3.4502,4:3.447,5:3.4479,6:3.4106,7:3.41,8:3.41,9:3.41,10:3.41,11:3.41,12:3.41}},
+  RD:{2024:{1:58.54,2:58.51,3:58.88,4:59.16,5:58.73,6:59.35,7:59.28,8:59.78,9:60.08,10:60.22,11:60.33,12:60.94},
+      2025:{1:61.67,2:62.29,3:63.09,4:60.80,5:59.15,6:59.57,7:60.67,8:62.29,9:63.00,10:63.76,11:63.89,12:63.64},
+      2026:{1:63.51,2:62.20,3:60.67,4:60.39,5:59.46,6:59.5,7:59.5,8:59.5,9:59.5,10:59.5,11:59.5,12:59.5}},
+  BR:{2024:{1:4.914,2:4.964,3:4.980,4:5.129,5:5.133,6:5.389,7:5.542,8:5.553,9:5.542,10:5.624,11:5.806,12:6.097},
+      2025:{1:6.022,2:5.772,3:5.747,4:5.784,5:5.669,6:5.547,7:5.528,8:5.447,9:5.367,10:5.376,11:5.340,12:5.458},
+      2026:{1:5.338,2:5.201,3:5.232,4:5.035,5:4.984,6:5.137,7:5.14,8:5.14,9:5.14,10:5.14,11:5.14,12:5.14}},
+  HT:{2024:{1:131.60,2:131.83,3:132.62,4:132.30,5:133.16,6:132.28,7:131.75,8:131.51,9:131.59,10:131.25,11:130.94,12:130.57},
+      2025:{1:130.22,2:130.41,3:130.67,4:130.50,5:130.67,6:130.86,7:130.88,8:130.68,9:130.64,10:130.69,11:130.65,12:130.67},
+      2026:{1:130.66,2:130.81,3:130.84,4:130.60,5:130.55,6:130.51,7:130.51,8:130.51,9:130.51,10:130.51,11:130.51,12:130.51}},
+  GT:{2024:{1:7.85,2:7.85,3:7.85,4:7.85,5:7.85,6:7.85,7:7.85,8:7.85,9:7.85,10:7.85,11:7.85,12:7.85},
+      2025:{1:7.716,2:7.715,3:7.706,4:7.702,5:7.677,6:7.682,7:7.673,8:7.662,9:7.658,10:7.657,11:7.656,12:7.656},
+      2026:{1:7.666,2:7.767,3:7.656,4:7.640,5:7.625,6:7.619,7:7.619,8:7.619,9:7.619,10:7.619,11:7.619,12:7.619}}
+},
+PPTO:{
+  PE:{2024:{1:3.85,2:3.85,3:3.85,4:3.85,5:3.85,6:3.85,7:3.85,8:3.85,9:3.85,10:3.85,11:3.85,12:3.85},
+      2025:{1:3.77,2:3.77,3:3.77,4:3.77,5:3.77,6:3.77,7:3.77,8:3.77,9:3.77,10:3.77,11:3.77,12:3.77},
+      2026:{1:3.40,2:3.40,3:3.40,4:3.40,5:3.40,6:3.40,7:3.40,8:3.40,9:3.40,10:3.40,11:3.40,12:3.40}},
+  RD:{2024:{1:57.6,2:57.6,3:57.6,4:57.6,5:57.6,6:57.6,7:57.6,8:57.6,9:57.6,10:57.6,11:57.6,12:57.6},
+      2025:{1:60.5,2:60.5,3:60.5,4:60.5,5:60.5,6:60.5,7:60.5,8:60.5,9:60.5,10:60.5,11:60.5,12:60.5},
+      2026:{1:65,2:65,3:65,4:65,5:65,6:65,7:65,8:65,9:65,10:65,11:65,12:65}},
+  BR:{2024:{1:5.09,2:5.09,3:5.09,4:5.09,5:5.09,6:5.09,7:5.09,8:5.09,9:5.09,10:5.09,11:5.09,12:5.09},
+      2025:{1:6.0,2:6.0,3:6.0,4:6.0,5:6.0,6:6.0,7:6.0,8:6.0,9:6.0,10:6.0,11:6.0,12:6.0},
+      2026:{1:5.5,2:5.5,3:5.5,4:5.5,5:5.5,6:5.5,7:5.5,8:5.5,9:5.5,10:5.5,11:5.5,12:5.5}},
+  HT:{2024:{1:140.1,2:142.2,3:144.3,4:146.5,5:148.7,6:150.9,7:153.2,8:155.5,9:157.8,10:160.2,11:162.6,12:165.0},
+      2025:{1:139.9,2:141.8,3:143.7,4:145.6,5:147.6,6:149.6,7:151.6,8:153.7,9:155.7,10:157.8,11:160.0,12:162.1},
+      2026:{1:130.5,2:130.9,3:131.5,4:132.1,5:132.6,6:132.9,7:133.3,8:133.8,9:133.4,10:132.5,11:131.7,12:131.0}},
+  GT:{2024:{1:7.85,2:7.85,3:7.85,4:7.85,5:7.85,6:7.85,7:7.85,8:7.85,9:7.85,10:7.85,11:7.85,12:7.85},
+      2025:{1:7.7,2:7.7,3:7.7,4:7.7,5:7.7,6:7.7,7:7.7,8:7.7,9:7.7,10:7.7,11:7.7,12:7.7},
+      2026:{1:7.75,2:7.75,3:7.75,4:7.75,5:7.75,6:7.75,7:7.75,8:7.75,9:7.75,10:7.75,11:7.75,12:7.75}}
+}};
+
+// ══ DEMO DATA ══
+const SEA={
+  PE:[1.15,1.10,1.05,.90,.85,.85,.90,.95,1.00,1.05,1.10,1.15],
+  RD:[.90,.85,.95,1.00,1.10,1.15,1.15,1.10,1.05,.95,1.00,1.10],
+  BR:[1.10,1.05,1.00,.90,.85,.85,.90,.95,1.00,1.05,1.10,1.20],
+  HT:[1.05,1.00,1.05,1.10,1.10,1.05,1.00,.90,.85,.90,1.00,1.05],
+  GT:[.30,.35,.45,.55,.75,.85,1.05,1.15,1.20,1.20,1.10,1.00],
+};
+const RATIOS={
+  PE:{bonif:.038,desc:.016,cpv:.335,isc:.055,f1:.060,f2:.057,f3:0,com:.048,est:.014,semiv:.040,gfab:.060,gadm:.022,gadmD:.072,gdist:.007,gcom:.067,gmkt:.048,gcomi:.007,gcorp:.025,dep:.040,oing:.004,ocos:.001,ifin:.007,gfin:.010,vtc:0,part:.003,imp:.011,vol:7.5e-4},
+  RD:{bonif:.058,desc:.030,cpv:.448,isc:0,f1:.026,f2:.008,f3:0,com:0,est:.024,semiv:.044,gfab:.075,gadm:.029,gadmD:.014,gdist:.052,gcom:.039,gmkt:.048,gcomi:.001,gcorp:0,dep:.073,oing:.004,ocos:.013,ifin:.016,gfin:.027,vtc:.009,part:.011,imp:0,vol:4.8e-5},
+  BR:{bonif:.025,desc:.010,cpv:.385,isc:.020,f1:.055,f2:.065,f3:.005,com:.040,est:.015,semiv:.038,gfab:.068,gadm:.035,gadmD:.050,gdist:.012,gcom:.072,gmkt:.045,gcomi:.005,gcorp:.015,dep:.030,oing:.003,ocos:.002,ifin:.004,gfin:.020,vtc:.005,part:0,imp:0,vol:6.5e-4},
+  HT:{bonif:.018,desc:.008,cpv:.420,isc:0,f1:.045,f2:.085,f3:.010,com:.035,est:.025,semiv:.055,gfab:.055,gadm:.028,gadmD:.065,gdist:.015,gcom:.048,gmkt:.035,gcomi:.004,gcorp:0,dep:.025,oing:.002,ocos:.005,ifin:.003,gfin:.025,vtc:-.015,part:0,imp:0,vol:2.86e-5},
+  GT:{bonif:.029,desc:0,cpv:.440,isc:.036,f1:.040,f2:.220,f3:0,com:.370,est:0,semiv:.075,gfab:.340,gadm:.520,gadmD:0,gdist:.100,gcom:.140,gmkt:.130,gcomi:0,gcorp:0,dep:0,oing:0,ocos:0,ifin:0,gfin:0,vtc:0,part:0,imp:0,vol:1.85e-4},
+};
+const VN_BASE={
+  REAL:{PE:{2024:375e6,2025:400e6,2026:420e6},RD:{2024:7100e6,2025:7500e6,2026:7900e6},BR:{2024:172e6,2025:185e6,2026:195e6},HT:{2024:2550e6,2025:2800e6,2026:2850e6},GT:{2024:18e6,2025:65e6,2026:100e6}},
+  PPTO:{PE:{2024:395e6,2025:420e6,2026:445e6},RD:{2024:7300e6,2025:7800e6,2026:8100e6},BR:{2024:178e6,2025:195e6,2026:205e6},HT:{2024:2700e6,2025:3000e6,2026:3000e6},GT:{2024:30e6,2025:80e6,2026:120e6}},
+};
+const PE_REG_PCT={'PE':1,'PE-LIM':.42,'PE-PROV':.50,'PE-CH':.08,'PE-PROV-N':.20,'PE-PROV-NG':.15,'PE-PROV-S':.15};
+
+function genDRE(vnAnnual,r,sea,noise=.025){
+  const avgS=sea.reduce((a,b)=>a+b)/12;
+  return sea.map(s=>{
+    const n=1+(Math.random()-.5)*noise;
+    const v=vnAnnual/12*(s/avgS)*n;
+    const cpv=-v*r.cpv,isc=-v*r.isc,f1=-v*r.f1,f2=-v*r.f2,f3=-v*r.f3;
+    const com=-v*r.com,est=-v*r.est,semiv=-v*r.semiv;
+    const gv=cpv+isc+f1+f2+f3+com+est+semiv,mc=v+gv;
+    const gfab=-v*r.gfab,gadm=-v*r.gadm,gadmD=-v*r.gadmD,gdist=-v*r.gdist;
+    const gcom=-v*r.gcom,gmkt=-v*r.gmkt,gcomi=-v*r.gcomi;
+    const gf=gfab+gadm+gadmD+gdist+gcom+gmkt+gcomi;
+    const ebitda1=mc+gf,gcorp=-v*r.gcorp,ebitda2=ebitda1+gcorp;
+    const dep=-v*r.dep,ebit=ebitda2+dep;
+    const oing=v*r.oing,ocos=-v*r.ocos,ifin=v*r.ifin,gfin=-v*r.gfin;
+    const vtc=v*r.vtc,part=-v*r.part,imp=-v*r.imp;
+    const rn=ebit+oing+ocos+ifin+gfin+vtc+part+imp;
+    return{vol:v*r.vol,vn:v,cpv,isc,f1,f2,f3,com,est,semiv,gv,mc,gfab,gadm,gadmD,gdist,gcom,gmkt,gcomi,gf,ebitda1,gcorp,ebitda2,dep,ebit,oing,ocos,ifin,gfin,vtc,part,imp,rn};
+  });
+}
+function metaR(r){const m={...r};m.cpv*=.97;m.f1*=.96;m.f2*=.96;m.est*=.95;m.gfab*=.97;m.gcom*=.98;return m;}
+function buildDemo(){
+  const data={};
+  for(const cc of CODES){
+    data[cc]={REAL:{},PPTO:{}};
+    const r=RATIOS[cc],mr=metaR(r),sea=SEA[cc];
+    const regs=cc==='PE'?Object.keys(PE_REG_PCT):[cc];
+    for(const tipo of['REAL','PPTO']){
+      data[cc][tipo]={};
+      const ruse=tipo==='REAL'?r:mr;
+      for(const reg of regs){
+        data[cc][tipo][reg]={};
+        const pct=cc==='PE'?PE_REG_PCT[reg]:1;
+        for(const yr of YEARS){
+          const vn=VN_BASE[tipo][cc][yr]*pct;
+          const months=genDRE(vn,ruse,sea,.028);
+          if(tipo==='REAL'&&yr===2026){
+            for(let m=5;m<12;m++){for(const k of Object.keys(months[m])) months[m][k]=0;}
+          }
+          data[cc][tipo][reg][yr]=months;
+        }
+      }
+    }
+  }
+  return data;
+}
+
+// ══ TC ACCESS ══
+function getTC(tipo,cc,year,month){
+  return S.tc?.[tipo]?.[cc]?.[year]?.[month]||TC_DATA[tipo]?.[cc]?.[year]?.[month]||3.7;
+}
+function avgTC(tipo,cc,year){
+  const vals=Object.values(S.tc?.[tipo]?.[cc]?.[year]||TC_DATA[tipo]?.[cc]?.[year]||{1:3.7});
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
+}
+
+// ══ DATA ACCESS ══
+function getReg(cc){return cc==='PE'?'PE':cc;}
+function getD(cc,tipo,region,year,period){
+  const months=S.data?.[cc]?.[tipo]?.[region]?.[year];
+  if(!months) return null;
+  if(period==='YTD'){const r={};for(const k of Object.keys(months[0]||{})) r[k]=months.reduce((s,m)=>s+(m?m[k]||0:0),0);return r;}
+  return months[parseInt(period)-1]||null;
+}
+function getD_usd(cc,tipo,region,year,period){
+  const months=S.data?.[cc]?.[tipo]?.[region]?.[year];
+  if(!months) return null;
+  if(period==='YTD'){
+    const r={};
+    for(let m=0;m<12;m++){const md=months[m];if(!md) continue;const tc=getTC(tipo,cc,year,m+1);for(const k of Object.keys(md)) r[k]=(r[k]||0)+(k==='vol'?(md[k]||0):(md[k]||0)/tc);}
+    return r;
+  }
+  const m=parseInt(period);const md=months[m-1];if(!md) return null;
+  const tc=getTC(tipo,cc,year,m);const r={};for(const k of Object.keys(md)) r[k]=k==='vol'?(md[k]||0):(md[k]||0)/tc;return r;
+}
+function gd(cc,tipo,region,year,period){
+  const reg=region||getReg(cc);
+  return S.f.moneda==='usd'?getD_usd(cc,tipo,reg,year,period):getD(cc,tipo,reg,year,period);
+}
+function gdR(cc,per){return gd(cc,'REAL',getReg(cc),S.f.año,per);}
+function gdP(cc,per){return gd(cc,'PPTO',getReg(cc),S.f.año,per);}
+function gdPY(cc,per){return gd(cc,'REAL',getReg(cc),S.f.año-1,per);}
+function paises(){return S.f.paises==='ALL'?CODES:[S.f.paises];}
+// ── PPTO MODE HELPERS ──
+function getYTDMonths(cc,yr){
+  const months=S.data?.[cc]?.REAL?.[getReg(cc)]?.[yr];if(!months) return 12;
+  let last=0;for(let m=0;m<12;m++){if(months[m]&&Math.abs(months[m].vn||0)>0) last=m+1;}
+  return last||12;
+}
+function sumMths(tipo,cc,yr,upTo){
+  const months=S.data?.[cc]?.[tipo]?.[getReg(cc)]?.[yr];if(!months) return null;
+  const r={};for(let m=0;m<upTo;m++){const md=months[m];if(!md) continue;for(const k of Object.keys(md)) r[k]=(r[k]||0)+(md[k]||0);}
+  return Object.keys(r).length?r:null;
+}
+function sumMthsUSD(tipo,cc,yr,upTo){
+  const months=S.data?.[cc]?.[tipo]?.[getReg(cc)]?.[yr];if(!months) return null;
+  const r={};for(let m=0;m<upTo;m++){const md=months[m];if(!md) continue;const tc=getTC(tipo,cc,yr,m+1);for(const k of Object.keys(md)) r[k]=(r[k]||0)+(k==='vol'?(md[k]||0):(md[k]||0)/tc);}
+  return Object.keys(r).length?r:null;
+}
+// ── Versiones genéricas por región (para PVM: permiten pedir sub-regiones de PE) ──
+function sumMthsReg(tipo,cc,region,yr,upTo){
+  const months=S.data?.[cc]?.[tipo]?.[region]?.[yr];if(!months) return null;
+  const r={};for(let m=0;m<upTo;m++){const md=months[m];if(!md) continue;for(const k of Object.keys(md)) r[k]=(r[k]||0)+(md[k]||0);}
+  return Object.keys(r).length?r:null;
+}
+function sumMthsUSDReg(tipo,cc,region,yr,upTo){
+  const months=S.data?.[cc]?.[tipo]?.[region]?.[yr];if(!months) return null;
+  const r={};for(let m=0;m<upTo;m++){const md=months[m];if(!md) continue;const tc=getTC(tipo,cc,yr,m+1);for(const k of Object.keys(md)) r[k]=(r[k]||0)+(k==='vol'?(md[k]||0):(md[k]||0)/tc);}
+  return Object.keys(r).length?r:null;
+}
+// ── Fetch unificado de un segmento para PVM/TC: tipo = 'REAL' | 'PY' (real año-1) | 'PPTO' (respeta pptoMode) ──
+function gdSeg(cc,region,tipo,per,forceUSD){
+  const yr=S.f.año;
+  const useUSD=forceUSD===true||(forceUSD!==false&&S.f.moneda==='usd');
+  if(tipo==='PPTO'){
+    if(per!=='YTD') return useUSD?getD_usd(cc,'PPTO',region,yr,per):getD(cc,'PPTO',region,yr,per);
+    const upTo=S.f.pptoMode==='FY'?12:getYTDMonths(cc,yr);
+    return useUSD?sumMthsUSDReg('PPTO',cc,region,yr,upTo):sumMthsReg('PPTO',cc,region,yr,upTo);
+  }
+  const y=tipo==='PY'?yr-1:yr;
+  return useUSD?getD_usd(cc,'REAL',region,y,per):getD(cc,'REAL',region,y,per);
+}
+// ── PVM: descompone la variación de VN en efecto Volumen + Mix + Precio ──
+// segments: [{vol0,vn0,vol1,vn1}, ...] uno por país o región. Con 1 solo segmento, mixEffect=0 automáticamente.
+function calcPVM(segments){
+  const V0=segments.reduce((s,x)=>s+(x.vol0||0),0);
+  const V1=segments.reduce((s,x)=>s+(x.vol1||0),0);
+  const VN0=segments.reduce((s,x)=>s+(x.vn0||0),0);
+  const VN1=segments.reduce((s,x)=>s+(x.vn1||0),0);
+  if(!(V0>0)||!(V1>0)) return null;
+  const avgP0=VN0/V0;
+  const volumeEffect=(V1-V0)*avgP0;
+  let mixEffect=0,priceEffect=0;
+  for(const seg of segments){
+    const v0=seg.vol0||0,v1=seg.vol1||0;
+    const p0=v0>0?(seg.vn0||0)/v0:0;
+    const p1=v1>0?(seg.vn1||0)/v1:0;
+    const mix0=V0>0?v0/V0:0,mix1=V1>0?v1/V1:0;
+    mixEffect+=V1*(mix1-mix0)*p0;
+    priceEffect+=v1*(p1-p0);
+  }
+  return{volumeEffect,mixEffect,priceEffect,total:volumeEffect+mixEffect+priceEffect,deltaVN:VN1-VN0,V0,V1,VN0,VN1,avgP0};
+}
+// ── Impacto TC: separa variación operativa (moneda constante) del efecto cambiario puro ──
+// local0/local1 = valores en moneda local; usd0/usd1 = mismos valores convertidos a USD con su TC exacto por mes
+function calcTCImpact(local0,local1,usd0,usd1){
+  if(!(local0>0)||usd0==null||usd1==null) return null;
+  const localGrowth=local1/local0-1;
+  const operational=usd0*localGrowth;
+  const fx=usd1-usd0*(local1/local0);
+  return{operational,fx,total:operational+fx,deltaUSD:usd1-usd0,localGrowth};
+}
+function gdPM(cc,per){
+  per=per||S.f.periodo;
+  if(per!=='YTD') return gd(cc,'PPTO',getReg(cc),S.f.año,per);
+  if(S.f.pptoMode==='FY') return S.f.moneda==='usd'?sumMthsUSD('PPTO',cc,S.f.año,12):sumMths('PPTO',cc,S.f.año,12);
+  const ytdM=getYTDMonths(cc,S.f.año);
+  return S.f.moneda==='usd'?sumMthsUSD('PPTO',cc,S.f.año,ytdM):sumMths('PPTO',cc,S.f.año,ytdM);
+}
+function pptoToggleHtml(per){
+  if(per!=='YTD') return `<span style="font-size:10px;color:var(--t3)">PPTO: mes exacto</span>`;
+  return `<div style="display:flex;align-items:center;gap:4px">
+    <span style="font-size:10px;color:var(--t3)">PPTO:</span>
+    <button class="pill${S.f.pptoMode==='YTD'?' on':''}" style="padding:2px 9px;font-size:10px" onclick="S.f.pptoMode='YTD';renderActive()">YTD</button>
+    <button class="pill${S.f.pptoMode==='FY'?' on':''}" style="padding:2px 9px;font-size:10px" onclick="S.f.pptoMode='FY';renderActive()">FY</button>
+  </div>`;
+}
+function calcEVT(d){if(!d) return 0;return Math.abs(d.cpv||0)+Math.abs(d.isc||0)+Math.abs(d.f1||0)+Math.abs(d.f2||0)+Math.abs(d.f3||0)+Math.abs(d.com||0)+Math.abs(d.est||0)+Math.abs(d.semiv||0);}
+function calcEFT(d){if(!d) return 0;return Math.abs(d.gfab||0)+Math.abs(d.gadm||0)+Math.abs(d.gadmD||0)+Math.abs(d.gdist||0)+Math.abs(d.gcom||0)+Math.abs(d.gmkt||0)+Math.abs(d.gcomi||0)+Math.abs(d.gcorp||0);}
+
+function fmtN(v,opts={}){
+  const{pre='',dec=1,abs=false}=opts;
+  if(v==null||isNaN(v)) return '—';
+  const x=abs?Math.abs(v):v,a=Math.abs(x);
+  let s;
+  if(a>=1e9) s=(x/1e9).toFixed(dec)+'B';
+  else if(a>=1e6) s=(x/1e6).toFixed(dec)+'M';
+  else if(a>=1e3) s=(x/1e3).toFixed(dec)+'K';
+  else s=x.toFixed(dec);
+  return pre+s;
+}
+function fmtP(v,dec=1){if(v==null||isNaN(v)) return '—';return (v>=0?'+':'')+( v*100).toFixed(dec)+'%';}
+function pct(n,d){return d?n/d:0;}
+function semC(r,m){if(!m)return'n';const x=r/m;return x>=.95?'g':x>=.85?'y':'r';}
+function dClass(v){return v>.005?'pos':v<-.005?'neg':'neu';}
+function cLabel(cc){return S.f.moneda==='usd'?'USD':CC[cc].cur;}
+function perLabel(p){return p==='YTD'?'Acumulado':MES[parseInt(p)-1];}
+
+// ══ CHART UTILS ══
+Chart.defaults.color='#5B5648';Chart.defaults.borderColor='#E5E7EB';
+Chart.defaults.font.family="'Work Sans','Segoe UI',Arial,sans-serif";Chart.defaults.font.size=10;
+const gridOpts={x:{grid:{color:'#E5E7EB'}},y:{grid:{color:'#E5E7EB'}}};
+// ── NUEVO v1.2: colores de LÍNEA/eje validados por contraste WCAG (theme-aware). Los rellenos de barra/área siguen con el hex original de CC/PE_H (exento por manual Sec. 03.1). ──
+function chartVar(name){return getComputedStyle(document.documentElement).getPropertyValue(name).trim()||'#00953B';}
+const CC_CHVAR={PE:'--chart-1',RD:'--chart-3',BR:'--chart-4',HT:'--chart-5',GT:'--chart-6'};
+const REG_CHVAR={'PE':'--chart-1','PE-LIM':'--chart-3','PE-CH':'--chart-6','PE-PROV':'--chart-4','PE-PROV-N':'--chart-5','PE-PROV-NG':'--chart-2','PE-PROV-S':'--chart-7'};
+function lineColor(cc){return chartVar(CC_CHVAR[cc]||'--chart-1');}
+function regLineColor(reg){return chartVar(REG_CHVAR[reg]||'--chart-1');}
+function applyChartTheme(){
+  const cs=getComputedStyle(document.documentElement);
+  const gridColor=cs.getPropertyValue('--border').trim(),textColor=cs.getPropertyValue('--t2').trim();
+  Chart.defaults.color=textColor;Chart.defaults.borderColor=gridColor;
+  gridOpts.x.grid.color=gridColor;gridOpts.y.grid.color=gridColor;
+}
+function destroyC(id){if(S.charts[id]){S.charts[id].destroy();delete S.charts[id];}}
+function mkChart(id,cfg){destroyC(id);const el=document.getElementById(id);if(!el)return;const c=new Chart(el,cfg);S.charts[id]=c;return c;}
+
+// ══ CORPORATIVO ══
+function renderCorp(){
+  const ps=paises(),per=S.f.periodo,yr=S.f.año,pl=perLabel(per);
+  let kpis='';
+  for(const cc of ps){
+    const r=gdR(cc,per),m=gdPM(cc,per),p=gdPY(cc,per);
+    if(!r) continue;
+    const info=CC[cc];
+    const eP=pct(r.ebitda2,r.vn),mcP=pct(r.mc,r.vn),rnP=pct(r.rn,r.vn);
+    const vsMeta=m?pct(r.vn-m.vn,Math.abs(m.vn)):null;
+    const vsAnt=p?pct(r.vn-p.vn,Math.abs(p.vn)):null;
+    const cump=m?r.vn/m.vn:null,sc=semC(r.vn,m?.vn);
+    kpis+=`<div class="card card-sm">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div><div style="font-size:12px;font-weight:700;color:${info.color}">${info.flag} ${info.name}</div>
+        <div style="font-size:9px;color:var(--t3)">${info.cur} · TC mensual</div></div>
+        <span class="sem ${sc}"></span>
+      </div>
+      <div class="kpi-val">${fmtN(r.vn,{pre:S.f.moneda==='usd'?'$':''})}</div>
+      <div class="kpi-sub">Ventas Netas ${cLabel(cc)}</div>
+      <div class="kpi-row" style="margin-top:8px">
+        <div class="km"><div class="kml">MC%</div><div class="kmv">${(mcP*100).toFixed(1)}%</div></div>
+        <div class="km"><div class="kml">EBITDA%</div><div class="kmv" style="color:${eP>.05?'var(--green)':eP>0?'var(--yellow)':'var(--red)'}">${(eP*100).toFixed(1)}%</div></div>
+        <div class="km"><div class="kml">Neto%</div><div class="kmv" style="color:${rnP>=0?'var(--green)':'var(--red)'}">${(rnP*100).toFixed(1)}%</div></div>
+      </div>
+      ${m?`<div style="margin-top:8px"><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:3px"><span>vs PPTO ${vsMeta!==null?fmtP(vsMeta):''}</span><span>${cump?(cump*100).toFixed(0):'-'}%</span></div>
+      <div class="prog"><div class="prog-fill" style="width:${Math.min((cump||0)*100,100)}%;background:${sc==='g'?'var(--green)':sc==='y'?'var(--yellow)':'var(--red)'}"></div></div></div>`:''}
+      ${vsAnt!==null?`<div style="margin-top:5px;font-size:11px;color:${vsAnt>=0?'var(--green)':'var(--red)'}">${vsAnt>=0?'▲':'▼'} ${Math.abs(vsAnt*100).toFixed(1)}% vs ${yr-1}</div>`:''}
+    </div>`;
+  }
+  let rows='';
+  for(const cc of ps){
+    const r=gdR(cc,per),m=gdPM(cc,per),p=gdPY(cc,per);if(!r) continue;
+    const vsMeta=m?pct(r.vn-m.vn,Math.abs(m.vn)):null,vsAnt=p?pct(r.vn-p.vn,Math.abs(p.vn)):null,sc=semC(r.vn,m?.vn);
+    rows+=`<tr>
+      <td><span class="sem ${sc}" style="margin-right:5px"></span>${CC[cc].flag} ${CC[cc].name}</td>
+      <td class="td-b">${fmtN(r.vn,{pre:S.f.moneda==='usd'?'$':''})}</td>
+      <td>${fmtN(r.mc)}</td><td>${fmtN(r.ebitda1)}</td><td>${fmtN(r.ebitda2)}</td>
+      <td style="color:${r.rn>=0?'var(--green)':'var(--red)'}">${fmtN(r.rn)}</td>
+      <td style="color:${pct(r.mc,r.vn)>=.35?'var(--green)':pct(r.mc,r.vn)>=.25?'var(--yellow)':'var(--red)'}">${(pct(r.mc,r.vn)*100).toFixed(1)}%</td>
+      <td style="color:${pct(r.ebitda2,r.vn)>=.05?'var(--green)':pct(r.ebitda2,r.vn)>=0?'var(--yellow)':'var(--red)'}">${(pct(r.ebitda2,r.vn)*100).toFixed(1)}%</td>
+      <td class="${vsMeta!==null?dClass(vsMeta):''}">${vsMeta!==null?fmtP(vsMeta):'—'}</td>
+      <td class="${vsAnt!==null?dClass(vsAnt):''}">${vsAnt!==null?fmtP(vsAnt):'—'}</td>
+    </tr>`;
+  }
+  document.getElementById('panel-corp').innerHTML=`
+  <div class="sh"><div class="stitle">Vista Corporativa — DRE Consolidado</div>
+  <div class="ssub">${pl} · ${yr} · Moneda: ${S.f.moneda.toUpperCase()} · TC por mes/tipo (REAL/PPTO)</div></div>
+  <div class="${ps.length>=4?'g5':'g'+ps.length} mb20">${kpis}</div>
+  <div class="g2 mb20">
+    <div class="card"><div class="ch"><div><div class="ct">VN Real vs PPTO vs ${yr-1}</div><div class="cs">${pl}</div></div></div>
+    <div class="cw"><canvas id="c-c-bar"></canvas></div></div>
+    <div class="card"><div class="ch"><div><div class="ct">Tendencia Mensual VN ${yr}</div><div class="cs">Real (sólido) vs PPTO (punteado)</div></div></div>
+    <div class="cw"><canvas id="c-c-trend"></canvas></div></div>
+  </div>
+  <div class="card mb20"><div class="ch"><div class="ct">Cascada DRE Consolidado ${yr} ${pl}</div></div>
+  <div style="position:relative;height:195px"><canvas id="c-c-wf"></canvas></div></div>
+  <div class="card"><div class="ch"><div class="ct">Resumen de Resultados · ${pl} · ${yr}</div></div>
+  <div class="tw"><table><thead><tr>
+    <th>País</th><th>VN</th><th>MC</th><th>EBITDA1</th><th>EBITDA2</th><th>Neto</th><th>MC%</th><th>EBITDA%</th><th>vs PPTO</th><th>vs ${yr-1}</th>
+  </tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  requestAnimationFrame(()=>{
+    const lbs=ps.map(c=>CC[c].flag+' '+CC[c].name);
+    mkChart('c-c-bar',{type:'bar',data:{labels:lbs,datasets:[
+      {label:'REAL',data:ps.map(c=>{const r=gdR(c,per);return r?r.vn/1e6:0;}),backgroundColor:'#00953B',borderRadius:4},
+      {label:'PPTO',data:ps.map(c=>{const m=gdPM(c,per);return m?m.vn/1e6:0;}),backgroundColor:'rgba(6,36,186,.35)',borderColor:'#0624BA',borderWidth:1,borderRadius:4},
+      {label:`${yr-1}`,data:ps.map(c=>{const p=gdPY(c,per);return p?p.vn/1e6:0;}),backgroundColor:'rgba(139,148,158,.25)',borderRadius:4},
+    ]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom'}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v+'M'}}}}});
+    const tDS=[];
+    for(const cc of ps){
+      const mr=S.data?.[cc]?.REAL?.[getReg(cc)]?.[yr];
+      const mp=S.data?.[cc]?.PPTO?.[getReg(cc)]?.[yr];
+      const conv=(arr,t)=>arr?.map((m,i)=>{const tc=getTC(t,cc,yr,i+1);return S.f.moneda==='usd'?m.vn/tc/1e6:m.vn/1e6;});
+      if(mr) tDS.push({label:CC[cc].flag+' Real',data:conv(mr,'REAL'),borderColor:lineColor(cc),tension:.4,borderWidth:2,pointRadius:2});
+      if(mp) tDS.push({label:CC[cc].flag+' PPTO',data:conv(mp,'PPTO'),borderColor:lineColor(cc),borderDash:[4,4],tension:.4,borderWidth:1.5,pointRadius:1});
+    }
+    mkChart('c-c-trend',{type:'line',data:{labels:MES,datasets:tDS},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:9}}}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v.toFixed(0)+'M'}}}}});
+    const wfK=['vn','gv','mc','gf','gcorp','ebitda2','dep','ebit','rn'];
+    const wfL=['FN','GV','MC','GF','Corp','EBITDA','Dep','EBIT','Neto'];
+    const tot=['mc','ebitda2','ebit','rn'];
+    const cons={};
+    for(const cc of ps){const r=gdR(cc,per);if(r) for(const k of wfK) cons[k]=(cons[k]||0)+r[k]/1e6;}
+    const wfd=[],wfc=[];let run=0;
+    for(let i=0;i<wfK.length;i++){
+      const k=wfK[i],v=cons[k]||0;
+      if(tot.includes(k)){wfd.push([0,v]);wfc.push('#0624BA');run=v;}
+      else{const nxt=run+v;v>=0?(wfd.push([run,nxt]),wfc.push('#00953B')):(wfd.push([nxt,run]),wfc.push('#EE3124'));run=nxt;}
+    }
+    mkChart('c-c-wf',{type:'bar',data:{labels:wfL,datasets:[{data:wfd,backgroundColor:wfc,borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const v=Array.isArray(ctx.raw)?ctx.raw[1]-ctx.raw[0]:ctx.raw;return ` ${v.toFixed(1)}M`;}}}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v.toFixed(0)+'M'}}}}});
+  });
+}
+
+// ══ ANÁLISIS VERTICAL ══
+function renderVert(){
+  const ps=paises(),per=S.f.periodo,yr=S.f.año;
+  const lines=[
+    {k:'vn',l:'Ventas Netas',b:true},{k:'cpv',l:'— Costo Producción'},{k:'isc',l:'— Imp. Selectivo'},
+    {k:'f1',l:'— Flete F1'},{k:'f2',l:'— Flete F2'},{k:'f3',l:'— Flete F3'},
+    {k:'com',l:'— Comisión'},{k:'est',l:'— Estibaje'},{k:'semiv',l:'— Semivariables'},
+    {k:'gv',l:'Total GV',b:true},{k:'mc',l:'Margen Contribución',b:true},
+    {k:'gfab',l:'— G. Fábrica'},{k:'gadm',l:'— G. Adm. Central'},{k:'gadmD',l:'— G. Adm. Directo'},
+    {k:'gdist',l:'— G. Distribución'},{k:'gcom',l:'— G. Comercial'},{k:'gmkt',l:'— G. Marketing'},
+    {k:'gcomi',l:'— G. Comunicaciones'},{k:'gf',l:'Total GF (sin corp)',b:true},
+    {k:'ebitda1',l:'EBITDA 1 (sin corp)',b:true},{k:'gcorp',l:'— G. Corp.'},
+    {k:'ebitda2',l:'EBITDA 2',b:true},{k:'dep',l:'— Depreciación'},
+    {k:'ebit',l:'Utilidad Operativa',b:true},{k:'rn',l:'Resultado Neto',b:true},
+  ];
+  const profK=['mc','ebitda1','ebitda2','ebit','rn'];
+  let thead=`<tr><th style="min-width:150px;text-align:left">Concepto</th>`;
+  for(const cc of ps) thead+=`<th colspan="2" style="text-align:center">${CC[cc].flag} REAL</th><th colspan="2" style="text-align:center;color:var(--blue)">PPTO</th>`;
+  thead+=`</tr><tr><th></th>`;
+  for(const cc of ps) thead+=`<th>${CC[cc].cur}</th><th style="color:var(--t3)">%VN</th><th style="color:var(--blue)">Monto</th><th style="color:var(--t3)">%VN</th>`;
+  thead+='</tr>';
+  let tbody='';
+  for(const ln of lines){
+    const isP=profK.includes(ln.k);
+    let tr=`<tr${isP?' style="background:rgba(255,255,255,.02)"':''}>`;
+    tr+=`<td class="${ln.b?'td-b':''}" style="${ln.b?'':'color:var(--t3)'}">${ln.l}</td>`;
+    for(const cc of ps){
+      for(const tipo of['REAL','PPTO']){
+        const d=tipo==='REAL'?gd(cc,'REAL',getReg(cc),yr,per):gdPM(cc,per);
+        if(!d){tr+='<td>—</td><td>—</td>';continue;}
+        const v=d[ln.k]||0,vn=d.vn||1,p=v/vn;
+        const col=isP?(v>=0?'color:var(--green)':'color:var(--red)'):'';
+        tr+=`<td class="${ln.b?'td-b':''}" style="${col};${tipo==='PPTO'?'color:var(--blue)':''}">${fmtN(v)}</td>`;
+        tr+=`<td style="color:var(--t3)">${(p*100).toFixed(1)}%</td>`;
+      }
+    }
+    tr+='</tr>';tbody+=tr;
+  }
+  document.getElementById('panel-vert').innerHTML=`
+  <div class="sh"><div class="stitle">Análisis Vertical — Estructura DRE</div>
+  <div class="ssub">% de Ventas Netas · REAL vs PPTO · ${perLabel(per)} · ${yr}</div></div>
+  <div class="card mb12">
+    <div class="ct mb12">Márgenes % VN por País · REAL</div>
+    <div style="position:relative;height:215px"><canvas id="c-v-mg"></canvas></div>
+  </div>
+  <div class="card mb20">
+    <div class="ct mb12">Composición SC % VN · REAL vs PPTO</div>
+    <div style="position:relative;height:290px"><canvas id="c-v-sc"></canvas></div>
+  </div>
+  <div class="card"><div class="ch"><div class="ct">Análisis Vertical Detallado REAL vs PPTO · ${perLabel(per)} · ${yr}</div>${pptoToggleHtml(per)}</div>
+  <div class="tw" style="max-height:480px;overflow-y:auto">
+  <table><thead>${thead}</thead><tbody>${tbody}</tbody></table></div></div>`;
+  requestAnimationFrame(()=>{
+    const scK=['f1','f2','f3','est','cpv','semiv'],scL=['F1','F2','F3','Estibaje','CPV','Semiv.'];
+    const scDS=[];
+    for(const cc of ps){
+      for(const tipo of['REAL','PPTO']){
+        const d=gd(cc,tipo,getReg(cc),yr,per);if(!d) continue;
+        const vn=d.vn||1;
+        scDS.push({label:`${CC[cc].flag} ${tipo}`,data:scK.map(k=>Math.abs(d[k]||0)/vn*100),backgroundColor:CC[cc].color+(tipo==='PPTO'?'55':'aa'),borderColor:CC[cc].color,borderWidth:tipo==='PPTO'?2:1,borderRadius:3});
+      }
+    }
+    mkChart('c-v-sc',{type:'bar',data:{labels:scL,datasets:scDS},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v+'%'}}}}});
+    const mgL=['MC%','EBITDA1%','EBITDA2%','EBIT%','Neto%'],mgK=['mc','ebitda1','ebitda2','ebit','rn'];
+    const mgDS=ps.map(cc=>{const d=gd(cc,'REAL',getReg(cc),yr,per);if(!d||!d.vn) return null;return{label:CC[cc].flag+' '+CC[cc].name,data:mgK.map(k=>(d[k]||0)/d.vn*100),backgroundColor:CC[cc].color+'99',borderColor:CC[cc].color,borderWidth:1,borderRadius:4};}).filter(Boolean);
+    mkChart('c-v-mg',{type:'bar',data:{labels:mgL,datasets:mgDS},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v+'%'}}}}});
+  });
+}
+
+// ══ ANÁLISIS HORIZONTAL ══
+function renderHoriz(){
+  const ps=paises(),per=S.f.periodo,yr=S.f.año;
+  const keyLines=[
+    {k:'vn',l:'Ventas Netas',b:true,dir:1},{k:'mc',l:'Margen Contribución',b:true,dir:1},
+    {k:'ebitda1',l:'EBITDA 1',b:true,dir:1},{k:'ebitda2',l:'EBITDA 2',b:true,dir:1},
+    {k:'ebit',l:'Utilidad Operativa',b:true,dir:1},{k:'rn',l:'Resultado Neto',b:true,dir:1},
+    {k:'cpv',l:'CPV',dir:-1},{k:'f1',l:'Flete F1',dir:-1},{k:'f2',l:'Flete F2',dir:-1},
+    {k:'gfab',l:'G. Fábrica',dir:-1},{k:'gadmD',l:'G. Adm. Directo',dir:-1},{k:'gdist',l:'G. Distribución',dir:-1},
+    {k:'gcom',l:'G. Comercial',dir:-1},{k:'gmkt',l:'G. Marketing',dir:-1},
+  ];
+  let tables='';
+  for(const cc of ps){
+    const r=gdR(cc,per),m=gdPM(cc,per),p=gdPY(cc,per);
+    let rows='';
+    for(const ln of keyLines){
+      const rv=r?r[ln.k]||0:null,mv=m?m[ln.k]||0:null,pv=p?p[ln.k]||0:null;
+      const dM=rv!=null&&mv!=null?rv-mv:null,pM=dM!=null&&mv?dM/Math.abs(mv):null;
+      const dA=rv!=null&&pv!=null?rv-pv:null,pA=dA!=null&&pv?dA/Math.abs(pv):null;
+      const scM=pM!=null?(ln.dir>0?(pM>=0?'g':pM>=-0.05?'y':'r'):(pM<=0?'g':pM<=0.05?'y':'r')):'n';
+      rows+=`<tr><td class="${ln.b?'td-b':''}">${ln.l}</td>
+        <td class="${ln.b?'td-b':''}">${rv!=null?fmtN(rv):'—'}</td>
+        <td style="color:var(--blue)">${mv!=null?fmtN(mv):'—'}</td>
+        <td class="${dM!=null?dClass(dM*ln.dir):''}">${dM!=null?fmtN(dM):'—'}</td>
+        <td class="${pM!=null?dClass(pM*ln.dir):''}">${pM!=null?fmtP(pM):'—'}</td>
+        <td><span class="sem ${scM}"></span></td>
+        <td style="color:var(--t3)">${pv!=null?fmtN(pv):'—'}</td>
+        <td class="${dA!=null?dClass(dA*ln.dir):''}">${dA!=null?fmtN(dA):'—'}</td>
+        <td class="${pA!=null?dClass(pA*ln.dir):''}">${pA!=null?fmtP(pA):'—'}</td>
+      </tr>`;
+    }
+    tables+=`<div class="card mb12">
+      <div class="ch"><div><div class="ct">${CC[cc].flag} ${CC[cc].name}</div>
+      <div class="cs">${CC[cc].cur} · TC por mes/tipo · ${perLabel(per)}</div></div>${pptoToggleHtml(per)}</div>
+      <div class="tw"><table><thead><tr>
+        <th style="text-align:left;min-width:140px">Concepto</th>
+        <th>REAL ${yr}</th><th style="color:var(--blue)">PPTO ${yr}</th><th>Δ PPTO</th><th>% PPTO</th><th>✓</th>
+        <th>REAL ${yr-1}</th><th>Δ vs ${yr-1}</th><th>% vs ${yr-1}</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>
+    </div>`;
+  }
+  document.getElementById('panel-horiz').innerHTML=`
+  <div class="sh" style="display:flex;align-items:flex-start;justify-content:space-between"><div><div class="stitle">Análisis Horizontal · ${yr} vs PPTO · vs ${yr-1}</div>
+  <div class="ssub">TC aplicado por mes y tipo · ${perLabel(per)}</div></div>${pptoToggleHtml(per)}</div>
+  <div class="card mb12">
+    <div class="ct mb12">VN ${yr} vs ${yr-1} (REAL)</div>
+    <div style="position:relative;height:210px"><canvas id="c-h-yoy"></canvas></div>
+  </div>
+  <div class="card mb20">
+    <div class="ct mb12">% Cumplimiento Mensual VN · REAL vs PPTO</div>
+    <div style="position:relative;height:210px"><canvas id="c-h-comp"></canvas></div>
+  </div>${tables}`;
+  requestAnimationFrame(()=>{
+    const ytdM_h=getYTDMonths(ps[0]||'PE',yr);
+    const cDS=ps.map(cc=>{
+      const mr=S.data?.[cc]?.REAL?.[getReg(cc)]?.[yr],mp=S.data?.[cc]?.PPTO?.[getReg(cc)]?.[yr];
+      if(!mr||!mp) return null;
+      const vals=mr.map((rm,i)=>{const tc_r=getTC('REAL',cc,yr,i+1),tc_p=getTC('PPTO',cc,yr,i+1);const rv=S.f.moneda==='usd'?rm.vn/tc_r:rm.vn;const pIdx=S.f.pptoMode==='YTD'&&i>=ytdM_h?0:i;const mv=S.f.moneda==='usd'?(mp[pIdx]?.vn||0)/tc_p:(mp[pIdx]?.vn||0);return mv>0?rv/mv*100:null;});
+      return{label:CC[cc].flag+' '+CC[cc].name,data:vals,borderColor:lineColor(cc),tension:.4,borderWidth:2,pointRadius:3};
+    }).filter(Boolean);
+    mkChart('c-h-comp',{type:'line',data:{labels:MES,datasets:cDS},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{...gridOpts,y:{...gridOpts.y,min:70,max:130,ticks:{callback:v=>v+'%'}}}}});
+    const yDS=[];
+    for(const cc of ps){
+      const mr=S.data?.[cc]?.REAL?.[getReg(cc)]?.[yr],my=S.data?.[cc]?.REAL?.[getReg(cc)]?.[yr-1];
+      const conv=(arr,y)=>arr?.map((m,i)=>{const tc=getTC('REAL',cc,y,i+1);return S.f.moneda==='usd'?m.vn/tc/1e6:m.vn/1e6;});
+      if(mr) yDS.push({label:`${CC[cc].flag} ${yr}`,data:conv(mr,yr),borderColor:lineColor(cc),tension:.4,borderWidth:2,pointRadius:2});
+      if(my) yDS.push({label:`${CC[cc].flag} ${yr-1}`,data:conv(my,yr-1),borderColor:lineColor(cc),borderDash:[5,5],tension:.4,borderWidth:1.5,pointRadius:1});
+    }
+    mkChart('c-h-yoy',{type:'line',data:{labels:MES,datasets:yDS},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:9}}}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v.toFixed(0)+'M'}}}}});
+  });
+}
+
+// ══ PVM (Precio-Volumen-Mix) + IMPACTO TC ══
+function compBaseToggleHtml(){
+  const cb=S.f.compBase;
+  return `<div style="display:flex;align-items:center;gap:4px">
+    <span style="font-size:10px;color:var(--t3)">Comparar vs:</span>
+    <button class="pill${cb==='PPTO'?' on':''}" style="padding:2px 9px;font-size:10px" onclick="S.f.compBase='PPTO';renderActive()">PPTO</button>
+    <button class="pill${cb==='PY'?' on':''}" style="padding:2px 9px;font-size:10px" onclick="S.f.compBase='PY';renderActive()">Año Anterior</button>
+  </div>`;
+}
+function renderPVM(){
+  const ps=paises(),per=S.f.periodo,yr=S.f.año,cb=S.f.compBase;
+  const cbLabel=cb==='PPTO'?'PPTO':`${yr-1} (REAL)`;
+  const isAll=S.f.paises==='ALL';
+  // ── Construir segmentos ──
+  // "Todos": 1 segmento por país, forzado a USD (no se pueden sumar monedas distintas)
+  // País único = PE: 1 segmento por región hija (LIM/PROV/CH), respeta S.f.moneda
+  // País único ≠ PE: 1 solo segmento (sin mix), respeta S.f.moneda
+  let segments=[],segLabels=[],forceUSD=false,pvmScope='';
+  if(isAll){
+    forceUSD=true;pvmScope='Consolidado 5 países (forzado a USD)';
+    for(const cc of ps){
+      const ref=gdSeg(cc,getReg(cc),cb,per,true),act=gdSeg(cc,getReg(cc),'REAL',per,true);
+      if(!ref||!act) continue;
+      segments.push({vol0:ref.vol||0,vn0:ref.vn||0,vol1:act.vol||0,vn1:act.vn||0});
+      segLabels.push(CC[cc].flag+' '+CC[cc].name);
+    }
+  }else{
+    const cc=ps[0];forceUSD=S.f.moneda==='usd';
+    if(cc==='PE'){
+      pvmScope='Perú por regiones (Lima / Provincia / Chile)';
+      for(const reg of['PE-LIM','PE-PROV','PE-CH']){
+        const ref=gdSeg('PE',reg,cb,per,forceUSD),act=gdSeg('PE',reg,'REAL',per,forceUSD);
+        if(!ref||!act) continue;
+        segments.push({vol0:ref.vol||0,vn0:ref.vn||0,vol1:act.vol||0,vn1:act.vn||0});
+        segLabels.push(PE_H[reg]?.label||reg);
+      }
+    }else{
+      pvmScope=`${CC[cc].name} (sin sub-regiones → solo Volumen + Precio)`;
+      const ref=gdSeg(cc,getReg(cc),cb,per,forceUSD),act=gdSeg(cc,getReg(cc),'REAL',per,forceUSD);
+      if(ref&&act){segments.push({vol0:ref.vol||0,vn0:ref.vn||0,vol1:act.vol||0,vn1:act.vn||0});segLabels.push(CC[cc].name);}
+    }
+  }
+  const pvm=segments.length?calcPVM(segments):null;
+  const curTag=forceUSD?'USD':(S.f.moneda==='usd'?'USD':'Local');
+  // ── Tabla de detalle por segmento ──
+  let segRows='';
+  for(let i=0;i<segments.length;i++){
+    const s=segments[i];
+    const p0=s.vol0>0?s.vn0/s.vol0:null,p1=s.vol1>0?s.vn1/s.vol1:null;
+    const dVol=s.vol0>0?(s.vol1-s.vol0)/s.vol0:null,dP=p0?((p1-p0)/p0):null;
+    segRows+=`<tr><td class="td-b">${segLabels[i]}</td>
+      <td>${fmtN(s.vol0,{dec:0})}</td><td>${fmtN(s.vol1,{dec:0})}</td><td class="${dVol!==null?dClass(dVol):''}">${dVol!==null?fmtP(dVol):'—'}</td>
+      <td>${p0?fmtN(p0,{dec:2}):'—'}</td><td>${p1?fmtN(p1,{dec:2}):'—'}</td><td class="${dP!==null?dClass(dP):''}">${dP!==null?fmtP(dP):'—'}</td>
+      <td>${fmtN(s.vn0/1e6,{dec:2})}M</td><td>${fmtN(s.vn1/1e6,{dec:2})}M</td></tr>`;
+  }
+  // ── Impacto TC: por país (o consolidado si ALL) ──
+  let tcRows='',tcChartLbl=[],tcOper=[],tcFx=[];
+  for(const cc of ps){
+    const refLoc=gdSeg(cc,getReg(cc),cb,per,false),actLoc=gdSeg(cc,getReg(cc),'REAL',per,false);
+    const refUsd=gdSeg(cc,getReg(cc),cb,per,true),actUsd=gdSeg(cc,getReg(cc),'REAL',per,true);
+    if(!refLoc||!actLoc||!refUsd||!actUsd) continue;
+    const tci=calcTCImpact(refLoc.vn,actLoc.vn,refUsd.vn,actUsd.vn);
+    if(!tci) continue;
+    tcChartLbl.push(CC[cc].flag+' '+cc);tcOper.push(tci.operational/1e6);tcFx.push(tci.fx/1e6);
+    tcRows+=`<tr><td class="td-b">${CC[cc].flag} ${CC[cc].name}</td>
+      <td>${fmtN(refLoc.vn/1e6,{dec:2})}M ${CC[cc].cur}</td><td>${fmtN(actLoc.vn/1e6,{dec:2})}M ${CC[cc].cur}</td>
+      <td class="${dClass(tci.operational)}">${fmtN(tci.operational/1e6,{dec:2})}M USD</td>
+      <td class="${dClass(tci.fx)}">${fmtN(tci.fx/1e6,{dec:2})}M USD</td>
+      <td class="td-b">${fmtN(tci.deltaUSD/1e6,{dec:2})}M USD</td></tr>`;
+  }
+  document.getElementById('panel-pvm').innerHTML=`
+  <div class="sh" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <div><div class="stitle">Análisis PVM (Precio · Volumen · Mix) + Impacto TC</div>
+    <div class="ssub">Base de comparación: ${cbLabel} · ${perLabel(per)} · Alcance: ${pvmScope}</div></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${compBaseToggleHtml()}${cb==='PPTO'?pptoToggleHtml(per):''}</div>
+  </div>
+  ${!pvm?`<div class="card"><div class="note-box">⚠ No hay suficientes datos de volumen para calcular PVM en la selección actual (verifica que el Excel tenga la fila "Volumen de venta" para el país/período elegido).</div></div>`:`
+  <div class="card mb12">
+    <div class="ct mb12">Descomposición de Δ Ventas Netas (${curTag}) — Volumen · Mix · Precio</div>
+    <div style="position:relative;height:230px"><canvas id="c-pvm-wf"></canvas></div>
+  </div>
+  <div class="card mb20">
+    <div class="ct mb12">Detalle por ${isAll?'País':cb==='PPTO'&&ps[0]==='PE'?'Región':'Segmento'}</div>
+    <div class="tw"><table><thead><tr>
+      <th style="text-align:left">Segmento</th><th>Vol. Ref</th><th>Vol. Real</th><th>Δ Vol%</th>
+      <th>Precio Ref</th><th>Precio Real</th><th>Δ Precio%</th><th>VN Ref</th><th>VN Real</th>
+    </tr></thead><tbody>${segRows}</tbody></table></div>
+  </div>`}
+  <div class="card mb12">
+    <div class="ct mb12">Impacto de Tipo de Cambio — Variación Operativa (moneda constante) vs Efecto Cambiario</div>
+    <div style="position:relative;height:230px"><canvas id="c-tc-impact"></canvas></div>
+    <div class="note-box" style="margin-top:10px">Metodología "moneda constante": la Variación Operativa aplica el crecimiento en moneda local sobre la base convertida a USD con el TC de referencia (${cbLabel}). El Impacto TC es el residual explicado exclusivamente por el movimiento cambiario. Operativa + Impacto TC = Δ USD Total.</div>
+  </div>
+  <div class="card">
+    <div class="ct mb12">Detalle por País</div>
+    <div class="tw"><table><thead><tr>
+      <th style="text-align:left">País</th><th>VN Ref (Local)</th><th>VN Real (Local)</th>
+      <th>Var. Operativa (USD)</th><th>Impacto TC (USD)</th><th>Δ USD Total</th>
+    </tr></thead><tbody>${tcRows}</tbody></table></div>
+  </div>`;
+  requestAnimationFrame(()=>{
+    if(pvm){
+      const wfL=[cb==='PPTO'?'PPTO':`${yr-1}`,'Volumen','Mix','Precio','Real'];
+      const wfd=[],wfc=[];let run=pvm.VN0/1e6;
+      wfd.push([0,run]);wfc.push('#0624BA');
+      for(const eff of[pvm.volumeEffect,pvm.mixEffect,pvm.priceEffect]){
+        const v=eff/1e6,nxt=run+v;
+        v>=0?(wfd.push([run,nxt]),wfc.push('#00953B')):(wfd.push([nxt,run]),wfc.push('#EE3124'));
+        run=nxt;
+      }
+      wfd.push([0,pvm.VN1/1e6]);wfc.push('#0624BA');
+      mkChart('c-pvm-wf',{type:'bar',data:{labels:wfL,datasets:[{data:wfd,backgroundColor:wfc,borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const v=Array.isArray(ctx.raw)?ctx.raw[1]-ctx.raw[0]:ctx.raw;return ` ${v.toFixed(2)}M`;}}}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v.toFixed(0)+'M'}}}}});
+    }
+    mkChart('c-tc-impact',{type:'bar',data:{labels:tcChartLbl,datasets:[
+      {label:'Variación Operativa',data:tcOper,backgroundColor:'#0624BA',borderRadius:4},
+      {label:'Impacto TC',data:tcFx,backgroundColor:'#EC6B00',borderRadius:4},
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{...gridOpts,x:{...gridOpts.x,stacked:true},y:{...gridOpts.y,stacked:true,ticks:{callback:v=>v.toFixed(1)+'M'}}}}});
+  });
+}
+
+// ══ SUPPLY CHAIN (ISC y Comisión excluidos) ══
+function renderSC(){
+  const ps=paises(),per=S.f.periodo,yr=S.f.año;
+  const scL=[
+    {k:'cpv',l:'CPV — Costo Producción Variable (MP)',cat:'Producción'},
+    {k:'f1',l:'Flete Primario (F1: Fáb→CD)',cat:'Logística'},
+    {k:'f2',l:'Flete Secundario (F2: CD→PDV)',cat:'Logística'},
+    {k:'f3',l:'Flete Terciario (F3: Fáb→PDV)',cat:'Logística'},
+    {k:'est',l:'Estibaje y Combustible',cat:'Logística'},
+    {k:'semiv',l:'Semivariables de Producción',cat:'Producción'},
+  ];
+  const fixedSCL=[
+    {k:'gfab',l:'G. Fábrica'},
+    {k:'gadmD',l:'G. Adm. Directo'},
+    {k:'gdist',l:'G. Distribución'},
+  ];
+  // KPI cards
+  let kpis='';
+  for(const cc of ps){
+    const r=gdR(cc,per),m=gdPM(cc,per);if(!r) continue;
+    const vn=r.vn||1;
+    const logC=Math.abs(r.f1)+Math.abs(r.f2)+Math.abs(r.f3)+Math.abs(r.est);
+    const logP=logC/vn,cpvP=Math.abs(r.cpv)/vn,vol=r.vol||1,cHL=logC/(vol*10);
+    const sc=m?semC(Math.abs(m.f1)+Math.abs(m.f2)+Math.abs(m.f3)+Math.abs(m.est),logC):'n';
+    kpis+=`<div class="card card-sm">
+      <div style="display:flex;justify-content:space-between;margin-bottom:7px">
+        <span style="font-size:12px;font-weight:700;color:${CC[cc].color}">${CC[cc].flag} ${CC[cc].name}</span>
+        <span class="sem ${sc}"></span>
+      </div>
+      <div class="kpi-row">
+        <div class="km"><div class="kml">Costo Log.%VN</div><div class="kmv" style="color:${logP>.15?'var(--red)':logP>.10?'var(--yellow)':'var(--green)'}">${(logP*100).toFixed(1)}%</div></div>
+        <div class="km"><div class="kml">CPV%VN</div><div class="kmv">${(cpvP*100).toFixed(1)}%</div></div>
+        <div class="km"><div class="kml">Flete/HL</div><div class="kmv">${fmtN(cHL,{dec:2})}</div></div>
+      </div></div>`;
+  }
+  // Variable SC table
+  let thead=`<tr><th style="text-align:left;min-width:190px">Concepto SC Variable</th><th>Cat.</th>`;
+  for(const cc of ps) thead+=`<th>${CC[cc].flag} REAL</th><th style="color:var(--blue)">PPTO</th><th>Δ%</th>`;
+  thead+='</tr>';
+  let tbody='';
+  for(const ln of scL){
+    let row=`<tr><td>${ln.l}</td><td style="color:var(--t3)">${ln.cat}</td>`;
+    for(const cc of ps){
+      const r=gdR(cc,per),m=gdPM(cc,per);if(!r){row+='<td>—</td><td>—</td><td>—</td>';continue;}
+      const rp=Math.abs(r[ln.k]||0)/r.vn,mp=m?Math.abs(m[ln.k]||0)/(m.vn||1):null;
+      const d=mp?(rp-mp)/Math.abs(mp):null;
+      const col=rp>.15?'var(--red)':rp>.08?'var(--yellow)':'var(--green)';
+      row+=`<td style="color:${col}">${(rp*100).toFixed(1)}%</td>`;
+      row+=`<td style="color:var(--blue)">${mp?(mp*100).toFixed(1)+'%':'—'}</td>`;
+      row+=`<td class="${d!==null?dClass(-d):''}">${d!==null?fmtP(d):'—'}</td>`;
+    }
+    row+='</tr>';tbody+=row;
+  }
+  let totRow=`<tr class="td-section"><td class="td-b">Total GV SC (sin ISC/Comisión)</td><td></td>`;
+  for(const cc of ps){
+    const r=gdR(cc,per),m=gdPM(cc,per);if(!r){totRow+='<td>—</td><td>—</td><td>—</td>';continue;}
+    const rt=(Math.abs(r.f1)+Math.abs(r.f2)+Math.abs(r.f3)+Math.abs(r.est)+Math.abs(r.cpv)+Math.abs(r.semiv))/r.vn;
+    const mt=m?(Math.abs(m.f1)+Math.abs(m.f2)+Math.abs(m.f3)+Math.abs(m.est)+Math.abs(m.cpv)+Math.abs(m.semiv))/(m.vn||1):null;
+    const d=mt?(rt-mt)/Math.abs(mt):null;
+    totRow+=`<td class="td-b">${(rt*100).toFixed(1)}%</td><td style="color:var(--blue)">${mt?(mt*100).toFixed(1)+'%':'—'}</td><td class="${d!==null?dClass(-d):''}">${d!==null?fmtP(d):'—'}</td>`;
+  }
+  totRow+='</tr>';
+  // Fixed SC table
+  let fixedThead=`<tr><th style="text-align:left;min-width:160px">Componente Fijo SC</th>`;
+  for(const cc of ps) fixedThead+=`<th>${CC[cc].flag} REAL%VN</th><th style="color:var(--blue)">PPTO%VN</th><th>Δ%</th>`;
+  fixedThead+='</tr>';
+  let fixedTbody='';
+  for(const ln of fixedSCL){
+    let row=`<tr><td class="td-b">${ln.l}</td>`;
+    for(const cc of ps){
+      const r=gdR(cc,per),m=gdPM(cc,per);if(!r){row+='<td>—</td><td>—</td><td>—</td>';continue;}
+      const rp=Math.abs(r[ln.k]||0)/(r.vn||1),mp=m?Math.abs(m[ln.k]||0)/(m.vn||1):null;
+      const d=mp?(rp-mp)/Math.abs(mp):null;
+      row+=`<td>${(rp*100).toFixed(1)}%</td><td style="color:var(--blue)">${mp?(mp*100).toFixed(1)+'%':'—'}</td>`;
+      row+=`<td class="${d!==null?(d>0.02?'neg':d<-0.02?'pos':'neu'):''}">${d!==null?fmtP(d):'—'}</td>`;
+    }
+    row+='</tr>';fixedTbody+=row;
+  }
+  let fixedTot=`<tr class="td-section"><td class="td-b">Total GF Operativo SC</td>`;
+  for(const cc of ps){
+    const r=gdR(cc,per),m=gdPM(cc,per);if(!r){fixedTot+='<td>—</td><td>—</td><td>—</td>';continue;}
+    const rp=(Math.abs(r.gfab||0)+Math.abs(r.gadmD||0)+Math.abs(r.gdist||0))/(r.vn||1);
+    const mp=m?(Math.abs(m.gfab||0)+Math.abs(m.gadmD||0)+Math.abs(m.gdist||0))/(m.vn||1):null;
+    const d=mp?(rp-mp)/Math.abs(mp):null;
+    fixedTot+=`<td class="td-b">${(rp*100).toFixed(1)}%</td><td style="color:var(--blue)">${mp?(mp*100).toFixed(1)+'%':'—'}</td><td class="${d!==null?(d>0.02?'neg':d<-0.02?'pos':'neu'):''}">${d!==null?fmtP(d):'—'}</td>`;
+  }
+  fixedTot+='</tr>';
+
+  document.getElementById('panel-sc').innerHTML=`
+  <div class="sh"><div class="stitle">Supply Chain — Costos Logísticos y Estructura Fija SC</div>
+  <div class="ssub">Fletes · CPV · Estibaje · Semivariables · ${perLabel(per)} · ${yr} <span style="color:var(--yellow);margin-left:8px">⚠ ISC y Comisión excluidos (tributario/comercial)</span></div></div>
+  <div class="${ps.length>=4?'g5':'g'+ps.length} mb20">${kpis}</div>
+
+  <!-- 1. EVOLUCIÓN MENSUAL -->
+  <div class="card mb20">
+    <div class="ct mb12">Evolución Mensual Costo Logístico % VN</div>
+    <div style="position:relative;height:215px"><canvas id="c-s-log"></canvas></div>
+  </div>
+
+  <!-- 2. DESGLOSE SC VARIABLE: tabla + composición en mismo card -->
+  <div class="card mb20">
+    <div class="ch">
+      <div><div class="ct">Desglose SC Variable · REAL vs PPTO por País (%VN)</div>
+      <div class="cs">ISC y Comisión de Venta excluidos · Δ% = variación REAL vs PPTO</div></div>
+      ${pptoToggleHtml(per)}
+    </div>
+    <div class="tw mb12"><table><thead>${thead}</thead><tbody>${tbody}${totRow}</tbody></table></div>
+    <div style="margin-top:14px">
+      <div class="ct mb8" style="font-size:9px;margin-bottom:8px">COMPOSICIÓN SC VARIABLE % VN · REAL vs PPTO</div>
+      <div class="cw"><canvas id="c-s-comp"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 3. DESGLOSE SC FIJO (renamed) -->
+  <div class="card">
+    <div class="ch">
+      <div><div class="ct">Desglose SC Fijo · REAL vs PPTO por País (%VN)</div>
+      <div class="cs">G. Fábrica · G. Adm. Directo · G. Distribución · ${perLabel(per)} · ${yr}</div></div>
+      ${pptoToggleHtml(per)}
+    </div>
+    <div class="tw mb12"><table><thead>${fixedThead}</thead><tbody>${fixedTbody}${fixedTot}</tbody></table></div>
+    <div style="margin-top:14px">
+      <div class="ct mb8" style="font-size:9px;margin-bottom:8px">COMPOSICIÓN SC FIJO % VN · REAL vs PPTO</div>
+      <div class="cw"><canvas id="c-s-fixed"></canvas></div>
+    </div>
+  </div>`;
+
+  requestAnimationFrame(()=>{
+    // Monthly log chart
+    const lDS=ps.map(cc=>{
+      const months=S.data?.[cc]?.REAL?.[getReg(cc)]?.[yr];if(!months) return null;
+      return{label:CC[cc].flag+' '+CC[cc].name,data:months.map((m,i)=>{const log=Math.abs(m.f1)+Math.abs(m.f2)+Math.abs(m.f3)+Math.abs(m.est);const v=S.f.moneda==='usd'?m.vn/getTC('REAL',cc,yr,i+1):m.vn;const lv=S.f.moneda==='usd'?log/getTC('REAL',cc,yr,i+1):log;return v>0?lv/v*100:0;}),borderColor:lineColor(cc),tension:.4,borderWidth:2,pointRadius:2,fill:false};
+    }).filter(Boolean);
+    mkChart('c-s-log',{type:'line',data:{labels:MES,datasets:lDS},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v.toFixed(1)+'%'}}}}});
+    // SC variable composition chart
+    const gK=['f1','f2','f3','est','cpv','semiv'],gL=['F1','F2','F3','Estibaje','CPV','Semiv.'];
+    const cDS=[];
+    for(const cc of ps){
+      for(const t of['REAL','PPTO']){
+        const d=t==='REAL'?gd(cc,'REAL',getReg(cc),yr,per):gdPM(cc,per);if(!d) continue;
+        cDS.push({label:`${CC[cc].flag} ${t}`,data:gK.map(k=>Math.abs(d[k]||0)/(d.vn||1)*100),backgroundColor:CC[cc].color+(t==='PPTO'?'55':'aa'),borderColor:CC[cc].color,borderWidth:t==='PPTO'?2:1,borderRadius:3});
+      }
+    }
+    mkChart('c-s-comp',{type:'bar',data:{labels:gL,datasets:cDS},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v+'%'}}}}});
+    // Fixed costs chart
+    const fixedK=['gfab','gadmD','gdist'];const fixedLbl=['G.Fábrica','G.Adm.Dir.','G.Distribución'];
+    const fDS=[];
+    for(const cc of ps){
+      for(const t of['REAL','PPTO']){
+        const d=t==='REAL'?gd(cc,'REAL',getReg(cc),yr,per):gdPM(cc,per);if(!d) continue;
+        fDS.push({label:`${CC[cc].flag} ${t}`,data:fixedK.map(k=>Math.abs(d[k]||0)/(d.vn||1)*100),backgroundColor:CC[cc].color+(t==='PPTO'?'55':'aa'),borderColor:CC[cc].color,borderWidth:t==='PPTO'?2:1,borderRadius:3});
+      }
+    }
+    mkChart('c-s-fixed',{type:'bar',data:{labels:fixedLbl,datasets:fDS},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v+'%'}}}}});
+  });
+}
+
+// ══ BREAK EVEN con curvas EVT/EFT/ET/FN ══
+function renderBE(){
+  const ps=paises(),per=S.f.periodo,yr=S.f.año;
+  const beDat=[];let cards='';
+  for(const cc of ps){
+    const r=gdR(cc,per);if(!r||!r.vn) continue;
+    const info=CC[cc];
+    const evt=calcEVT(r);
+    const eft=calcEFT(r);
+    const et=evt+eft;
+    const mcP=r.mc/r.vn;
+    const beVN=mcP>0?eft/mcP:null;
+    const vol=r.vol||1,precio=r.vn/vol;
+    const beVol=beVN?beVN/precio:null;
+    const safety=beVN?(r.vn-beVN)/r.vn:null;
+    const cov=beVN?r.vn/beVN:null;
+    beDat.push({cc,r,evt,eft,et,mcP,beVN,beVol,safety,cov});
+    const gHex=cov?(cov>=1.15?'#00953B':cov>=1?'#FFBC36':'#EE3124'):'#D1D5DB';
+    const sc=cov?(cov>=1.15?'g':cov>=1?'y':'r'):'n';
+    const filledSweep=cov?Math.min(cov,2)/2*Math.PI:0;
+    const x2=90+75*Math.cos(Math.PI+filledSweep),y2=90+75*Math.sin(Math.PI+filledSweep);
+    const lg=filledSweep>Math.PI?1:0;
+    cards+=`<div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:12px;font-weight:700;color:${info.color}">${info.flag} ${info.name}</span>
+        <span class="sem ${sc}"></span>
+      </div>
+      <div style="text-align:center;padding:6px 0 2px">
+        <svg viewBox="0 0 180 100" width="100%" style="max-width:190px">
+          <path d="M15 90 A 75 75 0 0 1 165 90" fill="none" stroke="#E5E7EB" stroke-width="13" stroke-linecap="round"/>
+          ${cov?`<path d="M15 90 A 75 75 0 ${lg} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="${gHex}" stroke-width="13" stroke-linecap="round"/>`:''}
+          <text x="90" y="80" text-anchor="middle" font-size="19" font-weight="700" fill="${gHex}">${cov?(cov*100).toFixed(0)+'%':'—'}</text>
+          <text x="90" y="96" text-anchor="middle" font-size="8" fill="#8A8575">Cobertura PE</text>
+        </svg>
+      </div>
+      <div class="kpi-row" style="text-align:center">
+        <div class="km" style="text-align:center"><div class="kml">PE (FN)</div><div class="kmv">${beVN?fmtN(beVN):'—'}</div></div>
+        <div class="km" style="text-align:center"><div class="kml">PE Vol.</div><div class="kmv">${beVol?fmtN(beVol)+'K L':'—'}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">
+        <div style="background:var(--bg4);border-radius:5px;padding:7px;text-align:center"><div class="kml">MC%</div>
+          <div class="kmv" style="color:${mcP>.3?'var(--green)':mcP>0?'var(--yellow)':'var(--red)'}">${(mcP*100).toFixed(1)}%</div></div>
+        <div style="background:var(--bg4);border-radius:5px;padding:7px;text-align:center"><div class="kml">Mg. Seguridad</div>
+          <div class="kmv" style="color:${safety&&safety>.1?'var(--green)':safety&&safety>0?'var(--yellow)':'var(--red)'}">${safety?(safety*100).toFixed(1)+'%':'—'}</div></div>
+        <div style="background:rgba(236,107,0,.1);border-radius:5px;padding:7px;text-align:center"><div class="kml">EVT</div><div class="kmv" style="color:#EC6B00">${fmtN(evt)}</div></div>
+        <div style="background:rgba(6,36,186,.1);border-radius:5px;padding:7px;text-align:center"><div class="kml">EFT</div><div class="kmv" style="color:var(--blue)">${fmtN(eft)}</div></div>
+        <div style="background:rgba(245,81,73,.1);border-radius:5px;padding:7px;text-align:center;grid-column:1/-1"><div class="kml">ET = EVT + EFT</div><div class="kmv" style="color:var(--red)">${fmtN(et)} | FN: ${fmtN(r.vn)}</div></div>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('panel-be').innerHTML=`
+  <div class="sh"><div class="stitle">Break Even — Punto de Equilibrio</div>
+  <div class="ssub">PE(FN) = EFT ÷ MC% · EVT = Estructura Variable Total · EFT = Estructura Fija Total · ET = EVT+EFT · ${perLabel(per)} · ${yr}</div></div>
+  <div class="alert alert-i">ℹ️ <strong>EVT</strong> = |Gasto Variable Total| · <strong>EFT</strong> = |Gasto Fijo Total + G.Corporativo| · <strong>ET</strong> = EVT+EFT · <strong>FN</strong> = Facturación Neta (Ventas Netas) · El Break Even ocurre donde FN = ET, es decir cuando MC cubre exactamente la EFT.</div>
+  <div class="${ps.length>=4?'g5':'g'+ps.length} mb20">${cards}</div>
+  <div class="card mb20">
+    <div class="ch"><div><div class="ct">Curva BE Mensual — EVT · EFT apilados = ET vs FN (Facturación Neta)</div>
+    <div class="cs">Barras: EVT (naranja) + EFT (azul) = ET total · Línea verde = FN · Zona verde = ganancia · Zona roja = pérdida operativa</div></div></div>
+    <div style="position:relative;height:280px"><canvas id="c-b-curve"></canvas></div>
+  </div>
+  <div class="g2 mb20">
+    <div class="card"><div class="ct mb12">FN Real vs Punto de Equilibrio</div>
+    <div style="position:relative;height:260px"><canvas id="c-b-bar"></canvas></div></div>
+    <div class="card"><div class="ct mb12">Margen de Seguridad % por País</div>
+    <div style="position:relative;height:260px"><canvas id="c-b-safe"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="ch"><div class="ct">Estructura BE Consolidada · ${perLabel(per)} · ${yr}</div></div>
+    <div class="tw"><table><thead><tr>
+      <th style="text-align:left">País</th><th>FN</th><th style="color:var(--orange)">EVT</th><th style="color:var(--blue)">EFT</th><th style="color:var(--red)">ET</th><th>FN−ET</th><th>MC%</th><th>GV%</th><th>GF%</th><th>BE(FN)</th><th>Cobert.</th>
+    </tr></thead><tbody id="be-tbl"></tbody></table></div>
+  </div>`;
+
+  requestAnimationFrame(()=>{
+    // EVT/EFT curve chart
+    const evtArr=[],eftArr=[],fnArr=[];
+    for(let m=0;m<12;m++){
+      let evt=0,eft=0,fn=0;
+      for(const cc of ps){
+        const md=S.data?.[cc]?.REAL?.[getReg(cc)]?.[yr]?.[m];if(!md) continue;
+        const tc=S.f.moneda==='usd'?getTC('REAL',cc,yr,m+1):1;
+        evt+=calcEVT(md)/tc;
+        eft+=calcEFT(md)/tc;
+        fn+=md.vn/tc;
+      }
+      evtArr.push(evt/1e6);eftArr.push(eft/1e6);fnArr.push(fn/1e6);
+    }
+    mkChart('c-b-curve',{type:'bar',data:{labels:MES,datasets:[
+      {label:'EVT (Estructura Variable)',data:evtArr,backgroundColor:'rgba(236,107,0,0.75)',stack:'et',borderRadius:[3,3,0,0],order:2},
+      {label:'EFT (Estructura Fija)',data:eftArr,backgroundColor:'rgba(6,36,186,0.80)',stack:'et',borderRadius:[3,3,0,0],order:2},
+      {label:'FN (Facturación Neta)',data:fnArr,type:'line',borderColor:chartVar('--chart-1'),backgroundColor:'rgba(0,149,59,0.08)',fill:true,borderWidth:3,pointRadius:5,pointBackgroundColor:chartVar('--chart-1'),tension:.3,order:1},
+    ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{usePointStyle:true,pointStyle:'rect',padding:18,font:{size:10}}},
+      tooltip:{mode:'index',intersect:false,callbacks:{
+        afterBody:(items)=>{
+          const fn=items.find(i=>i.dataset.label==='FN (Facturación Neta)');
+          const ev=items.find(i=>i.dataset.label==='EVT (Estructura Variable)');
+          const ef=items.find(i=>i.dataset.label==='EFT (Estructura Fija)');
+          if(fn&&ev&&ef){const et=(ev.raw||0)+(ef.raw||0);const gap=(fn.raw||0)-et;
+            return [`─────────────`,`ET (EVT+EFT): ${et.toFixed(1)}M`,`Resultado: ${gap>=0?'▲ +':'▼ '}${gap.toFixed(1)}M`];}
+          return[];}}}},
+    scales:{
+      x:{...gridOpts.x,stacked:true},
+      y:{...gridOpts.y,stacked:true,ticks:{callback:v=>v.toFixed(0)+'M'},
+        grace:'5%'}}}});
+    // Bar chart
+    const lbs=beDat.map(d=>CC[d.cc].flag+' '+CC[d.cc].name);
+    mkChart('c-b-bar',{type:'bar',data:{labels:lbs,datasets:[
+      {label:'FN Real',data:beDat.map(d=>d.r.vn/1e6),backgroundColor:beDat.map(d=>d.cov&&d.cov>=1?'#00953B':'#EE3124'),borderRadius:5},
+      {label:'PE (FN)',data:beDat.map(d=>d.beVN?d.beVN/1e6:0),type:'line',borderColor:chartVar('--chart-3'),backgroundColor:'transparent',pointStyle:'triangle',pointRadius:9,pointBackgroundColor:chartVar('--chart-3'),borderWidth:0},
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v.toFixed(0)+'M'}}}}});
+    mkChart('c-b-safe',{type:'bar',data:{labels:lbs,datasets:[{label:'Mg. Seguridad %',data:beDat.map(d=>d.safety?d.safety*100:0),backgroundColor:beDat.map(d=>!d.safety?'#D1D5DB':d.safety>=.15?'#00953B':d.safety>=0?'#FFBC36':'#EE3124'),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v.toFixed(0)+'%'}}}}});
+    // BE table
+    const tbl=document.getElementById('be-tbl');if(!tbl) return;
+    tbl.innerHTML=beDat.map(d=>{
+      const fnEt=d.r.vn-d.et;
+      return `<tr>
+        <td>${CC[d.cc].flag} ${CC[d.cc].name}</td>
+        <td class="td-b">${fmtN(d.r.vn)}</td>
+        <td style="color:var(--orange)">${fmtN(d.evt)}</td>
+        <td style="color:var(--blue)">${fmtN(d.eft)}</td>
+        <td style="color:var(--red)">${fmtN(d.et)}</td>
+        <td class="${fnEt>=0?'pos':'neg'}">${fmtN(fnEt)}</td>
+        <td style="color:${d.mcP>.3?'var(--green)':d.mcP>0?'var(--yellow)':'var(--red)'}">${(d.mcP*100).toFixed(1)}%</td>
+        <td>${(Math.abs(d.r.gv||0)/d.r.vn*100).toFixed(1)}%</td>
+        <td>${(d.eft/d.r.vn*100).toFixed(1)}%</td>
+        <td>${d.beVN?fmtN(d.beVN):'—'}</td>
+        <td style="color:${d.cov&&d.cov>=1?'var(--green)':'var(--red)'}">${d.cov?(d.cov*100).toFixed(0)+'%':'—'}</td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+// ══ PERÚ REGIONAL ══
+function renderPeru(){
+  const per=S.f.periodo,yr=S.f.año,sel=S.peReg||'PE';
+  const peD=S.data?.PE;
+  if(!peD?.REAL){document.getElementById('panel-peru').innerHTML='<div class="alert alert-w">No hay datos regionales de Perú.</div>';return;}
+  function regCard(rk,selReg){
+    const ri=PE_H[rk],reg_real=peD?.REAL?.[rk];
+    const r=reg_real?getD('PE','REAL',rk,yr,per):null;
+    const rUSD=reg_real?getD_usd('PE','REAL',rk,yr,per):null;
+    const disp=S.f.moneda==='usd'?rUSD:r;
+    const rTot=S.f.moneda==='usd'?getD_usd('PE','REAL','PE',yr,per):getD('PE','REAL','PE',yr,per);
+    const pt=disp&&rTot&&rTot.vn?disp.vn/rTot.vn:null;
+    return `<div class="tree-branch">
+      <div class="tree-node${rk===selReg?' sel':''}" onclick="selectPeReg('${rk}')">
+        <div class="tree-label" style="color:${ri.color}">${ri.label}</div>
+        <div class="tree-sub">${disp?fmtN(disp.vn)+(S.f.moneda==='usd'?' USD':' PEN'):'N/A'}</div>
+        ${pt!==null?`<div class="tree-sub">${(pt*100).toFixed(0)}% PE</div>`:''}
+      </div></div>`;
+  }
+  const treeHTML=`
+  <div style="overflow-x:auto;padding-bottom:8px">
+    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:8px">${regCard('PE',sel)}</div>
+    <div style="display:flex;justify-content:center"><div class="tree-connector"></div></div>
+    <div style="display:flex;justify-content:center;gap:8px;margin-bottom:8px">${regCard('PE-LIM',sel)}${regCard('PE-PROV',sel)}${regCard('PE-CH',sel)}</div>
+    <div style="display:flex;justify-content:center">
+      <div style="width:100px"></div>
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div class="tree-connector"></div>
+        <div style="display:flex;gap:8px">${regCard('PE-PROV-N',sel)}${regCard('PE-PROV-NG',sel)}${regCard('PE-PROV-S',sel)}</div>
+      </div>
+      <div style="width:100px"></div>
+    </div>
+  </div>`;
+  const ri=PE_H[sel];
+  const r=gd('PE','REAL',sel,yr,per),m=gd('PE','PPTO',sel,yr,per),p=gd('PE','REAL',sel,yr-1,per);
+  const lns=[
+    {k:'vn',l:'Ventas Netas',b:true},{k:'mc',l:'Margen Contribución',b:true},
+    {k:'ebitda2',l:'EBITDA 2',b:true},{k:'ebit',l:'Utilidad Operativa',b:true},{k:'rn',l:'Resultado Neto',b:true},
+    {k:'f1',l:'Flete F1'},{k:'f2',l:'Flete F2'},{k:'cpv',l:'CPV'},{k:'gcom',l:'G. Comercial'},{k:'gmkt',l:'G. Marketing'},
+  ];
+  let detRows='';
+  for(const ln of lns){
+    const rv=r?r[ln.k]||0:null,mv=m?m[ln.k]||0:null,pv=p?p[ln.k]||0:null;
+    const dM=rv!=null&&mv!=null?rv-mv:null,pM=dM!=null&&mv?dM/Math.abs(mv):null;
+    detRows+=`<tr><td class="${ln.b?'td-b':''}">${ln.l}</td>
+      <td class="${ln.b?'td-b':''}">${rv!=null?fmtN(rv):'—'}</td>
+      <td style="color:var(--blue)">${mv!=null?fmtN(mv):'—'}</td>
+      <td class="${dM!=null?dClass(dM):''}">${dM!=null?fmtN(dM):'—'}</td>
+      <td class="${pM!=null?dClass(pM):''}">${pM!=null?fmtP(pM):'—'}</td>
+      <td style="color:var(--t3)">${pv!=null?fmtN(pv):'—'}</td>
+    </tr>`;
+  }
+  const l2=['PE-LIM','PE-PROV','PE-CH'];
+  const l2V=l2.map(rk=>{const d=gd('PE','REAL',rk,yr,per);return d?Math.max(0,d.vn/1e6):0;});
+  const l2C=l2.map(rk=>PE_H[rk].color);
+  document.getElementById('panel-peru').innerHTML=`
+  <div class="sh"><div class="stitle">🇵🇪 Perú Regional — Jerarquía Completa</div>
+  <div class="ssub">Haz clic en un nodo para ver su detalle · ${perLabel(per)} · ${yr}</div></div>
+  <div class="card mb20">${treeHTML}</div>
+  <div class="g2 mb20">
+    <div class="card"><div class="ct mb12">Participación VN por Región Nivel 2</div>
+    <div class="cw"><canvas id="c-pe-pie"></canvas></div></div>
+    <div class="card"><div class="ct mb12">Evolución Mensual VN — ${ri.label}</div>
+    <div class="cw"><canvas id="c-pe-tr"></canvas></div></div>
+  </div>
+  <div class="card">
+    <div class="ch"><div><div class="ct">Detalle DRE — ${ri.label} <span style="color:${ri.color}">(${sel})</span></div>
+    <div class="cs">REAL vs PPTO vs ${yr-1} · ${perLabel(per)}</div></div></div>
+    <div class="tw"><table><thead><tr>
+      <th style="text-align:left;min-width:145px">Concepto</th>
+      <th>REAL ${yr}</th><th style="color:var(--blue)">PPTO ${yr}</th><th>Δ PPTO</th><th>% PPTO</th><th>REAL ${yr-1}</th>
+    </tr></thead><tbody>${detRows}</tbody></table></div>
+  </div>`;
+  requestAnimationFrame(()=>{
+    mkChart('c-pe-pie',{type:'doughnut',data:{labels:l2.map(rk=>PE_H[rk].label),datasets:[{data:l2V,backgroundColor:l2C,borderWidth:2,borderColor:getComputedStyle(document.documentElement).getPropertyValue('--bg3').trim()||'#FFFFFF'}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw.toFixed(0)}M`}}}}});
+    const trDS=Object.keys(PE_H).filter(rk=>PE_H[rk].level<=2).map(rk=>{
+      const months=peD?.REAL?.[rk]?.[yr];if(!months) return null;
+      return{label:PE_H[rk].label,data:months.map((m,i)=>{const tc=getTC('REAL','PE',yr,i+1);return S.f.moneda==='usd'?m.vn/tc/1e6:m.vn/1e6;}),borderColor:regLineColor(rk),tension:.4,borderWidth:rk===sel?3:1.5,pointRadius:rk===sel?3:1};
+    }).filter(Boolean);
+    mkChart('c-pe-tr',{type:'line',data:{labels:MES,datasets:trDS},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:9}}}},scales:{...gridOpts,y:{...gridOpts.y,ticks:{callback:v=>v.toFixed(0)+'M'}}}}});
+  });
+}
+function selectPeReg(rk){S.peReg=rk;renderPeru();}
+
+// ══ AI CHAT ══
+let chatHistory=[],aiThinking=false;
+const QUICK_PROMPTS=[
+  '¿Cómo está el cumplimiento de PPTO de ventas por país?',
+  '¿Qué país tiene el mayor costo logístico % VN? (excl. ISC/Comisión)',
+  '¿Cuál es el país más rentable en EBITDA% y por qué?',
+  'Analiza la estructura EVT/EFT/ET vs FN y el riesgo de Break Even',
+  'Compara fletes F1 y F2 entre países y recomienda acciones SC',
+  '¿Cómo impacta la variación del TC en los resultados?',
+  'Analiza G. Fábrica, G. Adm. Directo y G. Distribución por país',
+  '¿Qué regiones de Perú están mejor posicionadas vs su PPTO?',
+];
+function buildDataContext(){
+  const yr=S.f.año,per=S.f.periodo,pl=perLabel(per);
+  let ctx=`# Dashboard DRE ISM MDCORP\n**Período:** ${pl} ${yr} | **Moneda:** ${S.f.moneda==='usd'?'USD (TC por mes/tipo)':'Local'}\n\n`;
+  for(const cc of CODES){
+    const r=gdR(cc,per),m=gdPM(cc,per),p=gdPY(cc,per);if(!r||!r.vn) continue;
+    const info=CC[cc],tcAvg=avgTC('REAL',cc,yr);
+    const evt=Math.abs(r.gv||0),eft=Math.abs(r.gf||0)+Math.abs(r.gcorp||0),et=evt+eft;
+    const mcP=r.mc/r.vn,beVN=mcP>0?eft/mcP:null,cov=beVN?r.vn/beVN:null;
+    ctx+=`## ${info.flag} ${info.name} (${info.cur}) — TC avg REAL ${yr}: ${tcAvg.toFixed(4)}\n`;
+    ctx+=`**REAL ${yr}:** FN=${fmtN(r.vn)} | MC=${fmtN(r.mc)} (${(mcP*100).toFixed(1)}%) | EBITDA2=${fmtN(r.ebitda2)} (${(pct(r.ebitda2,r.vn)*100).toFixed(1)}%) | Neto=${fmtN(r.rn)} (${(pct(r.rn,r.vn)*100).toFixed(1)}%)\n`;
+    ctx+=`**Estructura BE:** EVT=${fmtN(evt)} | EFT=${fmtN(eft)} | ET=${fmtN(et)} | Cobert.=${cov?(cov*100).toFixed(0)+'%':'N/A'} | Mg.Seg.=${beVN?((r.vn-beVN)/r.vn*100).toFixed(1)+'%':'N/A'}\n`;
+    ctx+=`**SC (sin ISC/Com):** F1=${(Math.abs(r.f1||0)/r.vn*100).toFixed(1)}% | F2=${(Math.abs(r.f2||0)/r.vn*100).toFixed(1)}% | CPV=${(Math.abs(r.cpv||0)/r.vn*100).toFixed(1)}% | Est=${(Math.abs(r.est||0)/r.vn*100).toFixed(1)}%\n`;
+    ctx+=`**GF Fijo SC:** G.Fab=${(Math.abs(r.gfab||0)/r.vn*100).toFixed(1)}% | G.AdmDir=${(Math.abs(r.gadmD||0)/r.vn*100).toFixed(1)}% | G.Dist=${(Math.abs(r.gdist||0)/r.vn*100).toFixed(1)}%\n`;
+    if(m&&m.vn) ctx+=`**vs PPTO:** VN ${fmtP(pct(r.vn-m.vn,m.vn))} | MC% ${(r.mc/r.vn*100).toFixed(1)}% vs ${(m.mc/m.vn*100).toFixed(1)}% | EBITDA% ${(pct(r.ebitda2,r.vn)*100).toFixed(1)}% vs ${(pct(m.ebitda2,m.vn)*100).toFixed(1)}%\n`;
+    if(p&&p.vn) ctx+=`**vs ${yr-1}:** VN ${fmtP(pct(r.vn-p.vn,p.vn))} | EBITDA% ${(pct(r.ebitda2,r.vn)*100).toFixed(1)}% vs ${(pct(p.ebitda2,p.vn)*100).toFixed(1)}%\n`;
+    ctx+='\n';
+  }
+  if(S.data?.PE){
+    ctx+=`## 🇵🇪 Perú Regional\n`;
+    for(const[rk,ri] of Object.entries(PE_H)){
+      const rd=gd('PE','REAL',rk,yr,per);if(!rd||!rd.vn) continue;
+      ctx+=`- **${ri.label}**: FN=${fmtN(rd.vn)} | MC=${(rd.mc/rd.vn*100).toFixed(1)}% | EBITDA=${(rd.ebitda2/rd.vn*100).toFixed(1)}%\n`;
+    }
+  }
+  return ctx;
+}
+function renderAI(){
+  const panel=document.getElementById('panel-ai');
+  const yr=S.f.año,per=S.f.periodo;
+  const qHtml=QUICK_PROMPTS.map(q=>`<button class="qbtn" onclick="aiQuick(this)">${q}</button>`).join('');
+  panel.innerHTML=`
+  <div class="sh mb12"><div class="stitle">🤖 Análisis AI — Asistente DRE ISM MDCORP</div>
+  <div class="ssub">Consultas sobre datos cargados · TC por mes/tipo · ${perLabel(per)} ${yr}</div></div>
+  <div class="card" style="padding:0;overflow:hidden;">
+    <div class="chat-header" style="display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="ai-avatar">✨</div>
+        <div><div style="font-size:12px;font-weight:600">Asistente Financiero ISM</div>
+        <div style="font-size:10px;color:var(--t3)">claude-sonnet-4-6 · Contexto: ${CODES.length} países, ${yr}</div></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="ctx-tag">📊 ${per==='YTD'?'YTD':perLabel(per)} ${yr}</span>
+        <button class="btn-s" style="font-size:11px;padding:3px 10px" onclick="clearChat()">Limpiar</button>
+      </div>
+    </div>
+    <div class="quick-row">${qHtml}</div>
+    <div class="ai-wrap" style="height:calc(100vh - 360px)">
+      <div class="chat-msgs" id="chat-msgs">
+        <div class="msg-row"><div class="ai-avatar" style="margin-top:2px">✨</div>
+        <div class="msg msg-ai"><strong>¡Hola!</strong> Soy tu asistente de análisis DRE para ISM MDCORP.<br><br>
+        Tengo acceso a datos de <strong>${CODES.length} países · ${yr} · ${perLabel(per)}</strong> con TC por mes/tipo (REAL/PPTO), EVT/EFT/ET para Break Even, y análisis SC sin ISC ni Comisión.<br><br>
+        ¿En qué te puedo ayudar?</div></div>
+      </div>
+    </div>
+    <div class="chat-foot">
+      <textarea class="chat-input" id="chat-input" placeholder="Pregunta sobre los datos del DRE..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();aiSend();}this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';"></textarea>
+      <button class="chat-send" id="chat-send" onclick="aiSend()">Enviar ↑</button>
+    </div>
+  </div>`;
+}
+function aiQuick(btn){document.getElementById('chat-input').value=btn.textContent;aiSend();}
+function clearChat(){
+  if(chatHistory.length&&!confirm('¿Descartar esta conversación de Análisis IA? No podrás recuperarla.')) return;
+  chatHistory=[];const m=document.getElementById('chat-msgs');if(m) m.innerHTML='<div class="msg-row"><div class="ai-avatar" style="margin-top:2px">✨</div><div class="msg msg-ai">Chat limpiado. ¿En qué puedo ayudarte?</div></div>';
+}
+function appendMsg(role,html,id,isThink){
+  const c=document.getElementById('chat-msgs');if(!c) return;
+  const w=document.createElement('div');w.className='msg-row';
+  w.style.justifyContent=role==='user'?'flex-end':'flex-start';
+  if(id) w.id=id;
+  if(role==='ai') w.innerHTML=`<div class="ai-avatar" style="margin-top:2px">✨</div><div class="msg msg-ai${isThink?' msg-think':''}">${html}</div>`;
+  else w.innerHTML=`<div class="msg msg-user">${html}</div>`;
+  c.appendChild(w);c.scrollTop=c.scrollHeight;
+}
+function removeMsg(id){const el=document.getElementById(id);if(el) el.remove();}
+function mdToHtml(txt){
+  return txt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code>$1</code>')
+    .replace(/^### (.+)$/gm,'<div style="font-size:12px;font-weight:700;margin:8px 0 4px;color:var(--orange)">$1</div>')
+    .replace(/^## (.+)$/gm,'<div style="font-size:13px;font-weight:700;margin:10px 0 4px;border-bottom:1px solid var(--border);padding-bottom:3px">$1</div>')
+    .replace(/^- (.+)$/gm,'<div style="padding-left:12px;margin:2px 0">• $1</div>')
+    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+}
+async function aiSend(){
+  const input=document.getElementById('chat-input'),sendBtn=document.getElementById('chat-send');
+  if(!input||aiThinking) return;
+  const msg=input.value.trim();if(!msg) return;
+  input.value='';input.style.height='auto';
+  aiThinking=true;if(sendBtn){sendBtn.disabled=true;sendBtn.textContent='...';}
+  appendMsg('user',mdToHtml(msg));
+  chatHistory.push({role:'user',content:msg});
+  const thinkId='think-'+Date.now();
+  appendMsg('ai','<div class="ism-ai-typing"><span></span><span></span><span></span></div>',thinkId,true);
+  const dataCtx=buildDataContext();
+  const sysPrompt=`Eres un experto en Finanzas y Supply Chain para ISM MDCORP, empresa multinacional de bebidas con operaciones en Perú, Rep. Dominicana, Brasil, Haití y Guatemala.
+
+DATOS DEL DASHBOARD (actualizados):
+${dataCtx}
+
+REGLAS:
+- Responde en español con tono ejecutivo-analítico
+- Usa los números exactos del contexto
+- Para SC: enfócate en fletes, CPV, estibaje. ISC y Comisión están EXCLUIDOS del análisis SC
+- Menciona EVT/EFT/ET cuando analices Break Even
+- Para Perú: considera la jerarquía regional (PE > PE-LIM/PE-PROV/PE-CH > sub-regiones)
+- Máximo 4 párrafos salvo análisis extenso solicitado`;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:sysPrompt,messages:chatHistory})});
+    const data=await resp.json();
+    if(data.error) throw new Error(data.error.message);
+    const aiText=data.content?.[0]?.text||'Sin respuesta.';
+    removeMsg(thinkId);appendMsg('ai',mdToHtml(aiText));
+    chatHistory.push({role:'assistant',content:aiText});
+    if(chatHistory.length>40) chatHistory=chatHistory.slice(-40);
+  }catch(err){removeMsg(thinkId);appendMsg('ai',`❌ <strong>Error:</strong> ${err.message}`);}
+  finally{aiThinking=false;if(sendBtn){sendBtn.disabled=false;sendBtn.textContent='Enviar ↑';}document.getElementById('chat-input')?.focus();}
+}
+
+// ══ CONFIGURACIÓN ══
+function renderCfg(){
+  const yr=S.f.año;
+  const tcRows=CODES.map(cc=>{
+    const r5=S.tc?.REAL?.[cc]?.[yr],p5=S.tc?.PPTO?.[cc]?.[yr];
+    const rAvg=r5?Object.values(r5).reduce((a,b)=>a+b,0)/Object.values(r5).length:null;
+    const pAvg=p5?Object.values(p5).reduce((a,b)=>a+b,0)/Object.values(p5).length:null;
+    return`<tr><td>${CC[cc].flag} ${CC[cc].name}</td><td style="color:var(--t3)">${CC[cc].cur}/USD</td>
+      <td><span class="tc-tag tc-real">REAL</span> ${rAvg?rAvg.toFixed(4):'N/A'}</td>
+      <td><span class="tc-tag tc-ppto">PPTO</span> ${pAvg?pAvg.toFixed(4):'N/A'}</td></tr>`;
+  }).join('');
+  document.getElementById('panel-cfg').innerHTML=`
+  <div class="sh"><div class="stitle">Configuración</div>
+  <div class="ssub">Carga del archivo DRE consolidado · TC dinámico por mes/tipo</div></div>
+  <div class="g2 mb20">
+    <div class="card">
+      <div class="ct mb12">📂 Cargar Archivo DRE Consolidado</div>
+      <div class="alert alert-i mb12">Hojas requeridas: <strong>PE (PEN) · RD (DOP) · BR (BRL) · HT (HTG) · GT (GTQ) · TC</strong><br>
+      Estructura por fila: <strong>TIPO | REGIÓN | REDONDEO | COMPONENTES | [columnas de año/mes...]</strong></div>
+      <div class="uzone ${S.data?.fromFile?'loaded':''}" id="uz-main" onclick="document.getElementById('f-main').click()">
+        <div class="uz-icon">${S.data?.fromFile?'✅':'📊'}</div>
+        <div class="uz-title">${S.data?.fromFile?'✔ Archivo cargado':'Cargar DRE ISM'}</div>
+        <div class="uz-sub">Un solo archivo con todos los países y años · Arrastra o haz clic · .xlsx</div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-p" onclick="loadDemo()">🔄 Recargar Demo</button>
+        <button class="btn-s" onclick="exportJSON()">📤 Exportar JSON</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct mb12">💱 Tipos de Cambio Vigentes — Año ${yr}</div>
+      <div class="alert alert-i mb12">TC leídos desde hoja <strong>TC</strong> del Excel · Aplicados por mes y tipo (REAL/PPTO) al convertir a USD</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr><th style="text-align:left">País</th><th style="text-align:left">Par</th><th>Prom. REAL</th><th>Prom. PPTO</th></tr></thead>
+        <tbody>${tcRows}</tbody>
+      </table>
+      <div style="margin-top:10px;font-size:11px;color:var(--t3)">Los TC mostrados son promedios anuales. En los cálculos se aplica el TC exacto de cada mes.</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct mb12">📋 Estructura del Excel — Nueva Versión</div>
+    <div style="font-size:12px;color:var(--t2);line-height:1.9">
+      <strong>Hojas de país (PE, RD, BR, HT, GT):</strong><br>
+      • Col A: <strong>TIPO</strong> → REAL o PPTO<br>
+      • Col B: <strong>REGIÓN</strong> → PE, PE-LIM, PE-CH, PE-PROV, PE-PROV-N, PE-PROV-NG, PE-PROV-S (o cc para otros países)<br>
+      • Col C: <strong>REDONDEO</strong> → factor multiplicador (1 = sin ajuste, 1000 = valor × 1000)<br>
+      • Col D: <strong>COMPONENTES</strong> → nombre de la línea DRE<br>
+      • Col E en adelante: años (ej. 2024) y meses como números seriales Excel<br><br>
+      <strong>Hoja TC:</strong><br>
+      • Sección REAL: TIPO | PAÍS | TC | ene.-24 | feb.-24 | ... | dic.-26<br>
+      • Sección PPTO: misma estructura con tasas presupuestadas
+    </div>
+  </div>`;
+  setupDrop('uz-main','f-main');
+}
+function setupDrop(zoneId,inputId){
+  const z=document.getElementById(zoneId);if(!z) return;
+  z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('drag-over');});
+  z.addEventListener('dragleave',()=>z.classList.remove('drag-over'));
+  z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f) handleFile(f);});
+}
+
+// ══ LÓGICA DE ANÁLISIS ══
+function renderLogic(){
+  document.getElementById('panel-logic').innerHTML=`
+  <div class="sh"><div class="stitle">📐 Lógica de Análisis — Definiciones y Fórmulas</div>
+  <div class="ssub">Marco conceptual, cálculos y criterios utilizados en el dashboard DRE ISM MDCORP</div></div>
+
+  <div class="g2 mb20">
+    <!-- DRE CASCADE -->
+    <div class="card logic-section">
+      <div class="logic-title">📊 1. Cascada del DRE</div>
+      <div class="def-row"><div class="def-term">Venta Bruta DRE</div><div class="def-desc">Precio de lista × volumen vendido</div></div>
+      <div class="def-row"><div class="def-term">Bonificaciones</div><div class="def-desc">Productos entregados sin cobro (descuento en especie)</div></div>
+      <div class="def-row"><div class="def-term">Descuentos</div><div class="def-desc">Reducciones directas sobre el precio</div></div>
+      <div class="formula-box">FN (Ventas Netas) = Venta Bruta DRE − Bonificaciones − Descuentos</div>
+      <div class="formula-box">Margen Contribución (MC) = FN − Gasto Variable Total (GV)
+EBITDA 1 = MC − Gasto Fijo (sin G.Corp.)
+EBITDA 2 = EBITDA 1 − G. Adm. Corporativo
+EBIT = EBITDA 2 − Depreciación
+Resultado Neto = EBIT ± Otros Ingresos/Gastos</div>
+      <div class="note-box">El DRE opera con signo positivo para ingresos y negativo para costos/gastos. Los % siempre se calculan sobre FN (Ventas Netas) = 100%.</div>
+    </div>
+
+    <!-- ANÁLISIS VERTICAL -->
+    <div class="card logic-section">
+      <div class="logic-title">📈 2. Análisis Vertical</div>
+      <div class="def-row"><div class="def-term">Concepto</div><div class="def-desc">Expresar cada línea del DRE como porcentaje de las Ventas Netas para comparar la estructura de costos entre períodos y países.</div></div>
+      <div class="formula-box">% VN = Valor_línea ÷ Ventas_Netas × 100</div>
+      <div class="def-row"><div class="def-term">Interpretación</div><div class="def-desc">Un CPV de 33.5% indica que por cada 100 de venta, 33.5 se destinan a producción. Permite benchmark entre países sin importar la escala.</div></div>
+      <div class="note-box">El análisis vertical es independiente del TC: se hace en moneda local antes de cualquier conversión.</div>
+    </div>
+  </div>
+
+  <div class="g2 mb20">
+    <!-- ANÁLISIS HORIZONTAL -->
+    <div class="card logic-section">
+      <div class="logic-title">↔️ 3. Análisis Horizontal</div>
+      <div class="formula-box">Δ Absoluta = REAL − Referencia (PPTO o Año Anterior)
+Δ % = (REAL − Referencia) ÷ |Referencia| × 100</div>
+      <div class="def-row"><div class="def-term">Semáforo Verde ✅</div><div class="def-desc">Cumplimiento ≥ 95% para ingresos / ≤ 100% para costos</div></div>
+      <div class="def-row"><div class="def-term">Semáforo Amarillo 🟡</div><div class="def-desc">Cumplimiento 85−94% para ingresos / 101−105% para costos</div></div>
+      <div class="def-row"><div class="def-term">Semáforo Rojo 🔴</div><div class="def-desc">Cumplimiento &lt; 85% para ingresos / &gt; 105% para costos</div></div>
+      <div class="note-box">El año anterior se obtiene de la misma tabla con año = año_seleccionado − 1, sin necesidad de cargar un segundo archivo.</div>
+    </div>
+
+    <!-- TIPO DE CAMBIO -->
+    <div class="card logic-section">
+      <div class="logic-title">💱 4. Tipo de Cambio (TC)</div>
+      <div class="def-row"><div class="def-term"><span class="tc-tag tc-real">REAL</span></div><div class="def-desc">TC histórico mensual real (promedio del mes). Varía cada mes.</div></div>
+      <div class="def-row"><div class="def-term"><span class="tc-tag tc-ppto">PPTO</span></div><div class="def-desc">TC presupuestado (generalmente fijo por año). Refleja el supuesto de planificación.</div></div>
+      <div class="formula-box">Conversión mes M: Valor_USD[M] = Valor_Local[M] ÷ TC[tipo][país][año][M]
+
+YTD en USD = Σ (Valor_Local[m] ÷ TC[tipo][país][año][m])
+             para m = 1..12</div>
+      <div class="note-box">La conversión YTD aplica el TC exacto de cada mes antes de sumar, evitando la distorsión de usar un TC promedio. Esto es especialmente relevante en países con alta volatilidad cambiaria (BRL, HTG).</div>
+    </div>
+
+    <!-- PVM -->
+    <div class="card logic-section">
+      <div class="logic-title">📈 4b. Análisis PVM (Precio · Volumen · Mix)</div>
+      <div class="def-row"><div class="def-term">Concepto</div><div class="def-desc">Descompone la variación de Ventas Netas entre dos períodos en tres efectos aislados: cuánto cambió por vender más/menos litros, cuánto por vender en segmentos distintos (mix), y cuánto por el precio promedio realizado.</div></div>
+      <div class="formula-box">Precio_i = VN_i ÷ Volumen_i  (por segmento: país o región)
+Efecto Volumen = (Vol₁_total − Vol₀_total) × Precio₀_promedio
+Efecto Mix     = Σᵢ [ Vol₁_total × (Mix₁ᵢ − Mix₀ᵢ) × Precio₀ᵢ ]
+Efecto Precio  = Σᵢ [ Vol₁ᵢ × (Precio₁ᵢ − Precio₀ᵢ) ]
+
+Verificación: Volumen + Mix + Precio = ΔVN (exacto)</div>
+      <div class="def-row"><div class="def-term">Segmentación</div><div class="def-desc">"Todos los países": 5 países (forzado a USD, ya que no se pueden sumar monedas distintas). Perú individual: 3 regiones (Lima/Provincia/Chile). Otro país individual: 1 segmento → Mix = 0 automáticamente, queda solo Volumen + Precio.</div></div>
+      <div class="note-box">Requiere la línea de Volumen del Excel ("Volumen de venta" / "Litros Vendidos"). Con un solo segmento el Efecto Mix es matemáticamente cero, por lo que el análisis se degrada de forma natural a un 2-way (Volumen + Precio) sin necesidad de lógica especial.</div>
+    </div>
+
+    <!-- IMPACTO TC -->
+    <div class="card logic-section">
+      <div class="logic-title">💱 4c. Impacto de Tipo de Cambio (Moneda Constante)</div>
+      <div class="def-row"><div class="def-term">Concepto</div><div class="def-desc">Separa la variación en USD entre lo explicado por el desempeño operativo real (en moneda local) y lo explicado únicamente por el movimiento del tipo de cambio.</div></div>
+      <div class="formula-box">Crecimiento_Local = VN₁_local ÷ VN₀_local − 1
+Variación Operativa (USD) = VN₀_USD × Crecimiento_Local
+Impacto TC (USD)          = VN₁_USD − VN₀_USD × (VN₁_local ÷ VN₀_local)
+
+Verificación: Variación Operativa + Impacto TC = Δ VN_USD (exacto)</div>
+      <div class="note-box">Es la misma metodología "moneda constante" / "ex-FX" usada en reportes de multinacionales: valora el crecimiento local a la tasa de cambio de referencia y aísla el resto como efecto cambiario puro. Útil para países con TC volátil como Brasil o Haití.</div>
+    </div>
+  </div>
+
+  <div class="g2 mb20">
+    <!-- BREAK EVEN -->
+    <div class="card logic-section">
+      <div class="logic-title">⚖️ 5. Break Even — Punto de Equilibrio</div>
+      <div class="def-row"><div class="def-term"><span class="badge-var">EVT</span></div><div class="def-desc">Estructura Variable Total = |GV| = todos los costos/gastos variables (CPV, fletes, estibaje, ISC, comisión, semivariables)</div></div>
+      <div class="def-row"><div class="def-term"><span class="badge-fix">EFT</span></div><div class="def-desc">Estructura Fija Total = |GF| + |G.Corp.| = todos los gastos fijos (fábrica, adm., distribución, comercial, marketing)</div></div>
+      <div class="def-row"><div class="def-term"><span class="badge-res">ET</span></div><div class="def-desc">Estructura Total = EVT + EFT = costo total de la operación</div></div>
+      <div class="formula-box">MC% = MC ÷ FN
+PE (Facturación Neta) = EFT ÷ MC%
+PE (Volumen) = PE(FN) ÷ Precio_Promedio_por_unidad
+Cobertura = FN ÷ PE(FN)        [meta: ≥ 100%]
+Margen de Seguridad = (FN − PE) ÷ FN × 100</div>
+      <div class="def-row"><div class="def-term">Punto de equilibrio</div><div class="def-desc">Nivel de ventas donde FN = ET, es decir donde el MC cubre exactamente la EFT. Por encima → ganancia operativa. Por debajo → pérdida.</div></div>
+      <div class="note-box">El MC% representa cuánto de cada unidad monetaria de venta queda disponible para cubrir costos fijos. Un MC% de 40% significa que se necesita vender 2.5 veces la EFT para llegar al equilibrio.</div>
+    </div>
+
+    <!-- SUPPLY CHAIN -->
+    <div class="card logic-section">
+      <div class="logic-title">🚛 6. Análisis Supply Chain</div>
+      <div class="def-row"><div class="def-term">Componentes SC Variable</div><div class="def-desc">CPV (producción), F1 (primario), F2 (secundario), F3 (terciario), Estibaje, Semivariables</div></div>
+      <div class="def-row"><div class="def-term">Excluidos del análisis SC</div><div class="def-desc">⚠️ ISC (carga tributaria del Estado) y Comisión de Venta (costo comercial, no logístico)</div></div>
+      <div class="formula-box">Costo Logístico = |F1| + |F2| + |F3| + |Estibaje|
+% Costo Log. = Costo Logístico ÷ FN × 100
+Costo por HL = Costo Logístico ÷ Volumen(en HL)</div>
+      <div class="def-row"><div class="def-term">Componentes Fijos SC</div><div class="def-desc">G. Fábrica + G. Adm. Directo + G. Distribución → representan la capacidad instalada de producción y distribución</div></div>
+      <div class="formula-box">% GF SC = (|G.Fábrica| + |G.Adm.Directo| + |G.Distribución|) ÷ FN × 100</div>
+      <div class="note-box">F1 = Fábrica → Centro de Distribución · F2 = CD → Punto de Venta · F3 = Fábrica → PDV (directo)</div>
+    </div>
+  </div>
+
+  <div class="g2 mb20">
+    <!-- REDONDEO -->
+    <div class="card logic-section">
+      <div class="logic-title">🔢 7. Factor de Redondeo</div>
+      <div class="def-row"><div class="def-term">¿Qué es?</div><div class="def-desc">Columna "REDONDEO" en el Excel que indica el factor multiplicador para convertir el valor reportado a su magnitud real.</div></div>
+      <div class="formula-box">Valor_Real = Valor_Celda × Factor_Redondeo
+
+Ejemplo:
+  Celda muestra: 5,123 (CPV Enero)
+  Redondeo = 1,000
+  Valor real = 5,123 × 1,000 = 5,123,000</div>
+      <div class="def-row"><div class="def-term">Valores típicos</div><div class="def-desc">1 = sin ajuste · 1,000 = en miles · 1,000,000 = en millones</div></div>
+      <div class="note-box">El factor de redondeo se aplica fila por fila durante la lectura del Excel, antes de cualquier cálculo o análisis. Si una fila no tiene redondeo, se asume factor = 1.</div>
+    </div>
+
+    <!-- JERARQUÍA PERÚ -->
+    <div class="card logic-section">
+      <div class="logic-title">🇵🇪 8. Jerarquía Regional Perú</div>
+      <div style="font-size:12px;color:var(--t2);line-height:2.0">
+        <div style="color:var(--orange);font-weight:700">PE — Perú Total (País completo)</div>
+        <div style="padding-left:20px">├── <span style="color:var(--blue)">PE-LIM</span> — Lima (mercado principal)</div>
+        <div style="padding-left:20px">├── <span style="color:var(--teal)">PE-CH</span> — Chile (operación regional)</div>
+        <div style="padding-left:20px">└── <span style="color:var(--green)">PE-PROV</span> — Provincia (consolida sub-regiones)</div>
+        <div style="padding-left:48px">├── <span style="color:var(--yellow)">PE-PROV-N</span> — Provincia Norte</div>
+        <div style="padding-left:48px">├── <span style="color:var(--red)">PE-PROV-NG</span> — Norte Grande</div>
+        <div style="padding-left:48px">└── <span style="color:var(--purple)">PE-PROV-S</span> — Provincia Sur</div>
+      </div>
+      <div class="formula-box">PE = PE-LIM + PE-PROV + PE-CH
+PE-PROV = PE-PROV-N + PE-PROV-NG + PE-PROV-S</div>
+      <div class="note-box">Los niveles superiores consolidan automáticamente sus sub-regiones. El análisis de Break Even y márgenes aplica a cada nivel independientemente.</div>
+    </div>
+  </div>
+
+  <div class="card logic-section">
+    <div class="logic-title">📌 9. Glosario Rápido de Indicadores</div>
+    <div class="g3">
+      ${[['FN / VN','Facturación Neta = Ventas Netas'],['GV','Gasto Variable Total'],['MC','Margen de Contribución = FN − GV'],['MC%','MC ÷ FN × 100'],['GF','Gasto Fijo Total (sin corporativo)'],['EBITDA 1','MC − GF (sin G.Corp.)'],['EBITDA 2','EBITDA 1 − G. Adm. Corporativo'],['EBIT','EBITDA 2 − Depreciación'],['EVT','Estructura Variable Total = |GV|'],['EFT','Estructura Fija Total = |GF+GCorp|'],['ET','Estructura Total = EVT + EFT'],['PE','Punto de Equilibrio (Break Even)'],['Cobert.','Cobertura BE = FN ÷ PE(FN)'],['Mg. Seg.','Margen de Seguridad = (FN−PE) ÷ FN'],['TC','Tipo de Cambio (local por 1 USD)'],['YTD','Year To Date = acumulado del año'],['PPTO','Presupuesto (META, BUDGET)'],['CPV','Costo de Producción Variable'],['F1','Flete Primario: Fábrica → CD'],['F2','Flete Secundario: CD → PDV'],['F3','Flete Terciario: Fábrica → PDV'],['HL','Hectolitro = 100 litros']].map(([t,d])=>`<div class="def-row"><div class="def-term" style="min-width:100px;font-size:11px">${t}</div><div class="def-desc" style="font-size:11px">${d}</div></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ══ INSIGHTS AUTOMÁTICOS (sección estándar SCM) ══
+function renderInsights(){
+  const per=S.f.periodo,yr=S.f.año,cb=S.f.compBase||'PPTO';
+  const insights=[];
+  for(const cc of CODES){
+    const r=gdR(cc,per);if(!r||!r.vn) continue;
+    const evt=calcEVT(r),eft=calcEFT(r),mcP=r.mc/r.vn;
+    const beVN=mcP>0?eft/mcP:null,cov=beVN?r.vn/beVN:null;
+    if(cov==null) continue;
+    if(cov<1) insights.push({sev:'critical',icon:'⚠️',text:`<b>${CC[cc].flag} ${CC[cc].name}</b> está por debajo del Punto de Equilibrio: cobertura de ${(cov*100).toFixed(0)}% (${perLabel(per)} ${yr}).`});
+    else if(cov<1.15) insights.push({sev:'warning',icon:'🟡',text:`<b>${CC[cc].flag} ${CC[cc].name}</b> tiene margen de seguridad ajustado: cobertura de ${(cov*100).toFixed(0)}% sobre el Punto de Equilibrio.`});
+    else insights.push({sev:'ok',icon:'✅',text:`<b>${CC[cc].flag} ${CC[cc].name}</b> cubre su Punto de Equilibrio con holgura: ${(cov*100).toFixed(0)}% de cobertura.`});
+  }
+  for(const cc of CODES){
+    const r=gdR(cc,per),m=gdPM(cc,per);if(!r||!m||!m.vn) continue;
+    const cump=r.vn/m.vn;
+    if(cump<.85) insights.push({sev:'critical',icon:'📉',text:`<b>${CC[cc].flag} ${CC[cc].name}</b> cumple solo ${(cump*100).toFixed(0)}% del PPTO de Ventas Netas.`});
+    else if(cump<.95) insights.push({sev:'warning',icon:'📊',text:`<b>${CC[cc].flag} ${CC[cc].name}</b> cumple ${(cump*100).toFixed(0)}% del PPTO de Ventas Netas — por debajo de la meta de 95%.`});
+  }
+  let maxTC=null;
+  for(const cc of CODES){
+    const refLoc=gdSeg(cc,getReg(cc),cb,per,false),actLoc=gdSeg(cc,getReg(cc),'REAL',per,false);
+    const refUsd=gdSeg(cc,getReg(cc),cb,per,true),actUsd=gdSeg(cc,getReg(cc),'REAL',per,true);
+    if(!refLoc||!actLoc||!refUsd||!actUsd) continue;
+    const tci=calcTCImpact(refLoc.vn,actLoc.vn,refUsd.vn,actUsd.vn);if(!tci) continue;
+    if(!maxTC||Math.abs(tci.fx)>Math.abs(maxTC.tci.fx)) maxTC={cc,tci};
+  }
+  if(maxTC&&Math.abs(maxTC.tci.fx)>1000){
+    const dir=maxTC.tci.fx<0?'negativo':'positivo';
+    insights.push({sev:maxTC.tci.fx<0?'warning':'ok',icon:'💱',text:`<b>${CC[maxTC.cc].flag} ${CC[maxTC.cc].name}</b> muestra el mayor impacto cambiario ${dir}: ${fmtN(maxTC.tci.fx/1e6,{dec:2})}M USD frente a ${cb==='PY'?'año anterior':'PPTO'}.`});
+  }
+  for(const cc of CODES){
+    const r=gdR(cc,per);if(!r||!r.vn) continue;
+    const logC=Math.abs(r.f1)+Math.abs(r.f2)+Math.abs(r.f3)+Math.abs(r.est);
+    const logP=logC/r.vn;
+    if(logP>.15) insights.push({sev:'critical',icon:'🚛',text:`<b>${CC[cc].flag} ${CC[cc].name}</b>: Costo Logístico es ${(logP*100).toFixed(1)}% de VN, por encima del umbral de 15%.`});
+  }
+  const counts={critical:insights.filter(i=>i.sev==='critical').length,warning:insights.filter(i=>i.sev==='warning').length,ok:insights.filter(i=>i.sev==='ok').length};
+  const sevOrder={critical:0,warning:1,ok:2};
+  insights.sort((a,b)=>sevOrder[a.sev]-sevOrder[b.sev]);
+  const badgeClass={critical:'ism-badge--critical',warning:'ism-badge--warning',ok:'ism-badge--ok'};
+  const badgeLbl={critical:'CRÍTICO',warning:'EN RIESGO',ok:'CUMPLE'};
+  document.getElementById('panel-insights').innerHTML=`
+  <div class="sh"><div class="stitle">💡 Insights Automáticos</div>
+  <div class="ssub">Hallazgos generados automáticamente a partir de los datos cargados · ${perLabel(per)} ${yr} · Sin intervención manual</div></div>
+  <div class="card mb20" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+    <span class="ism-badge ism-badge--critical">🔴 ${counts.critical} Crítico</span>
+    <span class="ism-badge ism-badge--warning">🟡 ${counts.warning} En riesgo</span>
+    <span class="ism-badge ism-badge--ok">🟢 ${counts.ok} Cumple</span>
+  </div>
+  ${insights.length?`<div class="g2">${insights.map(i=>`<div class="ism-insight-card"><div class="ico">${i.icon}</div><div class="txt"><span class="ism-badge ${badgeClass[i.sev]}" style="margin-bottom:5px;display:inline-block">${badgeLbl[i.sev]}</span><br>${i.text}</div></div>`).join('')}</div>`:`<div class="card"><div class="ism-empty">📭 No hay datos suficientes para generar insights.<br>Carga un archivo en "Cargar Archivos" o usa los datos Demo.</div></div>`}
+  `;
+}
+// ══ EXPORTAR RESULTADOS (sección estándar SCM) ══
+let exportHistory=[],exportFormat='xlsx';
+function buildExportSummary(){
+  const per=S.f.periodo,yr=S.f.año;
+  const header=['País','VN REAL','VN PPTO','MC REAL','EBITDA1 REAL','EBITDA2 REAL','Neto REAL','MC%','Cumpl. VN vs PPTO'];
+  const rows=[header];
+  for(const cc of CODES){
+    const r=gdR(cc,per),m=gdPM(cc,per);if(!r) continue;
+    rows.push([CC[cc].name,r.vn||0,m?m.vn||0:'',r.mc||0,r.ebitda1||0,r.ebitda2||0,r.rn||0,r.vn?((r.mc/r.vn)*100).toFixed(1)+'%':'',(m&&m.vn)?((r.vn/m.vn)*100).toFixed(1)+'%':'']);
+  }
+  return rows;
+}
+function pickExportFormat(el,fmt){document.querySelectorAll('.ism-export-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');exportFormat=fmt;}
+function logExport(fmt,scope){
+  exportHistory.unshift({fmt,scope,ts:new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})});
+  renderExport();
+}
+function getExportScope(){
+  return[...document.querySelectorAll('.ism-checkbox-row input:checked')].map(i=>i.value);
+}
+function doExport(){
+  const scope=getExportScope();
+  const rows=buildExportSummary();
+  if(exportFormat==='xlsx'){
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Resumen DRE');
+    XLSX.writeFile(wb,`ISM_DRE_Export_${S.f.año}.xlsx`);
+  }else if(exportFormat==='csv'){
+    const csv=rows.map(r=>r.map(v=>typeof v==='string'&&v.includes(',')?`"${v}"`:v).join(',')).join('\n');
+    const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`ISM_DRE_Export_${S.f.año}.csv`;a.click();
+  }else if(exportFormat==='pdf'){
+    window.print();
+  }else if(exportFormat==='png'){
+    const canvases=[...document.querySelectorAll('#content canvas')].filter(c=>c.width>0&&c.height>0);
+    if(!canvases.length){alert('No hay gráficos renderizados para exportar. Visita una pestaña de análisis primero.');return;}
+    canvases.forEach((c,i)=>{const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download=`ISM_chart_${c.id||i}.png`;a.click();});
+  }
+  logExport(exportFormat,scope.join('+')||'resumen');
+}
+function renderExport(){
+  const hist=exportHistory.map(h=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px"><span>📄 ${h.fmt.toUpperCase()} · ${h.scope}</span><span style="color:var(--t3)">${h.ts}</span></div>`).join('');
+  document.getElementById('panel-export').innerHTML=`
+  <div class="sh"><div class="stitle">📤 Exportar Resultados</div>
+  <div class="ssub">Descarga el resumen actual (${perLabel(S.f.periodo)} ${S.f.año}) en el formato que necesites</div></div>
+  <div class="card mb16">
+    <div class="ct mb12">Formato de exportación</div>
+    <div class="ism-export-grid">
+      <div class="ism-export-card selected" onclick="pickExportFormat(this,'xlsx')"><div class="ico">📊</div><div class="lbl">Excel (.xlsx)</div></div>
+      <div class="ism-export-card" onclick="pickExportFormat(this,'csv')"><div class="ico">📄</div><div class="lbl">CSV</div></div>
+      <div class="ism-export-card" onclick="pickExportFormat(this,'pdf')"><div class="ico">🖨️</div><div class="lbl">PDF (imprimir)</div></div>
+      <div class="ism-export-card" onclick="pickExportFormat(this,'png')"><div class="ico">🖼️</div><div class="lbl">PNG (gráficos)</div></div>
+    </div>
+  </div>
+  <div class="g2 mb16">
+    <div class="card">
+      <div class="ct mb12">Alcance</div>
+      <div class="ism-checkbox-group">
+        <label class="ism-checkbox-row"><input type="checkbox" value="resumen" checked> Resumen ejecutivo por país</label>
+        <label class="ism-checkbox-row"><input type="checkbox" value="tablas" checked> Tablas de detalle</label>
+        <label class="ism-checkbox-row"><input type="checkbox" value="graficos"> Gráficos (PNG)</label>
+        <label class="ism-checkbox-row"><input type="checkbox" value="ia"> Historial de Análisis IA</label>
+        <label class="ism-checkbox-row"><input type="checkbox" value="metodologia"> Metodología (Lógica de Análisis)</label>
+      </div>
+      <button class="btn-p mt8" onclick="doExport()" style="margin-top:14px">⬇ Descargar</button>
+    </div>
+    <div class="card">
+      <div class="ct mb12">Historial de esta sesión</div>
+      ${exportHistory.length?hist:'<div class="ism-empty" style="padding:20px 0">📭 Sin exportaciones aún.<br>Elige un formato y presiona "Descargar" para generar tu primera exportación.</div>'}
+    </div>
+  </div>
+  <div class="note-box">El export Excel/CSV usa el resumen consolidado por país (VN, MC, EBITDA, Neto REAL vs PPTO) del período y año seleccionados en la barra superior. PNG exporta los gráficos ya renderizados en pestañas visitadas durante esta sesión. PDF usa la función de impresión del navegador — selecciona "Guardar como PDF" en el diálogo.</div>`;
+}
+
+// ══ EXCEL PARSER (nueva estructura: TIPO | REGIÓN | REDONDEO | COMPONENTES | datos) ══
+function excelToDate(s){const d=new Date((s-25569)*86400*1e3);return{m:d.getUTCMonth()+1,y:d.getUTCFullYear()};}
+const LMAP={
+  vn:['ventas netas','venta neta'],cpv:['costo de venta','costo de producci'],
+  isc:['impuesto selectivo','isc'],f1:['flete primario'],f2:['flete secundario'],f3:['flete f3','flete terciario'],
+  com:['comision de venta','comisi'],est:['estibaje'],semiv:['semivariables'],
+  gv:['gasto variable'],mc:['margen de contribucion','margen de contribuci'],
+  gfab:['g. fabrica','g. fábrica'],gadm:['g. adm. central'],gadmD:['g. adm. directo'],gcorp:['g. adm. corporativo'],
+  gdist:['g. distribuci'],gcom:['g. comercial'],gmkt:['g. marketing'],gcomi:['g. comunicaciones'],gf:['gasto fijo'],
+  ebitda1:['ebitda (sin','ebitda 1'],ebitda2:['ebitda (con','ebitda 2'],
+  dep:['depreciaci'],ebit:['utilidad operativa','resultado operativo'],
+  oing:['otros ingresos de gesti'],ocos:['otros costos de gesti'],
+  ifin:['ingresos financieros'],gfin:['gastos financieros'],vtc:['variaci'],
+  part:['participaci'],imp:['impuesto a las ganaci'],rn:['resultado neto'],vol:['volumen de venta','litros vendidos'],
+};
+function matchLbl(s){
+  if(!s) return null;
+  const lc=s.toLowerCase().trim().replace(/[áéíóú]/g,c=>({á:'a',é:'e',í:'i',ó:'o',ú:'u'}[c]||c));
+  for(const[k,pats] of Object.entries(LMAP)) for(const p of pats) if(lc.includes(p)) return k;
+  return null;
+}
+function parseTCSheet(ws){
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});
+  const tc={REAL:{},PPTO:{}};
+  const monthHdr={};
+  for(const row of rows){
+    if(!row||!row[0]) continue;
+    const tipo=String(row[0]||'').trim().toUpperCase();
+    if(tipo==='TIPO'){
+      for(let i=3;i<row.length;i++){
+        const h=String(row[i]||'').toLowerCase();
+        const m=h.match(/^(\w+)\.-?(\d{2})$/);
+        if(m){const mn={ene:1,feb:2,mar:3,abr:4,may:5,jun:6,jul:7,ago:8,sep:9,oct:10,nov:11,dic:12}[m[1]];if(mn) monthHdr[i]={m:mn,y:2000+parseInt(m[2])};}
+      }
+      continue;
+    }
+    if(tipo==='REAL'||tipo==='PPTO'){
+      const cc=String(row[1]||'').trim().toUpperCase();if(!cc||!CODES.includes(cc)) continue;
+      if(!tc[tipo][cc]) tc[tipo][cc]={};
+      for(const[col,hdr] of Object.entries(monthHdr)){
+        const v=row[parseInt(col)];if(typeof v==='number'&&v>0){if(!tc[tipo][cc][hdr.y]) tc[tipo][cc][hdr.y]={};tc[tipo][cc][hdr.y][hdr.m]=v;}
+      }
+    }
+  }
+  return tc;
+}
+function parseCountrySheet(ws){
+  // New structure: TIPO(0) | REGIÓN(1) | REDONDEO(2) | COMPONENTES(3) | data(4+)
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});
+  const colMap={};
+  for(const row of rows){
+    if(!row) continue;
+    const t0=String(row[0]||'');
+    if(t0==='TIPO'){
+      // Col 0=TIPO, 1=REGIÓN, 2=REDONDEO, 3=COMPONENTES, 4+=data
+      for(let i=4;i<row.length;i++){
+        const v=row[i];if(typeof v==='number'){
+          if(v>40000&&v<47500){const{m,y}=excelToDate(v);colMap[i]={type:'mo',m,y};}
+          else if(v>=2015&&v<=2035) colMap[i]={type:'yr',y:v};
+        }
+      }
+      break;
+    }
+  }
+  const result={};
+  for(const row of rows){
+    if(!row||!row[0]) continue;
+    const tipo=String(row[0]).trim().toUpperCase();if(tipo!=='REAL'&&tipo!=='PPTO') continue;
+    const region=String(row[1]||'').trim();if(!region) continue;
+    const redondeo=typeof row[2]==='number'&&row[2]>0?row[2]:1; // Factor de redondeo
+    const compLabel=String(row[3]||'').trim();
+    const metricKey=matchLbl(compLabel);if(!metricKey) continue;
+    if(!result[tipo]) result[tipo]={};
+    if(!result[tipo][region]) result[tipo][region]={};
+    for(const[col,hdr] of Object.entries(colMap)){
+      if(hdr.type!=='mo') continue;
+      const v=row[parseInt(col)];const numV=(typeof v==='number'?v:0)*redondeo;
+      if(!result[tipo][region][hdr.y]) result[tipo][region][hdr.y]=Array(12).fill(null).map(()=>({}));
+      result[tipo][region][hdr.y][hdr.m-1][metricKey]=numV;
+    }
+  }
+  // Derive compound fields
+  for(const tipo of Object.keys(result)){for(const region of Object.keys(result[tipo])){for(const yr of Object.keys(result[tipo][region])){
+    result[tipo][region][yr]=result[tipo][region][yr].map(m=>{
+      if(!m.gv&&m.cpv) m.gv=-(Math.abs(m.cpv||0)+Math.abs(m.isc||0)+Math.abs(m.f1||0)+Math.abs(m.f2||0)+Math.abs(m.f3||0)+Math.abs(m.com||0)+Math.abs(m.est||0)+Math.abs(m.semiv||0));
+      if(!m.mc&&m.vn!==undefined) m.mc=m.vn+(m.gv||0);
+      if(!m.gf&&m.gfab) m.gf=-(Math.abs(m.gfab||0)+Math.abs(m.gadm||0)+Math.abs(m.gadmD||0)+Math.abs(m.gdist||0)+Math.abs(m.gcom||0)+Math.abs(m.gmkt||0)+Math.abs(m.gcomi||0));
+      if(!m.ebitda1&&m.mc!==undefined) m.ebitda1=m.mc+(m.gf||0);
+      if(!m.ebitda2&&m.ebitda1!==undefined) m.ebitda2=m.ebitda1-(Math.abs(m.gcorp||0));
+      if(!m.ebit&&m.ebitda2!==undefined) m.ebit=m.ebitda2-(Math.abs(m.dep||0));
+      return m;
+    });
+  }}}
+  return result;
+}
+function showContentSkeleton(){
+  const c=document.getElementById('content');if(!c) return;
+  c.style.position='relative';
+  const overlay=document.createElement('div');overlay.id='ism-load-overlay';
+  overlay.style.cssText='position:absolute;inset:0;background:var(--bg2);padding:20px;z-index:50;';
+  overlay.innerHTML=`<div class="g4 mb16">${'<div class="card ism-skeleton" style="height:78px"></div>'.repeat(4)}</div><div class="card ism-skeleton" style="height:280px"></div>`;
+  c.appendChild(overlay);
+}
+function hideContentSkeleton(){document.getElementById('ism-load-overlay')?.remove();}
+function handleFile(file){
+  showContentSkeleton();
+  const rd=new FileReader();
+  rd.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const tcWS=wb.Sheets['TC'];if(tcWS) S.tc=parseTCSheet(tcWS);else S.tc=TC_DATA;
+      const data={fromFile:true};
+      const shMap={'PE (PEN)':'PE','RD (DOP)':'RD','BR (BRL)':'BR','HT (HTG)':'HT','GT (GTQ)':'GT'};
+      for(const[sh,cc] of Object.entries(shMap)){const ws=wb.Sheets[sh];if(ws) try{data[cc]=parseCountrySheet(ws);}catch(e){console.warn('Error:',sh,e);}}
+      S.data=data;S.realFileLoaded=true;
+      document.getElementById('dstat').textContent='● Archivo cargado';
+      document.getElementById('dstat').className='dstatus ok';
+      renderActive();renderCfg();
+    }catch(err){alert('❌ Error:\n'+err.message);}
+    finally{hideContentSkeleton();}
+  };
+  rd.readAsArrayBuffer(file);
+}
+
+// ══ EVENTS + INIT ══
+function loadDemo(skipConfirm){
+  if(!skipConfirm&&S.realFileLoaded&&!confirm('¿Recargar datos Demo? Esto reemplazará el archivo Excel real que cargaste, sin poder deshacerlo.')) return;
+  S.data=buildDemo();S.tc=TC_DATA;S.realFileLoaded=false;document.getElementById('dstat').textContent='● Demo 2026';document.getElementById('dstat').className='dstatus ok';renderActive();
+}
+function exportJSON(){const b=new Blob([JSON.stringify({data:S.data,tc:S.tc},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='DRE_ISM.json';a.click();}
+function renderActive(){
+  const t=S.tab;
+  if(t==='corp') renderCorp();else if(t==='vert') renderVert();else if(t==='horiz') renderHoriz();
+  else if(t==='pvm') renderPVM();
+  else if(t==='sc') renderSC();else if(t==='be') renderBE();else if(t==='peru') renderPeru();
+  else if(t==='insights') renderInsights();
+  else if(t==='ai') renderAI();else if(t==='cfg') renderCfg();else if(t==='logic') renderLogic();
+  else if(t==='export') renderExport();
+}
+function switchTab(id){
+  S.tab=id;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+id));
+  document.getElementById('tb-title').textContent=TAB_TITLES[id]||id;
+  renderActive();
+}
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar'),main=document.getElementById('main');
+  const collapsed=sb.classList.toggle('ism-sidebar--collapsed');
+  main.classList.toggle('ism-collapsed',collapsed);
+  try{sessionStorage.setItem('ism-sidebar-collapsed',collapsed?'1':'0');}catch(e){}
+}
+// ── NUEVO v1.2: Tooltip anclado (7.2/7.5) — 400ms primera aparición, instantáneo en hovers consecutivos del mismo grupo ──
+let ttEl=null,ttTimer=null,ttLastGroup=null,ttLastTime=0;
+function showTooltip(el,text,group){
+  if(!ttEl){ttEl=document.createElement('div');ttEl.className='ism-tooltip';document.body.appendChild(ttEl);}
+  ttEl.textContent=text;
+  const r=el.getBoundingClientRect();
+  const now=Date.now();
+  const instant=group&&group===ttLastGroup&&(now-ttLastTime<800);
+  const place=()=>{
+    ttEl.style.left=Math.min(r.right+8,window.innerWidth-160)+'px';
+    ttEl.style.top=(r.top+r.height/2-11)+'px';
+    ttEl.style.setProperty('--tt-origin','left center');
+    ttEl.classList.add('show');
+  };
+  clearTimeout(ttTimer);
+  if(instant) place(); else ttTimer=setTimeout(place,400);
+  ttLastGroup=group;ttLastTime=now;
+}
+function hideTooltip(){if(ttEl) ttEl.classList.remove('show');clearTimeout(ttTimer);}
+function attachTooltip(el,text,group){
+  el.addEventListener('mouseenter',()=>showTooltip(el,text,group));
+  el.addEventListener('mouseleave',hideTooltip);
+  el.addEventListener('focus',()=>showTooltip(el,text,group));
+  el.addEventListener('blur',hideTooltip);
+}
+// ── NUEVO v1.2: toggle de tema claro/oscuro ──
+function setThemeAttrs(theme){
+  document.documentElement.dataset.theme=theme;
+  const btn=document.getElementById('theme-toggle');
+  if(btn){btn.textContent=theme==='dark'?'☀️':'🌙';btn.setAttribute('aria-label',theme==='dark'?'Cambiar a tema claro':'Cambiar a tema oscuro');}
+  applyChartTheme();
+  try{localStorage.setItem('ism-theme',theme);}catch(e){}
+}
+function applyTheme(theme){setThemeAttrs(theme);renderActive();}
+function toggleTheme(){const cur=document.documentElement.dataset.theme==='dark'?'dark':'light';applyTheme(cur==='dark'?'light':'dark');}
+document.addEventListener('DOMContentLoaded',()=>{
+  let savedTheme='light';
+  try{savedTheme=localStorage.getItem('ism-theme')||'light';}catch(e){}
+  setThemeAttrs(savedTheme);
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.addEventListener('click',()=>switchTab(b.dataset.tab));
+    const label=b.getAttribute('title');
+    if(label){attachTooltip(b,label,'nav');b.removeAttribute('title');}
+  });
+  document.getElementById('año-f').addEventListener('click',e=>{const b=e.target.closest('.pill');if(!b) return;document.querySelectorAll('#año-f .pill').forEach(x=>x.classList.remove('on'));b.classList.add('on');S.f.año=parseInt(b.dataset.a);renderActive();});
+  document.getElementById('pais-f').addEventListener('click',e=>{const b=e.target.closest('.pill');if(!b) return;document.querySelectorAll('#pais-f .pill').forEach(x=>x.classList.remove('on'));b.classList.add('on');S.f.paises=b.dataset.p;renderActive();});
+  document.getElementById('per-f').addEventListener('click',e=>{const b=e.target.closest('.pill');if(!b) return;document.querySelectorAll('#per-f .pill').forEach(x=>x.classList.remove('on'));b.classList.add('on');S.f.periodo=b.dataset.m;renderActive();});
+  document.querySelector('.ctoggle').addEventListener('click',e=>{const b=e.target.closest('.cbtn');if(!b) return;document.querySelectorAll('.cbtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');S.f.moneda=b.dataset.c;renderActive();});
+  document.getElementById('f-main').addEventListener('change',e=>{if(e.target.files[0]) handleFile(e.target.files[0]);});
+  document.getElementById('sb-collapse').addEventListener('click',toggleSidebar);
+  document.getElementById('theme-toggle').addEventListener('click',toggleTheme);
+  try{if(sessionStorage.getItem('ism-sidebar-collapsed')==='1') toggleSidebar();}catch(e){}
+  try { loadDemo(true); } catch(e) { console.error('Demo load error:', e); }
+});
+</script>
+</body>
+</html>
