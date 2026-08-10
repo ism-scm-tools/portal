@@ -56,7 +56,7 @@ const ISM_APPS = [
     sensibilidad: "alta",
     paises: ["PE", "RD", "HT", "GT"],
     estado: "nuevo",
-    url: "#",
+    url: "apps/materiales-inmovilizados/index.html",
   },
   {
     nombre: "Análisis de Estados Financieros",
@@ -65,7 +65,7 @@ const ISM_APPS = [
     sensibilidad: "alta",
     paises: ["Todos"],
     estado: "nuevo",
-    url: "#",
+    url: "apps/analisis-financiero/index.html",
   },
   {
     nombre: "Proyección de Cobertura",
@@ -74,7 +74,7 @@ const ISM_APPS = [
     sensibilidad: "media",
     paises: ["Todos"],
     estado: "nuevo",
-    url: "#",
+    url: "apps/proyeccion-cobertura/index.html",
   },
   {
     nombre: "ABCI",
@@ -83,7 +83,7 @@ const ISM_APPS = [
     sensibilidad: "alta",
     paises: ["Todos"],
     estado: "nuevo",
-    url: "#",
+    url: "apps/abci/index.html",
   },
   {
     nombre: "Optimización de Portafolio",
@@ -92,7 +92,7 @@ const ISM_APPS = [
     sensibilidad: "alta",
     paises: ["Todos"],
     estado: "nuevo",
-    url: "#",
+    url: "apps/optimizacion-portafolio/index.html",
   },
   {
     nombre: "Costos y Presupuestos",
@@ -101,7 +101,7 @@ const ISM_APPS = [
     sensibilidad: "media",
     paises: ["Todos"],
     estado: "nuevo",
-    url: "#",
+    url: "apps/costos-presupuestos/index.html",
   },
   {
     nombre: "Split Diario de Demanda",
