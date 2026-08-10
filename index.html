@@ -532,11 +532,9 @@ html { transition: background-color var(--theme-transition) ease, color var(--th
           // Único rol que puede ver "Restringido" — retorna antes del filtro transversal.
           return ISM_APPS;
         case 'manager':
-          // Cualquier etiqueta propia, o Estratégico — en AMBOS casos solo si está "nuevo"/"actualizado".
-          result = ISM_APPS.filter(a =>
-            estadoVigente(a) &&
-            (getCategoriaTags(a).includes(user.categoria) || getCategoriaTags(a).includes('Estratégico'))
-          );
+          // Ve TODAS las apps, de cualquier categoría (incluido Estratégico) y cualquier estado.
+          // Restringido se excluye siempre, vía el filtro transversal de abajo.
+          result = ISM_APPS;
           break;
         case 'lead':
           // TODAS las apps "nuevo"/"actualizado" — EXCLUYENDO Estratégico por completo
@@ -565,6 +563,7 @@ html { transition: background-color var(--theme-transition) ease, color var(--th
 
     function scopeLabel(user){
       if (user.role === 'admin') return 'Todas las categorías';
+      if (user.role === 'manager') return 'Todas (excepto Restringido)';
       if (user.role === 'lead') return 'Todas (excepto Estratégico / Restringido)';
       return user.categoria || user.proceso || '';
     }
