@@ -56,7 +56,7 @@ const ISM_APPS = [
     sensibilidad: "alta",
     paises: ["PE", "RD", "HT", "GT"],
     estado: "nuevo",
-    url: "#",
+    url: "apps/inventario-materiales/index.html",
   },
   {
     nombre: "Análisis de Estados Financieros",
