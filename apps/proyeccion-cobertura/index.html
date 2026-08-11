@@ -5,50 +5,83 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cobertura Guatemala — Torre de Control</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 <style>
   :root{
-    --bg:#F3F6F9;
+    --bg:#F9FAFB;
     --panel:#FFFFFF;
-    --ink:#0F1D30;
-    --ink-soft:#57697F;
-    --ink-faint:#8A97A8;
-    --line:#DBE3EC;
-    --line-strong:#B9C6D6;
-    --accent:#1F4E78;
-    --accent-soft:#E7EFF6;
-    --teal:#0E8C82;
-    --violet:#6E5AA8;
-    --zone-red:#D2483F;
-    --zone-red-bg:#FBE7E5;
-    --zone-yellow:#D99A2B;
-    --zone-yellow-bg:#FCF1DD;
-    --zone-green:#2E8B52;
-    --zone-green-bg:#E4F3E9;
-    --zone-over:#3A5FA8;
-    --zone-over-bg:#E6EBF6;
-    --zone-nodata:#9AA6B4;
+    --panel-2:#F9FAFB;
+    --ink:#302A1B;
+    --ink-soft:#6B7280;
+    --ink-faint:#9CA3AF;
+    --line:#E5E7EB;
+    --line-strong:#D1D5DB;
+    --accent:#00953B;
+    --accent-soft:#E8F5EE;
+    --accent-text:#006B2B;
+    --teal:#059CDA;
+    --violet:#F2664A;
+    --zone-red:#9B1A10;
+    --zone-red-bg:#FDEDEC;
+    --zone-yellow:#C58300;
+    --zone-yellow-bg:#FFF8E1;
+    --zone-green:#006B2B;
+    --zone-green-bg:#E8F5EE;
+    --zone-over:#0624BA;
+    --zone-over-bg:#ECEDFA;
+    --zone-nodata:#6B7280;
+    --zone-nodata-bg:#F3F4F6;
+    --zone-red-solid:#9B1A10;
+    --zone-yellow-solid:#C58300;
+    --zone-green-solid:#006B2B;
+    --zone-over-solid:#0624BA;
     --radius:10px;
-    --shadow:0 1px 2px rgba(15,29,48,.06), 0 8px 24px -12px rgba(15,29,48,.12);
+    --shadow:0 1px 2px rgba(48,42,27,.06), 0 8px 24px -12px rgba(48,42,27,.12);
   }
+  /* ---------- Modo oscuro — [data-theme="dark"] (paleta del manual ISM-SCM v1.2) ---------- */
+  [data-theme="dark"]{
+    --bg:#0E1210;
+    --panel:#1B2420;
+    --panel-2:#223028;
+    --ink:#F5F7F6;
+    --ink-soft:#A9B4AE;
+    --ink-faint:#7A8780;
+    --line:#2E3B34;
+    --line-strong:#3B4A42;
+    --accent-soft:rgba(0,149,59,0.18);
+    --accent-text:#3DDB84;
+    --zone-red:#FF8A80;
+    --zone-red-bg:rgba(238,49,36,0.18);
+    --zone-yellow:#FFC94D;
+    --zone-yellow-bg:rgba(255,188,54,0.16);
+    --zone-green:#4ADE80;
+    --zone-green-bg:rgba(0,149,59,0.18);
+    --zone-over:#4260F9;
+    --zone-over-bg:rgba(66,96,249,0.18);
+    --zone-nodata:#9CA3AF;
+    --zone-nodata-bg:rgba(255,255,255,0.06);
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+  }
+  html{ transition:background-color .18s ease; }
+  body{ transition:background-color .18s ease, color .18s ease; }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
     background:var(--bg);
     color:var(--ink);
-    font-family:'Inter',ui-sans-serif,system-ui,-apple-system,sans-serif;
+    font-family:'Nunito',ui-sans-serif,system-ui,-apple-system,sans-serif;
     font-size:14px;
     line-height:1.45;
     -webkit-font-smoothing:antialiased;
   }
-  .mono{font-family:'IBM Plex Mono',ui-monospace,'SF Mono',Consolas,monospace;}
-  h1,h2,h3,h4{font-family:'Space Grotesk',ui-sans-serif,system-ui,sans-serif; margin:0; letter-spacing:-0.01em;}
+  .mono{font-family:'Courier New',ui-monospace,'SF Mono',Consolas,monospace;}
+  h1,h2,h3,h4{font-family:'Work Sans',ui-sans-serif,system-ui,sans-serif; margin:0; letter-spacing:-0.01em;}
 
   /* ---------- Top band ---------- */
   .topband{
-    background:linear-gradient(100deg,#0F1D30 0%,#1F4E78 100%);
+    background:var(--accent);
     color:#fff;
     padding:16px 28px;
     display:flex;
@@ -65,28 +98,67 @@
     box-shadow:inset 0 0 0 2px rgba(255,255,255,.35);
   }
   .brand-text .eyebrow{
-    text-transform:uppercase; font-size:10.5px; letter-spacing:.14em; color:#B7CBE0; font-weight:600;
+    text-transform:uppercase; font-size:10.5px; letter-spacing:.14em; color:#A9B4AE; font-weight:600;
   }
   .brand-text h1{font-size:19px; color:#fff; font-weight:700;}
-  .topband .meta{font-size:12px; color:#C9D8E8; text-align:right;}
-  .topband .meta strong{color:#fff; font-family:'IBM Plex Mono',monospace;}
+  .topband-right{display:flex; align-items:center; gap:16px;}
+  .topband .meta{font-size:12px; color:#A9B4AE; text-align:right;}
+  .topband .meta strong{color:#fff; font-family:'Courier New',monospace;}
 
-  /* ---------- Tabs ---------- */
+  .theme-toggle{
+    width:32px; height:32px; border-radius:50%;
+    background:rgba(255,255,255,0.16);
+    border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:16px; line-height:1;
+    flex-shrink:0;
+    transition:transform .1s ease, background .16s ease;
+  }
+  .theme-toggle:hover{background:rgba(255,255,255,0.26);}
+  .theme-toggle:active{transform:scale(0.9) rotate(-8deg);}
+
+  /* ---------- Layout: sidebar + contenido ---------- */
+  .app-body{display:flex; align-items:flex-start;}
+
+  /* ---------- Sidebar de vistas (antes: tabs horizontales) ---------- */
   .tabnav{
-    background:#132840; display:flex; gap:2px; padding:0 24px; overflow-x:auto;
+    flex:0 0 220px; width:220px;
+    background:var(--panel); border-right:1px solid var(--line);
+    display:flex; flex-direction:column; gap:2px; padding:14px 0 24px;
+    min-height:calc(100vh - 65px);
   }
+  .tabnav .sidebar-label{
+    font-family:'Work Sans',sans-serif; font-size:10.5px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint);
+    padding:6px 20px 10px; margin-top:6px;
+  }
+  .tabnav .sidebar-label:first-child{margin-top:0;}
   .tabnav button{
-    appearance:none; border:none; background:transparent; color:#9FB4CC;
-    font-family:'Inter',sans-serif; font-size:13px; font-weight:600; padding:12px 18px;
-    cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; transition:all .12s ease;
+    appearance:none; border:none; background:transparent; color:var(--ink);
+    display:flex; align-items:center; gap:10px;
+    font-family:'Nunito',sans-serif; font-size:13.5px; font-weight:600; text-align:left;
+    padding:11px 20px; cursor:pointer; border-left:3px solid transparent; white-space:nowrap; transition:all .12s ease;
   }
-  .tabnav button:hover{color:#fff;}
-  .tabnav button.active{color:#fff; border-bottom-color:var(--zone-yellow);}
+  .tabnav button .nav-icon{font-size:15px; line-height:1; flex-shrink:0;}
+  .tabnav button:hover{background:var(--accent-soft);}
+  .tabnav button.active{background:var(--accent-soft); border-left-color:var(--accent); color:var(--accent-text); font-weight:700;}
+  .tabnav button.locked{opacity:.42; cursor:not-allowed;}
+  .tabnav button.locked:hover{background:transparent;}
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
 
+  @media (max-width:900px){
+    .app-body{flex-direction:column;}
+    .tabnav{flex-direction:row; width:100%; min-height:auto; overflow-x:auto; border-right:none; border-bottom:1px solid var(--line); padding:6px 12px;}
+    .tabnav .sidebar-label{display:none;}
+    .tabnav button{border-left:none; border-bottom:3px solid transparent; padding:10px 14px;}
+    .tabnav button.active{border-bottom-color:var(--accent);}
+  }
+
+
+
   /* ---------- Layout ---------- */
-  .wrap{max-width:1440px; margin:0 auto; padding:22px 28px 60px;}
+  .wrap{flex:1; min-width:0; max-width:1440px; margin:0; padding:22px 28px 60px;}
   .toolbar{
     background:var(--panel);
     border:1px solid var(--line);
@@ -102,15 +174,15 @@
   .tb-group{display:flex; flex-direction:column; gap:5px;}
   .tb-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-faint); font-weight:600;}
   .tb-group select, .tb-group input[type=text]{
-    font-family:'Inter',sans-serif; font-size:13px; padding:7px 10px;
-    border:1px solid var(--line-strong); border-radius:7px; background:#fff; color:var(--ink);
+    font-family:'Nunito',sans-serif; font-size:13px; padding:7px 10px;
+    border:1px solid var(--line-strong); border-radius:7px; background:var(--panel); color:var(--ink);
     min-width:150px;
   }
   .day-slider-row{display:flex; align-items:center; gap:10px;}
   .day-slider-row input[type=range]{width:220px; accent-color:var(--accent);}
   .day-pill{
-    font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px;
-    background:var(--accent-soft); color:var(--accent); padding:5px 10px; border-radius:6px; min-width:74px; text-align:center;
+    font-family:'Courier New',monospace; font-weight:600; font-size:13px;
+    background:var(--accent-soft); color:var(--accent-text); padding:5px 10px; border-radius:6px; min-width:74px; text-align:center;
   }
   .file-btn{margin-left:auto; display:flex; align-items:center; gap:10px;}
   .file-btn label{
@@ -118,7 +190,7 @@
     padding:9px 16px; border-radius:7px; cursor:pointer; border:1px solid var(--accent);
     transition:background .15s ease;
   }
-  .file-btn label:hover{background:#173e60;}
+  .file-btn label:hover{background:#006B2B;}
   .file-btn input[type=file]{display:none;}
   .file-status{font-size:12px; color:var(--ink-soft);}
   .file-status.ok{color:var(--zone-green); font-weight:600;}
@@ -126,28 +198,28 @@
   .chip-group{display:flex; gap:6px; flex-wrap:wrap;}
   .chip{
     font-size:11.5px; font-weight:600; padding:5px 11px; border-radius:20px;
-    border:1px solid var(--line-strong); background:#fff; color:var(--ink-soft); cursor:pointer;
+    border:1px solid var(--line-strong); background:var(--panel); color:var(--ink-soft); cursor:pointer;
     user-select:none; transition:all .12s ease;
   }
   .chip.active{background:var(--accent); border-color:var(--accent); color:#fff;}
-  .chip.zone-active-rojo{background:var(--zone-red); border-color:var(--zone-red); color:#fff;}
-  .chip.zone-active-amarillo{background:var(--zone-yellow); border-color:var(--zone-yellow); color:#fff;}
-  .chip.zone-active-verde{background:var(--zone-green); border-color:var(--zone-green); color:#fff;}
-  .chip.zone-active-exceso{background:var(--zone-over); border-color:var(--zone-over); color:#fff;}
+  .chip.zone-active-rojo{background:var(--zone-red-solid); border-color:var(--zone-red-solid); color:#fff;}
+  .chip.zone-active-amarillo{background:var(--zone-yellow-solid); border-color:var(--zone-yellow-solid); color:#fff;}
+  .chip.zone-active-verde{background:var(--zone-green-solid); border-color:var(--zone-green-solid); color:#fff;}
+  .chip.zone-active-exceso{background:var(--zone-over-solid); border-color:var(--zone-over-solid); color:#fff;}
   .chip:hover{border-color:var(--accent);}
 
-  /* ---------- Empty state ---------- */
-  .empty-state{
-    background:var(--panel); border:1px dashed var(--line-strong); border-radius:var(--radius);
-    padding:70px 30px; text-align:center; color:var(--ink-soft);
-  }
-  .empty-state h2{font-size:22px; color:var(--ink); margin-bottom:10px;}
-  .empty-state p{max-width:480px; margin:0 auto 6px; font-size:13.5px;}
-  .empty-state .drop-target{
-    border:2px dashed var(--line-strong); border-radius:12px; padding:34px; margin:22px auto 0; max-width:420px;
+  /* ---------- Zona de carga (arrastrar y soltar) ---------- */
+  .drop-target{
+    border:2px dashed var(--line-strong); border-radius:12px; padding:34px; margin:6px auto 0; max-width:420px;
+    text-align:center;
     transition:border-color .15s ease, background .15s ease;
   }
-  .empty-state .drop-target.drag{border-color:var(--accent); background:var(--accent-soft);}
+  .drop-target.drag{border-color:var(--accent); background:var(--accent-soft);}
+  .load-summary{
+    display:flex; align-items:flex-start; gap:10px;
+    background:var(--zone-green-bg); color:var(--zone-green); border:1px solid var(--zone-green);
+    border-radius:8px; padding:12px 14px; font-size:12.5px; margin-bottom:16px; line-height:1.5;
+  }
 
   #appShell{display:none;}
   #appShell.show{display:block;}
@@ -165,7 +237,7 @@
   .kpi.teal{border-top-color:var(--teal);}
   .kpi.accent{border-top-color:var(--accent);}
   .kpi .kpi-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-faint); font-weight:600; margin-bottom:8px;}
-  .kpi .kpi-value{font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:600; color:var(--ink); line-height:1;}
+  .kpi .kpi-value{font-family:'Courier New',monospace; font-size:26px; font-weight:600; color:var(--ink); line-height:1;}
   .kpi .kpi-value small{font-size:13px; font-weight:500; color:var(--ink-soft);}
   .kpi .kpi-sub{font-size:11.5px; color:var(--ink-soft); margin-top:6px;}
 
@@ -191,11 +263,11 @@
 
   /* ---------- Insights panel ---------- */
   .insights-panel{
-    background:linear-gradient(135deg,#0F1D30,#1F4E78); color:#fff; border-radius:var(--radius);
+    background:linear-gradient(135deg,#302A1B,#00953B); color:#fff; border-radius:var(--radius);
     padding:18px 20px; margin-bottom:20px; box-shadow:var(--shadow);
   }
   .insights-panel .panel-head h3{color:#fff;}
-  .insights-panel .panel-head .panel-note{color:#B7CBE0;}
+  .insights-panel .panel-head .panel-note{color:#A9B4AE;}
   .insight-list{list-style:none; margin:12px 0 0; padding:0; display:grid; gap:8px;}
   .insight-item{
     display:flex; gap:10px; align-items:flex-start; background:rgba(255,255,255,.06);
@@ -204,25 +276,25 @@
   .insight-item.severity-alta{border-left-color:var(--zone-red);}
   .insight-item.severity-media{border-left-color:var(--zone-yellow);}
   .insight-item.severity-baja{border-left-color:var(--zone-green);}
-  .insight-item.severity-info{border-left-color:#7FA8D9;}
+  .insight-item.severity-info{border-left-color:#059CDA;}
   .insight-icon{font-size:15px; line-height:1.4;}
-  .insight-empty{font-size:12.5px; color:#B7CBE0; padding:6px 0;}
+  .insight-empty{font-size:12.5px; color:#A9B4AE; padding:6px 0;}
 
   /* ---------- Table ---------- */
   .table-scroll{max-height:560px; overflow:auto; border:1px solid var(--line); border-radius:8px; margin-top:12px;}
   table.data{width:100%; border-collapse:collapse; font-size:12.5px;}
   table.data thead th{
-    position:sticky; top:0; background:#EEF3F8; color:var(--ink); text-align:left;
+    position:sticky; top:0; background:var(--accent); color:#fff; text-align:left;
     padding:8px 9px; font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.03em;
     border-bottom:1px solid var(--line-strong); cursor:pointer; white-space:nowrap; z-index:2;
   }
-  table.data thead th:hover{background:#E3EBF3;}
+  table.data thead th:hover{background:#006B2B;}
   table.data thead th .arrow{opacity:.4; font-size:9px; margin-left:3px;}
   table.data tbody td{padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:middle; white-space:nowrap;}
-  table.data tbody tr:hover{background:#F7FAFD; cursor:pointer;}
-  .num{font-family:'IBM Plex Mono',monospace; text-align:right;}
+  table.data tbody tr:hover{background:var(--accent-soft); cursor:pointer;}
+  .num{font-family:'Courier New',monospace; text-align:right;}
   .desc-cell{max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .code-cell{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--ink-soft);}
+  .code-cell{font-family:'Courier New',monospace; font-size:11.5px; color:var(--ink-soft);}
 
   .zone-chip{
     display:inline-block; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:700;
@@ -232,18 +304,18 @@
   .zone-chip.amarillo{background:var(--zone-yellow-bg); color:var(--zone-yellow);}
   .zone-chip.verde{background:var(--zone-green-bg); color:var(--zone-green);}
   .zone-chip.exceso{background:var(--zone-over-bg); color:var(--zone-over);}
-  .zone-chip.sindatos{background:#EEF1F5; color:var(--zone-nodata);}
+  .zone-chip.sindatos{background:var(--zone-nodata-bg); color:var(--zone-nodata);}
 
   .abc-chip{
     display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:6px;
-    font-size:11px; font-weight:700; font-family:'IBM Plex Mono',monospace;
+    font-size:11px; font-weight:700; font-family:'Courier New',monospace;
   }
-  .abc-chip.A{background:#DCEBFB; color:#1F5FA8;}
-  .abc-chip.B{background:#E7EFF6; color:#4C6480;}
-  .abc-chip.C{background:#F1F3F5; color:#8A97A8;}
+  .abc-chip.A{background:var(--accent-soft); color:var(--accent-text);}
+  .abc-chip.B{background:var(--zone-nodata-bg); color:var(--ink-soft);}
+  .abc-chip.C{background:var(--bg); color:var(--ink-faint);}
 
   /* ---------- Buffer gauge ---------- */
-  .gauge{position:relative; width:130px; height:18px; border-radius:4px; overflow:visible; display:flex; background:#EEF1F5;}
+  .gauge{position:relative; width:130px; height:18px; border-radius:4px; overflow:visible; display:flex; background:var(--zone-nodata-bg);}
   .gauge .seg{height:100%;}
   .gauge .seg.rojo{background:var(--zone-red);}
   .gauge .seg.amarillo{background:var(--zone-yellow);}
@@ -263,7 +335,7 @@
 
   .search-row{display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap;}
   .search-row input[type=text]{flex:1; min-width:200px;}
-  .count-pill{font-size:11.5px; color:var(--ink-faint); font-family:'IBM Plex Mono',monospace;}
+  .count-pill{font-size:11.5px; color:var(--ink-faint); font-family:'Courier New',monospace;}
 
   /* ---------- SKU detail tab ---------- */
   .sku-picker{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
@@ -271,36 +343,98 @@
   .sku-header{display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-top:14px;}
   @media (max-width:1000px){.sku-header{grid-template-columns:repeat(3,1fr);}}
   @media (max-width:600px){.sku-header{grid-template-columns:repeat(2,1fr);}}
-  .sku-stat{background:#F7FAFD; border:1px solid var(--line); border-radius:8px; padding:10px 12px;}
+  .sku-stat{background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:10px 12px;}
   .sku-stat .lbl{font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); font-weight:600;}
-  .sku-stat .val{font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:600; margin-top:3px;}
+  .sku-stat .val{font-family:'Courier New',monospace; font-size:16px; font-weight:600; margin-top:3px;}
 
   /* ---------- Methodology tab ---------- */
   .accordion{border:1px solid var(--line); border-radius:8px; margin-bottom:10px; overflow:hidden;}
   .accordion-head{
-    background:#F7FAFD; padding:11px 14px; font-weight:700; font-size:13px; cursor:pointer;
+    background:var(--panel-2); padding:11px 14px; font-weight:700; font-size:13px; cursor:pointer;
     display:flex; justify-content:space-between; align-items:center;
   }
-  .accordion-head:hover{background:#EEF3F8;}
+  .accordion-head:hover{background:var(--line);}
   .accordion-body{padding:12px 16px; font-size:12.5px; color:var(--ink-soft); display:none; line-height:1.6;}
   .accordion.open .accordion-body{display:block;}
   .accordion-head .caret{transition:transform .15s ease; color:var(--ink-faint);}
   .accordion.open .accordion-head .caret{transform:rotate(90deg);}
   .formula-block{
-    font-family:'IBM Plex Mono',monospace; font-size:11.5px; background:#0F1D30; color:#DCE8F5;
+    font-family:'Courier New',monospace; font-size:11.5px; background:var(--panel-2); color:var(--ink); border:1px solid var(--line);
     padding:9px 12px; border-radius:6px; margin:6px 0; overflow-x:auto; white-space:pre;
   }
   .sheet-table{width:100%; border-collapse:collapse; font-size:12px; margin-top:6px;}
-  .sheet-table th{text-align:left; padding:6px 8px; background:#EEF3F8; font-size:10.5px; text-transform:uppercase; color:var(--ink-faint);}
+  .sheet-table th{text-align:left; padding:6px 8px; background:var(--accent); font-size:10.5px; text-transform:uppercase; color:#fff;}
   .sheet-table td{padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top;}
 
   .check-row{display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid var(--line); font-size:12.5px;}
   .check-row:last-child{border-bottom:none;}
   .check-icon{width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex:none; color:#fff;}
-  .check-icon.ok{background:var(--zone-green);}
-  .check-icon.warn{background:var(--zone-yellow);}
-  .check-icon.fail{background:var(--zone-red);}
-  .check-text strong{font-family:'IBM Plex Mono',monospace;}
+  .check-icon.ok{background:var(--zone-green-solid);}
+  .check-icon.warn{background:var(--zone-yellow-solid);}
+  .check-icon.fail{background:var(--zone-red-solid);}
+  .check-text strong{font-family:'Courier New',monospace;}
+
+  /* ---------- Matriz SKU × Día ---------- */
+  .matrix-scroll{overflow:auto;}
+  .matrix-table{border-collapse:separate; border-spacing:0; font-size:11.5px;}
+  .matrix-table th, .matrix-table td{padding:6px 8px; text-align:center; white-space:nowrap; border-bottom:1px solid var(--line); border-right:1px solid var(--line);}
+  .matrix-table thead th{position:sticky; top:0; background:var(--accent); color:#fff; font-weight:600; font-size:10px; text-transform:uppercase; z-index:2;}
+  .matrix-table thead th:first-child{left:0; z-index:4; text-align:left;}
+  .matrix-table tbody td:first-child, .matrix-table tbody th:first-child{
+    position:sticky; left:0; z-index:1; background:var(--panel);
+    text-align:left; font-family:'Courier New',monospace; font-size:11px; color:var(--ink);
+    box-shadow:2px 0 3px -2px rgba(0,0,0,.18);
+  }
+  .matrix-table tbody tr:hover td:first-child{background:var(--panel-2);}
+  .matrix-cell{font-family:'Courier New',monospace; font-weight:600;}
+  .matrix-cell.rojo{background:var(--zone-red-bg); color:var(--zone-red);}
+  .matrix-cell.amarillo{background:var(--zone-yellow-bg); color:var(--zone-yellow);}
+  .matrix-cell.verde{background:var(--zone-green-bg); color:var(--zone-green);}
+  .matrix-cell.exceso{background:var(--zone-over-bg); color:var(--zone-over);}
+  .matrix-cell.sindatos{background:var(--zone-nodata-bg); color:var(--zone-nodata);}
+
+  /* ---------- Análisis IA ---------- */
+  .ai-chat{border:1px solid var(--line); border-radius:var(--radius); background:var(--panel-2); overflow:hidden;}
+  .ai-chat-messages{max-height:360px; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px;}
+  .ai-message{max-width:82%; padding:10px 13px; border-radius:10px; font-size:13px; line-height:1.5;}
+  .ai-message strong{font-family:'Courier New',monospace;}
+  .ai-message--user{align-self:flex-end; background:var(--accent-soft); color:var(--ink);}
+  .ai-message--assistant{align-self:flex-start; background:var(--panel); border:1px solid var(--line); color:var(--ink);}
+  .ai-prompts{display:flex; gap:8px; flex-wrap:wrap; padding:0 16px 14px;}
+  .ai-prompts button{
+    font-family:'Nunito',sans-serif; font-size:11.5px; font-weight:600; color:var(--accent-text);
+    background:var(--accent-soft); border:1px solid var(--line); border-radius:20px; padding:6px 12px; cursor:pointer;
+    transition:background .12s ease;
+  }
+  .ai-prompts button:hover{background:var(--zone-nodata-bg);}
+  .ai-input-row{display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--line); background:var(--panel);}
+  .ai-input-row input{
+    flex:1; font-family:'Nunito',sans-serif; font-size:13px; padding:9px 12px;
+    border:1px solid var(--line-strong); border-radius:7px; background:var(--panel); color:var(--ink);
+  }
+  .ai-input-row button{
+    background:var(--accent); color:#fff; font-weight:600; font-size:13px; border:none;
+    padding:9px 18px; border-radius:7px; cursor:pointer;
+  }
+  .ai-input-row button:hover{background:#006B2B;}
+
+  /* ---------- Exportar resultados ---------- */
+  .export-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:12px; margin-top:6px;}
+  .export-card{
+    border:1px solid var(--line); border-radius:10px; padding:16px 14px; text-align:center; cursor:pointer;
+    background:var(--panel); transition:border-color .12s ease, transform .1s ease, background .12s ease;
+  }
+  .export-card:hover{border-color:var(--accent); background:var(--accent-soft);}
+  .export-card:active{transform:scale(.97);}
+  .export-icon{font-size:26px; margin-bottom:8px;}
+  .export-name{font-family:'Work Sans',sans-serif; font-weight:700; font-size:13px; color:var(--ink);}
+  .export-hint{font-size:11px; color:var(--ink-faint); margin-top:4px; line-height:1.4;}
+  .export-history{display:flex; flex-direction:column; gap:6px; margin-top:16px;}
+  .export-history-item{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:8px 12px; border-radius:7px; background:var(--panel-2); font-size:12px; color:var(--ink-soft);
+  }
+  .export-history-item strong{color:var(--ink); font-family:'Courier New',monospace; font-weight:600;}
 
   footer{max-width:1440px; margin:0 auto; padding:0 28px 40px; color:var(--ink-faint); font-size:11.5px;}
 </style>
@@ -315,27 +449,44 @@
       <h1 id="brandTitle">Cobertura Guatemala — Agosto 2026</h1>
     </div>
   </div>
-  <div class="meta">
-    Horizonte<br><strong id="horizonLabel">01–31 ago 2026</strong>
+  <div class="topband-right">
+    <div class="meta">
+      Horizonte<br><strong id="horizonLabel">01–31 ago 2026</strong>
+    </div>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Cambiar a tema oscuro" title="Cambiar a tema oscuro">🌙</button>
   </div>
 </div>
 
-<div class="tabnav" id="tabNav" style="display:none;">
-  <button data-tab="resumen" class="active">Resumen General</button>
-  <button data-tab="sku">Detalle por SKU</button>
-  <button data-tab="metodologia">Metodología &amp; Validación</button>
+<div class="app-body">
+<div class="tabnav" id="tabNav">
+  <div class="sidebar-label">Datos</div>
+  <button data-tab="cargar" class="active"><span class="nav-icon">📂</span>Cargar Archivos</button>
+
+  <div class="sidebar-label">Análisis</div>
+  <button data-tab="resumen"><span class="nav-icon">📊</span>Resumen General</button>
+  <button data-tab="sku"><span class="nav-icon">🔎</span>Detalle por SKU</button>
+  <button data-tab="matriz"><span class="nav-icon">🗓️</span>Matriz SKU × Día</button>
+  <button data-tab="insights"><span class="nav-icon">💡</span>Insights Automáticos</button>
+  <button data-tab="ia"><span class="nav-icon">🤖</span>Análisis IA</button>
+
+  <div class="sidebar-label">Configuración</div>
+  <button data-tab="metodologia"><span class="nav-icon">📐</span>Lógica de Análisis</button>
+  <button data-tab="exportar"><span class="nav-icon">⬇️</span>Exportar Resultados</button>
 </div>
 
 <div class="wrap">
 
-  <div id="emptyState" class="empty-state">
-    <h2>Carga el archivo de Cobertura del mes</h2>
-    <p>Sube el Excel <strong>Cobertura_Guatemala_Agosto2026.xlsx</strong> (el mismo archivo que llena el equipo día a día) para ver la proyección de cobertura, la comparativa Cuota vs. Real y el estado de cada combinación SKU × CD.</p>
-    <p style="font-size:12px;color:var(--ink-faint);">Los datos se procesan localmente en tu navegador — el archivo no se envía a ningún servidor.</p>
-    <div class="drop-target" id="dropTarget">
-      <div style="font-size:13px; margin-bottom:10px; color:var(--ink-soft);">Arrastra el archivo aquí, o</div>
-      <label for="fileInputEmpty" style="background:var(--accent); color:#fff; font-weight:600; font-size:13px; padding:9px 18px; border-radius:7px; cursor:pointer; display:inline-block;">Elegir archivo .xlsx</label>
-      <input type="file" id="fileInputEmpty" accept=".xlsx,.xls">
+  <div id="tab-cargar" class="tab-panel active">
+    <div class="panel" style="max-width:640px;">
+      <div class="panel-head"><h3>Cargar archivo de Cobertura</h3></div>
+      <p style="font-size:13.5px; color:var(--ink-soft); margin:6px 0 4px;">Sube el Excel <strong>Cobertura_Guatemala_[Mes][Año].xlsx</strong> (el mismo archivo que llena el equipo día a día) para ver la proyección de cobertura, la comparativa Cuota vs. Real y el estado de cada combinación SKU × CD.</p>
+      <p style="font-size:12px;color:var(--ink-faint); margin-bottom:16px;">Los datos se procesan localmente en tu navegador — el archivo no se envía a ningún servidor.</p>
+      <div id="cargarSummary"></div>
+      <div class="drop-target" id="dropTarget">
+        <div style="font-size:13px; margin-bottom:10px; color:var(--ink-soft);">Arrastra el archivo aquí, o</div>
+        <label for="fileInputEmpty" style="background:var(--accent); color:#fff; font-weight:600; font-size:13px; padding:9px 18px; border-radius:7px; cursor:pointer; display:inline-block;">Elegir archivo .xlsx</label>
+        <input type="file" id="fileInputEmpty" accept=".xlsx,.xls">
+      </div>
     </div>
   </div>
 
@@ -373,15 +524,7 @@
     </div>
 
     <!-- ======================= TAB: RESUMEN GENERAL ======================= -->
-    <div class="tab-panel active" id="tab-resumen">
-      <div class="insights-panel">
-        <div class="panel-head">
-          <h3>Insights automáticos — Comercial vs. Supply</h3>
-          <span class="panel-note">Generados a partir de la data cargada, día seleccionado y filtros activos</span>
-        </div>
-        <ul class="insight-list" id="insightsGlobal"></ul>
-      </div>
-
+    <div class="tab-panel" id="tab-resumen">
       <div class="kpi-row" id="kpiRow"></div>
 
       <div class="grid-2">
@@ -477,7 +620,7 @@
         </div>
         <div class="chart-box tall"><canvas id="skuEvolChart"></canvas></div>
         <div class="legend-row">
-          <span><span class="legend-dot" style="background:#DCE8F5"></span>Banda política (ROP–TOG)</span>
+          <span><span class="legend-dot" style="background:#E6F4EB"></span>Banda política (ROP–TOG)</span>
           <span><span class="legend-line" style="background:var(--ink-faint); border-top:2px dashed var(--ink-faint);"></span>Política promedio</span>
           <span><span class="legend-line" style="background:var(--accent)"></span>Stock en piso</span>
           <span><span class="legend-line" style="background:var(--violet)"></span>Stock piso + tránsito</span>
@@ -492,6 +635,65 @@
           <span class="panel-note">Tasa de salida real (últimos 2 meses) vs. tasa de cuota futura</span>
         </div>
         <div class="chart-box short"><canvas id="skuRateChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- ======================= TAB: MATRIZ SKU × DÍA ======================= -->
+    <div class="tab-panel" id="tab-matriz">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Matriz SKU × CD — vista por día</h3>
+          <span class="panel-note">Filas = combinaciones filtradas (mismos filtros del toolbar) · Columnas = días del mes · Color = zona de cobertura real de ese día</span>
+        </div>
+        <div class="chip-group" id="matrixModeChips" style="margin-top:10px;">
+          <span class="chip mode-chip active" data-mode="cobertura">Cobertura (días)</span>
+          <span class="chip mode-chip" data-mode="volumen">Volumen (paquetes)</span>
+        </div>
+        <div class="gauge-legend" style="margin-top:12px;">
+          <span><span class="legend-dot" style="background:var(--zone-red-bg); box-shadow:inset 0 0 0 1px var(--zone-red);"></span>Rojo</span>
+          <span><span class="legend-dot" style="background:var(--zone-yellow-bg); box-shadow:inset 0 0 0 1px var(--zone-yellow);"></span>Amarillo</span>
+          <span><span class="legend-dot" style="background:var(--zone-green-bg); box-shadow:inset 0 0 0 1px var(--zone-green);"></span>Verde</span>
+          <span><span class="legend-dot" style="background:var(--zone-over-bg); box-shadow:inset 0 0 0 1px var(--zone-over);"></span>Exceso</span>
+          <span><span class="legend-dot" style="background:var(--zone-nodata-bg); box-shadow:inset 0 0 0 1px var(--zone-nodata);"></span>Sin datos</span>
+        </div>
+        <div class="table-scroll matrix-scroll" style="margin-top:12px; max-height:600px;">
+          <table class="data matrix-table" id="matrixTable"></table>
+        </div>
+        <div class="count-pill" id="matrixNote" style="margin-top:8px; display:block;"></div>
+      </div>
+    </div>
+
+    <!-- ======================= TAB: INSIGHTS AUTOMÁTICOS ======================= -->
+    <div class="tab-panel" id="tab-insights">
+      <div class="insights-panel">
+        <div class="panel-head">
+          <h3>Insights automáticos — Comercial vs. Supply</h3>
+          <span class="panel-note">Generados a partir de la data cargada, el día seleccionado y los filtros activos del toolbar</span>
+        </div>
+        <ul class="insight-list" id="insightsGlobal"></ul>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>¿Cómo se generan?</h3></div>
+        <p style="font-size:12.5px; color:var(--ink-soft); line-height:1.6; margin:6px 0 0;">Estos insights comparan, para el día seleccionado y las combinaciones filtradas, la <strong>cuota comercial</strong> (Demanda_Cuota) contra la <strong>salida real</strong> acumulada (Salidas_Reales), y cruzan esa brecha con la <strong>zona de cobertura</strong> de cada combinación (rojo / amarillo / verde / exceso). No usan un modelo de lenguaje: son reglas fijas sobre los datos ya cargados.</p>
+      </div>
+    </div>
+
+    <!-- ======================= TAB: ANÁLISIS IA ======================= -->
+    <div class="tab-panel" id="tab-ia">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Análisis IA</h3>
+          <span class="panel-note">Asistente de datos — responde preguntas frecuentes sobre lo que ya cargaste</span>
+        </div>
+        <p style="font-size:12px; color:var(--ink-faint); margin:4px 0 14px; line-height:1.5;">No es un modelo de lenguaje conectado a internet: interpreta tu pregunta con reglas simples y calcula la respuesta sobre las combinaciones cargadas, respetando los filtros activos del toolbar.</p>
+        <div class="ai-chat" id="aiChat">
+          <div class="ai-chat-messages" id="aiMessages"></div>
+          <div class="ai-prompts" id="aiPrompts"></div>
+          <div class="ai-input-row">
+            <input type="text" id="aiInput" placeholder="Ej: ¿qué SKU tiene menor cobertura hoy?">
+            <button id="aiSendBtn" type="button">Enviar</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -514,7 +716,41 @@
       </div>
     </div>
 
+    <!-- ======================= TAB: EXPORTAR RESULTADOS ======================= -->
+    <div class="tab-panel" id="tab-exportar">
+      <div class="panel">
+        <div class="panel-head">
+          <h3>Exportar resultados</h3>
+          <span class="panel-note">Exporta la selección actual (respeta los filtros del toolbar) en el formato que necesites</span>
+        </div>
+        <div class="export-grid" id="exportGrid">
+          <div class="export-card" data-export="xlsx-detalle">
+            <div class="export-icon">📗</div>
+            <div class="export-name">Detalle (Excel)</div>
+            <div class="export-hint">Tabla SKU × CD filtrada, día actual</div>
+          </div>
+          <div class="export-card" data-export="csv-detalle">
+            <div class="export-icon">📄</div>
+            <div class="export-name">Detalle (CSV)</div>
+            <div class="export-hint">Mismo detalle en texto plano</div>
+          </div>
+          <div class="export-card" data-export="xlsx-matriz">
+            <div class="export-icon">🗓️</div>
+            <div class="export-name">Matriz SKU × Día (Excel)</div>
+            <div class="export-hint">Cobertura o volumen, 31 días</div>
+          </div>
+          <div class="export-card" data-export="json-insights">
+            <div class="export-icon">💡</div>
+            <div class="export-name">Insights (JSON)</div>
+            <div class="export-hint">Texto de los insights generados</div>
+          </div>
+        </div>
+        <div class="export-history" id="exportHistory"></div>
+      </div>
+    </div>
+
   </div>
+</div>
 </div>
 
 <footer>
@@ -529,11 +765,11 @@ if(typeof XLSX === 'undefined' || typeof Chart === 'undefined'){
   const missing = [];
   if(typeof XLSX === 'undefined') missing.push('SheetJS (lectura de Excel)');
   if(typeof Chart === 'undefined') missing.push('Chart.js (gráficos)');
-  const box = document.getElementById('emptyState');
+  const box = document.getElementById('tab-cargar');
   if(box){
-    box.innerHTML = `<h2>No se pudo cargar una librería necesaria</h2>
+    box.innerHTML = `<div class="panel"><h2 style="font-size:20px;margin-bottom:10px;">No se pudo cargar una librería necesaria</h2>
       <p>Falta: <strong>${missing.join(', ')}</strong>. Esto suele pasar por falta de conexión a internet o porque la red bloquea cdnjs.cloudflare.com.</p>
-      <p>Verifica tu conexión y vuelve a abrir el archivo. Si el problema persiste desde una red corporativa, prueba abrirlo desde otra red.</p>`;
+      <p>Verifica tu conexión y vuelve a abrir el archivo. Si el problema persiste desde una red corporativa, prueba abrirlo desde otra red.</p></div>`;
   }
   return;
 }
@@ -559,8 +795,17 @@ const COB_B_START = 414;  // Cobertura Real (Histórico)
 
 let DATA = { combos: [], dates: [], rowCounts: {}, loaded: false };
 let VIEW = { day: 1, cds: new Set(), formato: '', zones: new Set(), search: '',
-             sortKey: 'covReal', sortDir: 'asc', selectedIdx: null, activeTab: 'resumen' };
+             sortKey: 'covReal', sortDir: 'asc', selectedIdx: null, activeTab: 'cargar', matrixMode: 'cobertura' };
 let CHARTS = {};
+
+/* ---------------------------------------------------------- tema --- */
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function hexToRgba(hex, alpha){
+  const h = hex.replace('#','').trim();
+  if(h.length!==6) return hex; // ya es rgba() u otro formato, se usa tal cual
+  const r=parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
 /* ---------------------------------------------------------- utils --- */
 function numOrNull(v){ if(v===null||v===undefined||v==='') return null; const n=Number(v); return isNaN(n)?null:n; }
@@ -867,7 +1112,7 @@ const vLinePlugin = {
     ctx.save();
     ctx.beginPath();
     ctx.moveTo(x, top); ctx.lineTo(x, bottom);
-    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(15,29,48,0.35)'; ctx.setLineDash([4,3]);
+    ctx.lineWidth = 1; ctx.strokeStyle = hexToRgba(cssVar('--ink'), 0.35); ctx.setLineDash([4,3]);
     ctx.stroke(); ctx.restore();
   }
 };
@@ -884,18 +1129,20 @@ function renderCoverageChart(filtered){
   const ropSeries = new Array(N_DAYS).fill(avgRop);
   const togSeries = new Array(N_DAYS).fill(avgTog);
 
+  const gridColor = cssVar('--line');
+  const tickColor = cssVar('--ink-soft');
   const ctx = document.getElementById('coverageChart').getContext('2d');
   if(CHARTS.coverage) CHARTS.coverage.destroy();
   CHARTS.coverage = new Chart(ctx, {
     type:'line',
     data:{ labels, datasets:[
-      { label:'Cobertura Real (Histórico)', data:realSeries, borderColor:'#0F1D30',
-        backgroundColor:'rgba(15,29,48,0.06)', borderWidth:2, pointRadius:0, tension:.25, fill:false },
-      { label:'Cobertura Cuota (Cuota)', data:cuotaSeries, borderColor:'#0E8C82',
-        backgroundColor:'rgba(240,217,181,0.55)', borderWidth:2, pointRadius:0, tension:.25, fill:'-1' },
-      { label:'ROP (límite inferior política)', data:ropSeries, borderColor:'rgba(210,72,63,0.55)',
+      { label:'Cobertura Real (Histórico)', data:realSeries, borderColor:cssVar('--ink'),
+        backgroundColor:hexToRgba(cssVar('--ink'), 0.06), borderWidth:2, pointRadius:0, tension:.25, fill:false },
+      { label:'Cobertura Cuota (Cuota)', data:cuotaSeries, borderColor:cssVar('--teal'),
+        backgroundColor:hexToRgba(cssVar('--zone-yellow'), 0.20), borderWidth:2, pointRadius:0, tension:.25, fill:'-1' },
+      { label:'ROP (límite inferior política)', data:ropSeries, borderColor:hexToRgba(cssVar('--zone-red'), 0.55),
         borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false },
-      { label:'TOG (límite superior política)', data:togSeries, borderColor:'rgba(46,139,82,0.55)',
+      { label:'TOG (límite superior política)', data:togSeries, borderColor:hexToRgba(cssVar('--zone-green'), 0.55),
         borderWidth:1.5, borderDash:[5,4], pointRadius:0, fill:false }
     ]},
     options:{
@@ -904,9 +1151,8 @@ function renderCoverageChart(filtered){
       plugins:{ legend:{display:false},
         tooltip:{ callbacks:{ label:(c)=> `${c.dataset.label}: ${c.parsed.y===null?'—':c.parsed.y.toFixed(1)} d` } } },
       scales:{
-        x:{ grid:{display:false}, ticks:{maxTicksLimit:11, font:{family:"'IBM Plex Mono', monospace", size:10}} },
-        y:{ grid:{color:'#EAEFF4'}, title:{display:true, text:'días de cobertura'},
-            ticks:{font:{family:"'IBM Plex Mono', monospace", size:10}} }
+        x:{ grid:{display:false}, ticks:{maxTicksLimit:11, color:tickColor, font:{family:"'Courier New', monospace", size:10}} },
+        y:{ grid:{color:gridColor}, title:{display:true, text:'días de cobertura', color:tickColor}, ticks:{color:tickColor, font:{family:"'Courier New', monospace", size:10}} }
       }
     },
     plugins:[vLinePlugin]
@@ -918,7 +1164,8 @@ function renderZoneChart(filtered){
   const counts = {rojo:0, amarillo:0, verde:0, exceso:0, sindatos:0};
   filtered.forEach(c=> counts[classify(c.covReal[di], c)]++ );
   const order = ['rojo','amarillo','verde','exceso','sindatos'];
-  const colors = {rojo:'#D2483F', amarillo:'#D99A2B', verde:'#2E8B52', exceso:'#3A5FA8', sindatos:'#9AA6B4'};
+  const colors = {rojo:cssVar('--zone-red-solid'), amarillo:cssVar('--zone-yellow-solid'), verde:cssVar('--zone-green-solid'), exceso:cssVar('--zone-over-solid'), sindatos:cssVar('--zone-nodata')};
+  const tickColor = cssVar('--ink-soft');
   const ctx = document.getElementById('zoneChart').getContext('2d');
   if(CHARTS.zone) CHARTS.zone.destroy();
   CHARTS.zone = new Chart(ctx, {
@@ -928,7 +1175,7 @@ function renderZoneChart(filtered){
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{display:false}, tooltip:{callbacks:{label:(c)=>`${c.parsed.y} combinaciones`}} },
-      scales:{ x:{grid:{display:false}}, y:{grid:{color:'#EAEFF4'}, beginAtZero:true, ticks:{precision:0}} }
+      scales:{ x:{grid:{display:false}, ticks:{color:tickColor}}, y:{grid:{color:cssVar('--line')}, beginAtZero:true, ticks:{precision:0, color:tickColor}} }
     }
   });
 }
@@ -937,7 +1184,7 @@ function renderZoneChart(filtered){
 /* -------------------------------------------------------- tabla --- */
 function bufferGaugeHTML(c, di){
   if(c.zr===null || c.za===null || c.zv===null){
-    return `<div class="gauge" style="background:#F2F4F7;"></div>`;
+    return `<div class="gauge" style="background:var(--zone-nodata-bg);"></div>`;
   }
   const scale = c.zr + c.za + (2*c.zv) || 1;
   const pRojo = (c.zr/scale)*100;
@@ -1097,21 +1344,22 @@ function renderSkuEvolChart(c){
     salidaR.push(c.salidaReal[d]);
     cuotaD.push(c.demanda[d]);
   }
+  const accent = cssVar('--accent'), gridColor = cssVar('--line'), tickColor = cssVar('--ink-soft');
   const ctx = document.getElementById('skuEvolChart').getContext('2d');
   if(CHARTS.skuEvol) CHARTS.skuEvol.destroy();
   CHARTS.skuEvol = new Chart(ctx, {
     type:'line',
     data:{ labels, datasets:[
-      { label:'Política mínimo (ROP)', data:minPkg, borderColor:'rgba(31,78,120,0.0)',
-        backgroundColor:'rgba(31,78,120,0.10)', borderWidth:0, pointRadius:0, fill:false, order:5 },
-      { label:'Política máximo (TOG)', data:maxPkg, borderColor:'rgba(31,78,120,0.25)',
-        backgroundColor:'rgba(31,78,120,0.10)', borderWidth:1, pointRadius:0, fill:'-1', order:5 },
-      { label:'Política promedio', data:promPkg, borderColor:'#8A97A8', borderDash:[5,4],
+      { label:'Política mínimo (ROP)', data:minPkg, borderColor:hexToRgba(accent,0.0),
+        backgroundColor:hexToRgba(accent,0.10), borderWidth:0, pointRadius:0, fill:false, order:5 },
+      { label:'Política máximo (TOG)', data:maxPkg, borderColor:hexToRgba(accent,0.25),
+        backgroundColor:hexToRgba(accent,0.10), borderWidth:1, pointRadius:0, fill:'-1', order:5 },
+      { label:'Política promedio', data:promPkg, borderColor:cssVar('--ink-faint'), borderDash:[5,4],
         borderWidth:1.5, pointRadius:0, fill:false, order:4 },
-      { label:'Stock en piso', data:stockPiso, borderColor:'#1F4E78', borderWidth:2.2, pointRadius:0, tension:.2, fill:false, order:1 },
-      { label:'Stock piso + tránsito', data:stockTransito, borderColor:'#6E5AA8', borderWidth:1.6, borderDash:[2,2], pointRadius:0, tension:.2, fill:false, order:2 },
-      { label:'Salidas reales diarias', data:salidaR, borderColor:'#D2483F', borderWidth:1.8, pointRadius:2, tension:.15, fill:false, order:3 },
-      { label:'Cuota diaria', data:cuotaD, borderColor:'#0E8C82', borderWidth:1.8, pointRadius:0, borderDash:[3,3], tension:.15, fill:false, order:3 }
+      { label:'Stock en piso', data:stockPiso, borderColor:accent, borderWidth:2.2, pointRadius:0, tension:.2, fill:false, order:1 },
+      { label:'Stock piso + tránsito', data:stockTransito, borderColor:cssVar('--violet'), borderWidth:1.6, borderDash:[2,2], pointRadius:0, tension:.2, fill:false, order:2 },
+      { label:'Salidas reales diarias', data:salidaR, borderColor:cssVar('--zone-red'), borderWidth:1.8, pointRadius:2, tension:.15, fill:false, order:3 },
+      { label:'Cuota diaria', data:cuotaD, borderColor:cssVar('--teal'), borderWidth:1.8, pointRadius:0, borderDash:[3,3], tension:.15, fill:false, order:3 }
     ]},
     options:{
       responsive:true, maintainAspectRatio:false,
@@ -1119,9 +1367,8 @@ function renderSkuEvolChart(c){
       plugins:{ legend:{display:false},
         tooltip:{ callbacks:{ label:(cc)=> `${cc.dataset.label}: ${cc.parsed.y===null?'—':Math.round(cc.parsed.y).toLocaleString('es-GT')} paq.` } } },
       scales:{
-        x:{ grid:{display:false}, ticks:{maxTicksLimit:11, font:{family:"'IBM Plex Mono', monospace", size:10}} },
-        y:{ grid:{color:'#EAEFF4'}, title:{display:true, text:'paquetes'},
-            ticks:{font:{family:"'IBM Plex Mono', monospace", size:10}} }
+        x:{ grid:{display:false}, ticks:{maxTicksLimit:11, color:tickColor, font:{family:"'Courier New', monospace", size:10}} },
+        y:{ grid:{color:gridColor}, title:{display:true, text:'paquetes', color:tickColor}, ticks:{color:tickColor, font:{family:"'Courier New', monospace", size:10}} }
       }
     }
   });
@@ -1129,21 +1376,22 @@ function renderSkuEvolChart(c){
 
 function renderSkuRateChart(c){
   const labels = buildDateLabels();
+  const gridColor = cssVar('--line'), tickColor = cssVar('--ink-soft');
   const ctx = document.getElementById('skuRateChart').getContext('2d');
   if(CHARTS.skuRate) CHARTS.skuRate.destroy();
   CHARTS.skuRate = new Chart(ctx, {
     type:'line',
     data:{ labels, datasets:[
-      { label:'Tasa salida real (últ. 2 meses)', data:c.tasaSalida, borderColor:'#0F1D30', borderWidth:2, pointRadius:0, tension:.2 },
-      { label:'Tasa cuota futura', data:c.tasaCuota, borderColor:'#0E8C82', borderWidth:2, pointRadius:0, tension:.2 }
+      { label:'Tasa salida real (últ. 2 meses)', data:c.tasaSalida, borderColor:cssVar('--ink'), borderWidth:2, pointRadius:0, tension:.2 },
+      { label:'Tasa cuota futura', data:c.tasaCuota, borderColor:cssVar('--teal'), borderWidth:2, pointRadius:0, tension:.2 }
     ]},
     options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{position:'bottom', labels:{boxWidth:10, font:{size:11}}},
+      plugins:{ legend:{position:'bottom', labels:{boxWidth:10, color:tickColor, font:{size:11}}},
         tooltip:{callbacks:{label:(cc)=>`${cc.dataset.label}: ${cc.parsed.y===null?'—':cc.parsed.y.toFixed(1)} paq/día`}} },
       scales:{
-        x:{ grid:{display:false}, ticks:{maxTicksLimit:11, font:{family:"'IBM Plex Mono', monospace", size:10}} },
-        y:{ grid:{color:'#EAEFF4'}, ticks:{font:{family:"'IBM Plex Mono', monospace", size:10}} }
+        x:{ grid:{display:false}, ticks:{maxTicksLimit:11, color:tickColor, font:{family:"'Courier New', monospace", size:10}} },
+        y:{ grid:{color:gridColor}, ticks:{color:tickColor, font:{family:"'Courier New', monospace", size:10}} }
       }
     }
   });
@@ -1161,6 +1409,228 @@ function renderSkuTab(){
   renderSkuEvolChart(c);
   renderSkuRateChart(c);
 }
+
+/* =============================================== TAB MATRIZ SKU×DÍA === */
+function renderMatrizTab(){
+  const filtered = getFiltered();
+  const labels = buildDateLabels();
+  const MAX_ROWS = 120;
+  const rows = filtered.slice(0, MAX_ROWS);
+
+  const theadHtml = `<thead><tr><th>SKU · CD</th>${labels.map(l=>`<th>${l}</th>`).join('')}</tr></thead>`;
+
+  const bodyHtml = rows.map(c=>{
+    const cells = [];
+    for(let d=0; d<N_DAYS; d++){
+      const zone = classify(c.covReal[d], c);
+      const val = VIEW.matrixMode==='volumen' ? fmtPkg(c.invInicial[d]) : fmtDays(c.covReal[d]);
+      cells.push(`<td class="matrix-cell ${zone}">${val}</td>`);
+    }
+    return `<tr><td title="${c.desc||''}">${c.codigo||''} · ${c.cd||''}</td>${cells.join('')}</tr>`;
+  }).join('');
+
+  document.getElementById('matrixTable').innerHTML = theadHtml + `<tbody>${bodyHtml}</tbody>`;
+
+  const note = document.getElementById('matrixNote');
+  if(filtered.length > MAX_ROWS){
+    note.textContent = `Mostrando ${MAX_ROWS} de ${filtered.length} combinaciones filtradas — usa los filtros del toolbar (CD, formato, búsqueda) para acotar la selección.`;
+  } else {
+    note.textContent = `${filtered.length} combinación(es) mostradas.`;
+  }
+}
+document.querySelectorAll('#matrixModeChips .mode-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#matrixModeChips .mode-chip').forEach(c=> c.classList.remove('active'));
+    chip.classList.add('active');
+    VIEW.matrixMode = chip.dataset.mode;
+    if(VIEW.activeTab==='matriz') renderMatrizTab();
+  });
+});
+
+/* =================================================== TAB ANÁLISIS IA === */
+const AI_PROMPTS = [
+  '¿Qué SKU tiene menor cobertura hoy?',
+  '¿Cuántas combinaciones están en zona roja?',
+  '¿Cuál es la cobertura promedio filtrada?',
+  '¿Qué combinaciones están en exceso?',
+  'Resumen del día seleccionado'
+];
+let aiChatStarted = false;
+
+function aiAppendMessage(text, who){
+  const box = document.getElementById('aiMessages');
+  const div = document.createElement('div');
+  div.className = `ai-message ai-message--${who}`;
+  div.innerHTML = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function aiAnswer(question){
+  const q = question.toLowerCase();
+  const filtered = getFiltered();
+  const di = VIEW.day - 1;
+  if(!filtered.length){
+    return 'No hay combinaciones que coincidan con los filtros activos del toolbar. Ajusta el CD, formato o búsqueda e intenta de nuevo.';
+  }
+
+  // ¿Menor / mayor cobertura?
+  if(/menor cobertura|más crític|mas critic|peor cobertura/.test(q)){
+    const withCov = filtered.filter(c=> c.covReal[di]!==null);
+    if(!withCov.length) return 'Ninguna combinación filtrada tiene dato de cobertura real para el día seleccionado.';
+    withCov.sort((a,b)=> a.covReal[di]-b.covReal[di]);
+    const c = withCov[0];
+    return `La combinación con menor cobertura real hoy es <strong>${c.codigo} · ${c.cd}</strong> (${c.desc||''}) con <strong>${fmtDays(c.covReal[di])} días</strong>, en zona <strong>${ZONE_LABEL[classify(c.covReal[di],c)]}</strong>.`;
+  }
+  if(/mayor cobertura|más alta|mas alta/.test(q)){
+    const withCov = filtered.filter(c=> c.covReal[di]!==null);
+    if(!withCov.length) return 'Ninguna combinación filtrada tiene dato de cobertura real para el día seleccionado.';
+    withCov.sort((a,b)=> b.covReal[di]-a.covReal[di]);
+    const c = withCov[0];
+    return `La combinación con mayor cobertura real hoy es <strong>${c.codigo} · ${c.cd}</strong> (${c.desc||''}) con <strong>${fmtDays(c.covReal[di])} días</strong>.`;
+  }
+  // Exceso (listado específico) — se revisa antes del conteo genérico por zona
+  // porque frases como "¿qué combinaciones están en exceso?" también contienen
+  // "en exceso", que si no, dispararía el conteo genérico en vez del listado.
+  if(/qué combinaciones|que combinaciones|cuáles combinaciones|cuales combinaciones|lista/.test(q) && /exceso/.test(q)){
+    const list = filtered.filter(c=> classify(c.covReal[di],c)==='exceso');
+    if(!list.length) return 'Ninguna combinación filtrada está en zona de exceso para el día seleccionado.';
+    const top = list.slice(0,5).map(c=>`${c.codigo} · ${c.cd} (${fmtDays(c.covReal[di])} d)`).join('<br>');
+    return `${list.length} combinación(es) en exceso. Algunas:<br>${top}`;
+  }
+  // Conteo por zona
+  const zoneMatch = q.match(/zona (roja|amarilla|verde|exceso)|en (rojo|amarillo|verde|exceso)/);
+  if(zoneMatch || /cuántas combinaciones|cuantas combinaciones/.test(q)){
+    const zoneWord = (zoneMatch && (zoneMatch[1]||zoneMatch[2])) || null;
+    const map = {roja:'rojo', rojo:'rojo', amarilla:'amarillo', amarillo:'amarillo', verde:'verde', exceso:'exceso'};
+    if(zoneWord && map[zoneWord]){
+      const z = map[zoneWord];
+      const n = filtered.filter(c=> classify(c.covReal[di],c)===z).length;
+      return `Hay <strong>${n}</strong> combinación(es) en zona <strong>${ZONE_LABEL[z]}</strong> para el día seleccionado, sobre ${filtered.length} filtradas.`;
+    }
+    const counts = {rojo:0,amarillo:0,verde:0,exceso:0,sindatos:0};
+    filtered.forEach(c=> counts[classify(c.covReal[di],c)]++);
+    return `Para el día seleccionado (sobre ${filtered.length} combinaciones filtradas): 🔴 ${counts.rojo} rojo · 🟡 ${counts.amarillo} amarillo · 🟢 ${counts.verde} verde · 🔵 ${counts.exceso} exceso · ⚪ ${counts.sindatos} sin datos.`;
+  }
+  // Cobertura promedio
+  if(/cobertura promedio|promedio de cobertura/.test(q)){
+    const m = avg(filtered.map(c=>c.covReal[di]));
+    return m===null ? 'No hay suficientes datos de cobertura real para calcular un promedio en el día seleccionado.' : `La cobertura real promedio de las ${filtered.length} combinaciones filtradas es de <strong>${fmtDays(m)} días</strong> para el día seleccionado.`;
+  }
+  // Exceso (fallback genérico si la pregunta solo menciona "exceso" sin calzar arriba)
+  if(/exceso/.test(q)){
+    const list = filtered.filter(c=> classify(c.covReal[di],c)==='exceso');
+    if(!list.length) return 'Ninguna combinación filtrada está en zona de exceso para el día seleccionado.';
+    const top = list.slice(0,5).map(c=>`${c.codigo} · ${c.cd} (${fmtDays(c.covReal[di])} d)`).join('<br>');
+    return `${list.length} combinación(es) en exceso. Algunas:<br>${top}`;
+  }
+  // Resumen del día
+  if(/resumen|resumen del día|resumen general/.test(q)){
+    const counts = {rojo:0,amarillo:0,verde:0,exceso:0,sindatos:0};
+    filtered.forEach(c=> counts[classify(c.covReal[di],c)]++);
+    const m = avg(filtered.map(c=>c.covReal[di]));
+    return `Resumen para el día ${VIEW.day} (${filtered.length} combinaciones filtradas): cobertura real promedio <strong>${m===null?'—':fmtDays(m)+' días'}</strong>. Zonas: 🔴 ${counts.rojo} · 🟡 ${counts.amarillo} · 🟢 ${counts.verde} · 🔵 ${counts.exceso} · ⚪ ${counts.sindatos}.`;
+  }
+
+  return 'No reconocí esa pregunta todavía. Puedes preguntar por la combinación con menor/mayor cobertura, cuántas están en una zona específica, la cobertura promedio, las que están en exceso, o pedir un resumen del día — siempre sobre los filtros activos del toolbar.';
+}
+
+function renderIaTab(){
+  if(aiChatStarted) return; // no reiniciar la conversación al volver a la pestaña
+  aiChatStarted = true;
+  aiAppendMessage('Hola 👋 Puedo responder preguntas sobre los datos ya cargados (respetando los filtros activos del toolbar). Prueba con una de las sugerencias o escribe tu propia pregunta.', 'assistant');
+  const promptsBox = document.getElementById('aiPrompts');
+  promptsBox.innerHTML = AI_PROMPTS.map(p=>`<button type="button">${p}</button>`).join('');
+  promptsBox.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=> aiAsk(btn.textContent));
+  });
+}
+function aiAsk(question){
+  if(!question || !question.trim()) return;
+  aiAppendMessage(question, 'user');
+  const answer = DATA.loaded ? aiAnswer(question) : 'Primero carga el archivo de Cobertura en "Cargar Archivos".';
+  setTimeout(()=> aiAppendMessage(answer, 'assistant'), 150);
+}
+document.getElementById('aiSendBtn').addEventListener('click', ()=>{
+  const input = document.getElementById('aiInput');
+  aiAsk(input.value);
+  input.value = '';
+});
+document.getElementById('aiInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter'){ document.getElementById('aiSendBtn').click(); }
+});
+
+/* =============================================== TAB EXPORTAR RESULTADOS === */
+let EXPORT_HISTORY = [];
+function logExport(label){
+  EXPORT_HISTORY.unshift({label, time: new Date()});
+  EXPORT_HISTORY = EXPORT_HISTORY.slice(0,8);
+  renderExportHistory();
+}
+function renderExportHistory(){
+  const box = document.getElementById('exportHistory');
+  if(!box) return;
+  box.innerHTML = EXPORT_HISTORY.length
+    ? EXPORT_HISTORY.map(h=>`<div class="export-history-item"><span><strong>${h.label}</strong></span><span>${h.time.toLocaleTimeString('es-GT',{hour:'2-digit',minute:'2-digit'})}</span></div>`).join('')
+    : `<div class="count-pill">Aún no has exportado nada en esta sesión.</div>`;
+}
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function exportDetalleRows(){
+  const di = VIEW.day - 1;
+  const filtered = getFiltered();
+  return filtered.map(c=>({
+    CD: c.cd, Codigo: c.codigo, Descripcion: c.desc, Formato: c.formato,
+    Cobertura_Real_d: c.covReal[di], Cobertura_Cuota_d: c.covCuota[di],
+    Zona: ZONE_LABEL[classify(c.covReal[di], c)],
+    Cuota_dia: c.demanda[di], Salida_real_dia: c.salidaReal[di], Sugerido_abast: c.abastSugerido[di]
+  }));
+}
+function doExport(type){
+  if(!DATA.loaded){ alert('Primero carga el archivo de Cobertura en "Cargar Archivos".'); return; }
+  if(type==='xlsx-detalle'){
+    const rows = exportDetalleRows();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Detalle');
+    XLSX.writeFile(wb, `Detalle_Cobertura_dia${String(VIEW.day).padStart(2,'0')}.xlsx`);
+    logExport('Detalle (Excel)');
+  } else if(type==='csv-detalle'){
+    const rows = exportDetalleRows();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const csv = XLSX.utils.sheet_to_csv(ws);
+    downloadBlob(new Blob([csv], {type:'text/csv;charset=utf-8;'}), `Detalle_Cobertura_dia${String(VIEW.day).padStart(2,'0')}.csv`);
+    logExport('Detalle (CSV)');
+  } else if(type==='xlsx-matriz'){
+    const filtered = getFiltered();
+    const labels = buildDateLabels();
+    const rows = filtered.map(c=>{
+      const row = {'SKU': c.codigo, 'CD': c.cd, 'Descripcion': c.desc};
+      for(let d=0; d<N_DAYS; d++){
+        row[labels[d]] = VIEW.matrixMode==='volumen' ? c.invInicial[d] : c.covReal[d];
+      }
+      return row;
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, VIEW.matrixMode==='volumen' ? 'Volumen' : 'Cobertura');
+    XLSX.writeFile(wb, `Matriz_SKUxDia_${VIEW.matrixMode}.xlsx`);
+    logExport(`Matriz SKU × Día (${VIEW.matrixMode})`);
+  } else if(type==='json-insights'){
+    const list = Array.from(document.querySelectorAll('#insightsGlobal .insight-item')).map(li=> li.textContent.trim());
+    const payload = { generado: new Date().toISOString(), dia: VIEW.day, insights: list.length ? list : ['Visita la pestaña "Insights Automáticos" primero para generarlos.'] };
+    downloadBlob(new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'}), 'Insights_Cobertura.json');
+    logExport('Insights (JSON)');
+  }
+}
+document.querySelectorAll('.export-card').forEach(card=>{
+  card.addEventListener('click', ()=> doExport(card.dataset.export));
+});
 
 /* =============================================== TAB METODOLOGÍA ==== */
 function checkRow(status, text){
@@ -1306,30 +1776,50 @@ function renderMethodology(){
 }
 
 /* ---------------------------------------------------------- tabs --- */
+const TABS_REQUIRE_DATA = ['resumen','sku','matriz','insights','ia','metodologia','exportar'];
+function updateNavLocks(){
+  document.querySelectorAll('.tabnav button').forEach(b=>{
+    const needsData = TABS_REQUIRE_DATA.includes(b.dataset.tab);
+    b.classList.toggle('locked', needsData && !DATA.loaded);
+  });
+}
 function switchTab(tab){
+  if(TABS_REQUIRE_DATA.includes(tab) && !DATA.loaded){
+    alert('Primero carga el archivo de Cobertura en "Cargar Archivos" para habilitar esta vista.');
+    return;
+  }
   VIEW.activeTab = tab;
   document.querySelectorAll('.tabnav button').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('.tab-panel').forEach(p=> p.classList.toggle('active', p.id===`tab-${tab}`));
   renderActiveTab();
 }
 function renderActiveTab(){
+  if(VIEW.activeTab==='cargar') return;
   if(!DATA.loaded) return;
   if(VIEW.activeTab==='resumen') renderResumenTab();
   else if(VIEW.activeTab==='sku') renderSkuTab();
+  else if(VIEW.activeTab==='matriz') renderMatrizTab();
+  else if(VIEW.activeTab==='insights') renderInsightsTab();
+  else if(VIEW.activeTab==='ia') renderIaTab();
   else if(VIEW.activeTab==='metodologia'){ renderValidation(); renderMethodology(); }
+  else if(VIEW.activeTab==='exportar') renderExportHistory();
 }
 document.querySelectorAll('.tabnav button').forEach(b=>{
   b.addEventListener('click', ()=> switchTab(b.dataset.tab));
 });
+updateNavLocks();
 
 /* --------------------------------------------------------- render --- */
 function renderResumenTab(){
   const filtered = getFiltered();
-  renderGlobalInsights(filtered);
   renderKPIs(filtered);
   renderCoverageChart(filtered);
   renderZoneChart(filtered);
   renderTable(filtered);
+}
+
+function renderInsightsTab(){
+  renderGlobalInsights(getFiltered());
 }
 
 function populateFilters(){
@@ -1401,9 +1891,8 @@ function handleFile(file){
       DATA = { combos: parsed.combos, dates: parsed.dates, rowCounts: parsed.rowCounts, loaded: true };
       VIEW.selectedIdx = null;
       populateFilters();
-      document.getElementById('emptyState').style.display = 'none';
+      updateNavLocks();
       document.getElementById('appShell').classList.add('show');
-      document.getElementById('tabNav').style.display = 'flex';
       statusEls.forEach(el=>{ el.textContent = `Cargado: ${file.name} (${DATA.combos.length} combinaciones)`; el.classList.add('ok'); });
 
       const validDates = DATA.dates.filter(d=> d instanceof Date && !isNaN(d));
@@ -1413,6 +1902,9 @@ function handleFile(file){
         document.getElementById('horizonLabel').textContent = `${dateLabel(first)} – ${dateLabel(last)}`;
         document.getElementById('brandTitle').textContent = `Cobertura Guatemala — ${monthYear}`;
         document.title = `Cobertura Guatemala — ${monthYear}`;
+        document.getElementById('cargarSummary').innerHTML = `<div class="load-summary">✓ <span><strong>${file.name}</strong> cargado correctamente — ${DATA.combos.length} combinaciones SKU × CD · Horizonte ${dateLabel(first)} – ${dateLabel(last)}.</span></div>`;
+      } else {
+        document.getElementById('cargarSummary').innerHTML = `<div class="load-summary">✓ <span><strong>${file.name}</strong> cargado correctamente — ${DATA.combos.length} combinaciones SKU × CD.</span></div>`;
       }
 
       const slider = document.getElementById('daySlider');
@@ -1440,6 +1932,33 @@ dropTarget.addEventListener('drop', (e)=>{
   const file = e.dataTransfer.files && e.dataTransfer.files[0];
   if(file) handleFile(file);
 });
+
+/* ------------------------------------------------- tema claro/oscuro --- */
+const themeToggleBtn = document.getElementById('themeToggle');
+function setTheme(theme){
+  if(theme === 'dark'){
+    document.documentElement.setAttribute('data-theme', 'dark');
+    themeToggleBtn.textContent = '☀';
+    themeToggleBtn.setAttribute('aria-label', 'Cambiar a tema claro');
+    themeToggleBtn.setAttribute('title', 'Cambiar a tema claro');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    themeToggleBtn.textContent = '🌙';
+    themeToggleBtn.setAttribute('aria-label', 'Cambiar a tema oscuro');
+    themeToggleBtn.setAttribute('title', 'Cambiar a tema oscuro');
+  }
+  // Los gráficos se pintan en <canvas> y no heredan variables CSS solas:
+  // hay que re-renderizar la pestaña activa para que tomen la nueva paleta.
+  if(DATA.loaded) renderActiveTab();
+}
+themeToggleBtn.addEventListener('click', ()=>{
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  setTheme(isDark ? 'light' : 'dark');
+});
+// Respeta la preferencia del sistema al cargar, sin persistir entre sesiones.
+if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches){
+  setTheme('dark');
+}
 
 })();
 </script>
