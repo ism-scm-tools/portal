@@ -79,7 +79,6 @@ const ISM_USERS = [
   { user: "aalvarado",   nombre: "Aarón Alvarado",                 hash: "eac50db3e6bbd428c5ca297e0e69db9573553aebac6fdfc4d48463cea87f66bb", role: "lead",    categoria: "Planeamiento de Supply Chain" },
   { user: "jatoche",     nombre: "Jeferson Atoche",                hash: "eac50db3e6bbd428c5ca297e0e69db9573553aebac6fdfc4d48463cea87f66bb", role: "lead",    categoria: "Desarrollo Logístico" },
   { user: "jojeda",     nombre: "Jorge Ojeda",                     hash: "eac50db3e6bbd428c5ca297e0e69db9573553aebac6fdfc4d48463cea87f66bb", role: "lead",    categoria: "Planeamiento de Supply Chain" },
-  { user: "mesquen",      nombre: "Martín Esquen",                 hash: "eac50db3e6bbd428c5ca297e0e69db9573553aebac6fdfc4d48463cea87f66bb", role: "lead", categoria: "Proyectos de Supply Chain" },
 
   /* Demo/placeholder — aún sin persona nombrada asignada a estos 4 roles.
      Renómbralos cuando asignes a la persona real de cada sub-equipo. */
