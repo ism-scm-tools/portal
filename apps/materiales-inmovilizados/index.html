@@ -171,20 +171,22 @@ header.top{
    usa el mismo patrón; el padding-top compensatorio se aplica por JS. */
 .ism-header-band{
   background:var(--ism-green);
-  padding:16px 0;
+  padding:12px 0;
   position:fixed;
-  top:0; left:0; right:0;
-  z-index:1000;
+  top:0; left:240px; right:0;
+  z-index:800;
+  transition:left var(--duration-moderate) var(--ease-in-out);
 }
+body.ism-sidebar-collapsed .ism-header-band{ left:64px; }
 .ism-header-band .top-row{
-  display:flex; align-items:center; justify-content:space-between; gap:24px;
+  display:flex; align-items:flex-start; justify-content:space-between; gap:24px;
   flex-wrap:wrap;
   padding-bottom:0;
 }
 /* Texto secundario del header SIEMPRE en chip — nunca opacidad (v1.2) */
 .brand-eyebrow{
   font-family:var(--font-body);
-  font-size:11px;
+  font-size:10px;
   font-weight:600;
   letter-spacing:.08em;
   text-transform:uppercase;
@@ -192,23 +194,23 @@ header.top{
   background:rgba(255,255,255,0.16);
   color:#FFFFFF;
   opacity:1;
-  padding:4px 10px;
+  padding:3px 9px;
   border-radius:999px;
-  margin-bottom:10px;
+  margin-bottom:6px;
 }
 .brand-eyebrow .dot{width:6px;height:6px;border-radius:50%;background:#FFFFFF;}
 /* Nombre de la app — único texto que puede ir directo sobre el verde (≥14px bold) */
 h1.title{
   font-family:var(--font-display);
   font-weight:700;
-  font-size:26px;
+  font-size:19px;
   letter-spacing:-.01em;
-  line-height:1.2;
+  line-height:1.25;
   color:#FFFFFF;
 }
-.ism-header-actions{ display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.ism-header-actions{ display:flex; align-items:center; gap:10px; flex-shrink:0; margin-top:1px; }
 .ism-theme-toggle{
-  width:34px; height:34px; border-radius:999px;
+  width:30px; height:30px; border-radius:999px;
   background:rgba(255,255,255,0.16);
   border:none; cursor:pointer;
   display:flex; align-items:center; justify-content:center;
@@ -308,13 +310,13 @@ body.ism-sidebar-collapsed .ism-header-sub-wrap{ padding-left:92px; }
 .ism-sidebar{
   position:fixed;
   left:0;
-  top:0; /* se ajusta por JS a la altura real de la banda de header */
+  top:0; /* siempre a toda altura, independiente del header (Manual: replica app-shell clásico) */
   bottom:0;
   width:240px;
   overflow:hidden;
   background:var(--panel);
   border-right:1px solid var(--border);
-  z-index:900;
+  z-index:1000;
   display:flex; flex-direction:column;
   transition:width var(--duration-moderate) var(--ease-in-out);
 }
@@ -466,7 +468,8 @@ body.ism-sidebar-collapsed .ism-header-sub-wrap{ padding-left:92px; }
 @media (max-width: 900px) and (min-width: 641px){
   .ism-main{ margin-left:92px; }
   .ism-header-sub-wrap{ padding-left:92px; }
-  .ism-sidebar{ width:64px; }
+  .ism-sidebar, .ism-sidebar--collapsed{ width:64px; }
+  .ism-header-band{ left:64px; }
   .ism-sidebar__brand{ display:none; }
   .ism-sidebar__label{ display:none; }
   .ism-nav-item{ justify-content:center; padding:9px; }
@@ -1418,12 +1421,9 @@ const HISTORY = [
   // (no los 56px fijos del manual), así que la medimos en vivo.
   function updateSidebarOffset(){
     const band = document.querySelector('.ism-header-band');
-    const sidebar = document.getElementById('ismSidebar');
     if (!band) return;
     const isDesktop = window.innerWidth > 640; /* el sidebar sigue fijo hasta 641px, ver CSS */
     document.body.style.paddingTop = isDesktop ? band.offsetHeight + 'px' : '0';
-    if (!sidebar) return;
-    sidebar.style.top = isDesktop ? band.offsetHeight + 'px' : '';
   }
   updateSidebarOffset();
   window.addEventListener('resize', updateSidebarOffset);
