@@ -50,13 +50,13 @@
 
 const ISM_APPS = [
   {
-    nombre: "Inventario de Materiales Inmovilizados",
+    nombre: "Inventario de Materiales Directos Inmovilizados",
     categoria: "Planeamiento / Almacenes / Compras",
     proceso: "Planeamiento de Materiales",
     sensibilidad: "alta",
     paises: ["PE", "RD", "HT", "GT"],
     estado: "nuevo",
-    url: "apps/materiales-inmovilizados/index.html",
+    url: "apps/md-inmovilizados/index.html",
   },
   {
     nombre: "Análisis de Estados Financieros",
@@ -120,5 +120,14 @@ const ISM_APPS = [
     paises: ["Todos"],
     estado: "nuevo",
     url: "apps/portafolio-proyectos/index.html",
+  },
+  {
+    nombre: "Inventario de Materiales Indirectos Inmovilizados",
+    categoria: "Planeamiento / Almacenes / Compras",
+    proceso: "Planeamiento de Materiales",
+    sensibilidad: "alta",
+    paises: ["PE", "RD", "HT", "GT"],
+    estado: "nuevo",
+    url: "apps/mi-inmovilizados/index.html",
   },
 ];
