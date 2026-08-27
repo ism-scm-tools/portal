@@ -379,11 +379,12 @@
   .matrix-table{border-collapse:separate; border-spacing:0; font-size:11.5px;}
   .matrix-table th, .matrix-table td{padding:6px 8px; text-align:center; white-space:nowrap; border-bottom:1px solid var(--line); border-right:1px solid var(--line);}
   .matrix-table thead th{position:sticky; top:0; background:var(--accent); color:#fff; font-weight:600; font-size:10px; text-transform:uppercase; z-index:2;}
-  .matrix-table thead th:first-child{left:0; z-index:4; text-align:left;}
+  .matrix-table thead th:first-child{left:0; z-index:4; text-align:left; max-width:280px;}
   .matrix-table tbody td:first-child, .matrix-table tbody th:first-child{
     position:sticky; left:0; z-index:1; background:var(--panel);
     text-align:left; font-family:'Courier New',monospace; font-size:11px; color:var(--ink);
     box-shadow:2px 0 3px -2px rgba(0,0,0,.18);
+    max-width:280px; overflow:hidden; text-overflow:ellipsis;
   }
   .matrix-table tbody tr:hover td:first-child{background:var(--panel-2);}
   .matrix-cell{font-family:'Courier New',monospace; font-weight:600;}
@@ -553,6 +554,18 @@
 
       <div class="panel">
         <div class="panel-head">
+          <h3>Evolución InStock3% — Simple vs. Ponderado</h3>
+          <span class="panel-note">% de combinaciones con Stock en piso &gt; Plan comercial mensual / 10 (≈ 3 días de venta), por día</span>
+        </div>
+        <div class="chart-box short"><canvas id="instock3Chart"></canvas></div>
+        <div class="legend-row">
+          <span><span class="legend-line" style="background:var(--ink)"></span>InStock3% Simple (portafolio completo)</span>
+          <span><span class="legend-line" style="background:var(--teal)"></span>InStock3% Ponderado (por Plan comercial, foco Pareto)</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
           <h3>Detalle por combinación SKU × CD</h3>
           <span class="panel-note">Barra = perfil de buffer (rojo / amarillo / verde / exceso) · ▲ real · ▼ cuota · clic en fila para ver el detalle del SKU</span>
         </div>
@@ -584,6 +597,7 @@
                 <th data-key="demanda" class="num">Cuota día</th>
                 <th data-key="salida" class="num">Salida real día</th>
                 <th data-key="sugerido" class="num">Sugerido abast.</th>
+                <th data-key="instock3">InStock3</th>
               </tr>
             </thead>
             <tbody id="detailBody"></tbody>
@@ -643,11 +657,14 @@
       <div class="panel">
         <div class="panel-head">
           <h3>Matriz SKU × CD — vista por día</h3>
-          <span class="panel-note">Filas = combinaciones filtradas (mismos filtros del toolbar) · Columnas = días del mes · Color = zona de cobertura real de ese día</span>
+          <span class="panel-note">Filas = combinaciones filtradas (mismos filtros del toolbar) · Columnas = días del mes · Color = zona de la métrica mostrada en cada modo</span>
         </div>
         <div class="chip-group" id="matrixModeChips" style="margin-top:10px;">
-          <span class="chip mode-chip active" data-mode="cobertura">Cobertura (días)</span>
+          <span class="chip mode-chip active" data-mode="covReal">Cobertura Real (días)</span>
+          <span class="chip mode-chip" data-mode="covCuota">Cobertura Cuota (días)</span>
           <span class="chip mode-chip" data-mode="volumen">Volumen (paquetes)</span>
+          <span class="chip mode-chip" data-mode="instock3">InStock3 (1/0)</span>
+          <span class="chip mode-chip" data-mode="volPerdido">Volumen perdido (paq.)</span>
         </div>
         <div class="gauge-legend" style="margin-top:12px;">
           <span><span class="legend-dot" style="background:var(--zone-red-bg); box-shadow:inset 0 0 0 1px var(--zone-red);"></span>Rojo</span>
@@ -795,7 +812,7 @@ const COB_B_START = 414;  // Cobertura Real (Histórico)
 
 let DATA = { combos: [], dates: [], rowCounts: {}, loaded: false };
 let VIEW = { day: 1, cds: new Set(), formato: '', zones: new Set(), search: '',
-             sortKey: 'covReal', sortDir: 'asc', selectedIdx: null, activeTab: 'cargar', matrixMode: 'cobertura' };
+             sortKey: 'covReal', sortDir: 'asc', selectedIdx: null, activeTab: 'cargar', matrixMode: 'covReal' };
 let CHARTS = {};
 
 /* ---------------------------------------------------------- tema --- */
@@ -939,8 +956,15 @@ function parseWorkbook(wb){
     });
   }
 
+  // Plan comercial mensual (UCOs = paquetes) — usado como peso en InStock3% Ponderado.
+  // InStock3(d) = 1 si Cobertura Cuota(d) > 3 días de venta, si no 0.
+  combos.forEach(c=>{
+    c.planComercial = sum(c.demanda);
+    c.instock3 = c.covCuota.map(v => v===null ? null : (v > 3 ? 1 : 0));
+  });
+
   // Clasificación ABC por volumen mensual de cuota (Pareto 80/95)
-  const withVolume = combos.map(c=> ({idx:c.idx, vol: sum(c.demanda)}));
+  const withVolume = combos.map(c=> ({idx:c.idx, vol: c.planComercial}));
   withVolume.sort((a,b)=> b.vol - a.vol);
   const totalVol = withVolume.reduce((s,x)=> s+x.vol, 0) || 1;
   let cum = 0;
@@ -953,6 +977,43 @@ function parseWorkbook(wb){
   combos.forEach(c=>{ c.abc = abcByIdx[c.idx] || 'C'; });
 
   return { combos, dates, rowCounts };
+}
+
+/* ------------------------------------------------------- InStock3 --- */
+// InStock3(d) = 1 si Cobertura Cuota(d) > 3 días, 0 en caso contrario (null si no hay dato).
+// Simple: promedio de InStock3 sobre el total de combinaciones (portafolio completo).
+// Ponderado: promedio de InStock3 ponderado por Plan comercial (UCO) — símil a Fill Rate,
+// enfocado en las combinaciones Pareto (mayor peso comercial).
+function instock3Simple(combos, di){
+  const vals = combos.map(c=> c.instock3[di]).filter(v=> v!==null);
+  if(!vals.length) return null;
+  return (vals.reduce((a,b)=>a+b,0) / vals.length) * 100;
+}
+function instock3Ponderado(combos, di){
+  let num=0, den=0;
+  combos.forEach(c=>{
+    if(c.instock3[di]===null) return;
+    num += c.instock3[di] * c.planComercial;
+    den += c.planComercial;
+  });
+  if(den<=0) return null;
+  return (num/den) * 100;
+}
+// Volumen "perdido": faltante para alcanzar los 3 días de Cobertura Cuota, valorizado en
+// paquetes de cuota diaria — proporcional a qué tan lejos está cada combinación del umbral,
+// no un "todo o nada". Null si falta Cobertura Cuota o Cuota ese día.
+function volumenPerdidoCombo(c, di){
+  const cov = c.covCuota[di], cuota = c.demanda[di];
+  if(cov===null || cuota===null) return null;
+  return Math.max(0, 3 - cov) * cuota;
+}
+function volumenPerdido(combos, di){
+  let total = 0;
+  combos.forEach(c=>{
+    const v = volumenPerdidoCombo(c, di);
+    if(v!==null) total += v;
+  });
+  return total;
 }
 
 function classify(cov, c){
@@ -1055,6 +1116,30 @@ function renderGlobalInsights(filtered){
     list.push(insightItem(`${nExceso} combinaciones están en zona de exceso — vale revisar si la cuota comercial se está quedando corta frente al abastecimiento real, generando sobre-stock.`, 'info', 'ℹ'));
   }
 
+  // InStock3: comparar Simple (portafolio completo) vs. Ponderado (foco Pareto)
+  const i3Simple = instock3Simple(filtered, di);
+  const i3Pond = instock3Ponderado(filtered, di);
+  if(i3Simple!==null && i3Pond!==null){
+    const gapI3 = i3Pond - i3Simple;
+    if(Math.abs(gapI3) > 5){
+      if(gapI3 < 0){
+        list.push(insightItem(`El <strong>InStock3% Ponderado (${i3Pond.toFixed(1)}%) es menor que el Simple (${i3Simple.toFixed(1)}%)</strong> — las combinaciones de mayor peso comercial (Pareto) tienen peor disponibilidad que el portafolio en general.`, Math.abs(gapI3)>15?'alta':'media', '⚠'));
+      } else {
+        list.push(insightItem(`El <strong>InStock3% Ponderado (${i3Pond.toFixed(1)}%) supera al Simple (${i3Simple.toFixed(1)}%)</strong> — las combinaciones de mayor peso comercial (Pareto) están mejor abastecidas que la cola del portafolio.`, 'info', 'ℹ'));
+      }
+    } else {
+      list.push(insightItem(`InStock3% Simple y Ponderado están alineados (${i3Simple.toFixed(1)}% vs. ${i3Pond.toFixed(1)}%) — la disponibilidad no varía significativamente entre el portafolio completo y las combinaciones Pareto.`, 'baja', '✓'));
+    }
+  }
+
+  // Volumen perdido: faltante ponderado por severidad para llegar a 3 días de Cobertura Cuota
+  const volPerdidoIns = volumenPerdido(filtered, di);
+  if(volPerdidoIns > 0){
+    const totalCuotaDia = filtered.reduce((s,c)=> s + (c.demanda[di]||0), 0);
+    const pctPerdido = totalCuotaDia>0 ? (volPerdidoIns/totalCuotaDia*100) : null;
+    list.push(insightItem(`<strong>${fmtPkg(volPerdidoIns)} paquetes</strong> es el faltante para que las combinaciones filtradas alcancen 3 días de Cobertura Cuota — mientras más lejos esté una combinación del umbral, más pesa${pctPerdido!==null ? ` (equivale a ${pctPerdido.toFixed(1)}% de la cuota diaria filtrada)` : ''}. Es el volumen concreto expuesto a quiebre de stock hoy.`, pctPerdido!==null && pctPerdido>10 ? 'alta' : 'media', '⚠'));
+  }
+
   const box = document.getElementById('insightsGlobal');
   box.innerHTML = list.length ? list.join('') : `<div class="insight-empty">No hay suficiente información cargada todavía para generar insights (carga Demanda_Cuota y Salidas_Reales).</div>`;
 }
@@ -1073,6 +1158,10 @@ function renderKPIs(filtered){
     else if(z==='verde') nVerde++; else if(z==='exceso') nExceso++; else nSinDatos++;
   });
   const sugerido = filtered.reduce((s,c)=> s + (c.abastSugerido[di]||0), 0);
+  const inst3Simple = instock3Simple(filtered, di);
+  const inst3Pond = instock3Ponderado(filtered, di);
+  const inst3Cls = (pct)=> pct===null ? 'accent' : (pct>=95 ? 'green' : (pct>=80 ? 'yellow' : 'red'));
+  const volPerdido = volumenPerdido(filtered, di);
 
   const cards = [
     {cls:'teal', label:'Cobertura real (histórico) — promedio', value: fmtDays(avgReal), unit:'días',
@@ -1086,7 +1175,13 @@ function renderKPIs(filtered){
      value:`${nRojo} <small>/ ${nAmarillo}</small>`, unit:'',
      sub:`${nVerde} en verde · ${nExceso} en exceso · ${nSinDatos} sin datos`},
     {cls:'accent', label:'Abastecimiento sugerido del día', value: fmtPkg(sugerido), unit:'paq.',
-     sub:'Suma sobre la selección actual, hoja Abastecimiento_Sugerido'}
+     sub:'Suma sobre la selección actual, hoja Abastecimiento_Sugerido'},
+    {cls: inst3Cls(inst3Simple), label:'InStock3% — Simple', value: (inst3Simple===null?'—':inst3Simple.toFixed(1)), unit:'%',
+     sub:'Portafolio completo · % de combinaciones con Cobertura Cuota > 3 días'},
+    {cls: inst3Cls(inst3Pond), label:'InStock3% — Ponderado', value: (inst3Pond===null?'—':inst3Pond.toFixed(1)), unit:'%',
+     sub:'Ponderado por Plan comercial (UCO) · símil a Fill Rate, foco Pareto'},
+    {cls: (volPerdido>0?'red':'green'), label:'Volumen perdido (faltante a 3 días)', value: fmtPkg(volPerdido), unit:'paq./día',
+     sub:'Σ máx(0, 3 − Cobertura Cuota) × Cuota diaria — pondera por qué tan lejos del umbral'}
   ];
   const row = document.getElementById('kpiRow');
   row.innerHTML = cards.map(k=>`
@@ -1180,6 +1275,35 @@ function renderZoneChart(filtered){
   });
 }
 
+function renderInstock3Chart(filtered){
+  const labels = buildDateLabels();
+  const simpleSeries = [], pondSeries = [];
+  for(let d=0; d<N_DAYS; d++){
+    simpleSeries.push(instock3Simple(filtered, d));
+    pondSeries.push(instock3Ponderado(filtered, d));
+  }
+  const gridColor = cssVar('--line'), tickColor = cssVar('--ink-soft');
+  const ctx = document.getElementById('instock3Chart').getContext('2d');
+  if(CHARTS.instock3) CHARTS.instock3.destroy();
+  CHARTS.instock3 = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[
+      { label:'InStock3% Simple', data:simpleSeries, borderColor:cssVar('--ink'), borderWidth:2, pointRadius:0, tension:.25, fill:false },
+      { label:'InStock3% Ponderado', data:pondSeries, borderColor:cssVar('--teal'), borderWidth:2, pointRadius:0, tension:.25, fill:false }
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{ legend:{display:false},
+        tooltip:{ callbacks:{ label:(c)=> `${c.dataset.label}: ${c.parsed.y===null?'—':c.parsed.y.toFixed(1)}%` } } },
+      scales:{
+        x:{ grid:{display:false}, ticks:{maxTicksLimit:11, color:tickColor, font:{family:"'Courier New', monospace", size:10}} },
+        y:{ grid:{color:gridColor}, min:0, max:100, title:{display:true, text:'% combinaciones', color:tickColor}, ticks:{color:tickColor, font:{family:"'Courier New', monospace", size:10}} }
+      }
+    }
+  });
+}
+
 
 /* -------------------------------------------------------- tabla --- */
 function bufferGaugeHTML(c, di){
@@ -1212,7 +1336,8 @@ function renderTable(filtered){
       c, zone: z,
       covReal: c.covReal[di], covCuota: c.covCuota[di],
       brecha: (c.covCuota[di]!==null && c.covReal[di]!==null) ? (c.covCuota[di]-c.covReal[di]) : null,
-      demanda: c.demanda[di], salida: c.salidaReal[di], sugerido: c.abastSugerido[di]
+      demanda: c.demanda[di], salida: c.salidaReal[di], sugerido: c.abastSugerido[di],
+      instock3: c.instock3[di]
     };
   });
 
@@ -1245,6 +1370,7 @@ function renderTable(filtered){
       <td class="num">${fmtPkg(r.demanda)}</td>
       <td class="num">${fmtPkg(r.salida)}</td>
       <td class="num">${fmtPkg(r.sugerido)}</td>
+      <td>${r.instock3===null ? `<span class="zone-chip sindatos">—</span>` : (r.instock3===1 ? `<span class="zone-chip verde">Sí</span>` : `<span class="zone-chip rojo">No</span>`)}</td>
     </tr>`).join('');
 
   document.getElementById('rowCount').textContent = `${rows.length} combinaciones`;
@@ -1417,16 +1543,34 @@ function renderMatrizTab(){
   const MAX_ROWS = 120;
   const rows = filtered.slice(0, MAX_ROWS);
 
-  const theadHtml = `<thead><tr><th>SKU · CD</th>${labels.map(l=>`<th>${l}</th>`).join('')}</tr></thead>`;
+  const theadHtml = `<thead><tr><th>SKU – Descripción – CD</th>${labels.map(l=>`<th>${l}</th>`).join('')}</tr></thead>`;
 
   const bodyHtml = rows.map(c=>{
     const cells = [];
     for(let d=0; d<N_DAYS; d++){
-      const zone = classify(c.covReal[d], c);
-      const val = VIEW.matrixMode==='volumen' ? fmtPkg(c.invInicial[d]) : fmtDays(c.covReal[d]);
+      let zone, val;
+      if(VIEW.matrixMode==='instock3'){
+        const v = c.instock3[d];
+        zone = v===null ? 'sindatos' : (v===1 ? 'verde' : 'rojo');
+        val = v===null ? '—' : String(v);
+      } else if(VIEW.matrixMode==='volPerdido'){
+        const v = volumenPerdidoCombo(c, d);
+        zone = v===null ? 'sindatos' : (v>0 ? 'rojo' : 'verde');
+        val = v===null ? '—' : fmtPkg(v);
+      } else if(VIEW.matrixMode==='volumen'){
+        zone = classify(c.covReal[d], c);
+        val = fmtPkg(c.invInicial[d]);
+      } else if(VIEW.matrixMode==='covCuota'){
+        zone = classify(c.covCuota[d], c);
+        val = fmtDays(c.covCuota[d]);
+      } else {
+        zone = classify(c.covReal[d], c);
+        val = fmtDays(c.covReal[d]);
+      }
       cells.push(`<td class="matrix-cell ${zone}">${val}</td>`);
     }
-    return `<tr><td title="${c.desc||''}">${c.codigo||''} · ${c.cd||''}</td>${cells.join('')}</tr>`;
+    const rowLabel = `${c.codigo||''} – ${c.desc||''} – ${c.cd||''}`;
+    return `<tr><td title="${c.desc||''}">${rowLabel}</td>${cells.join('')}</tr>`;
   }).join('');
 
   document.getElementById('matrixTable').innerHTML = theadHtml + `<tbody>${bodyHtml}</tbody>`;
@@ -1453,6 +1597,8 @@ const AI_PROMPTS = [
   '¿Cuántas combinaciones están en zona roja?',
   '¿Cuál es la cobertura promedio filtrada?',
   '¿Qué combinaciones están en exceso?',
+  '¿Cuál es el InStock3% hoy?',
+  '¿Cuánto es el volumen perdido hoy?',
   'Resumen del día seleccionado'
 ];
 let aiChatStarted = false;
@@ -1524,15 +1670,32 @@ function aiAnswer(question){
     const top = list.slice(0,5).map(c=>`${c.codigo} · ${c.cd} (${fmtDays(c.covReal[di])} d)`).join('<br>');
     return `${list.length} combinación(es) en exceso. Algunas:<br>${top}`;
   }
+  // InStock3
+  if(/instock3|in stock 3|in-stock3|disponibilidad/.test(q)){
+    const s = instock3Simple(filtered, di);
+    const p = instock3Ponderado(filtered, di);
+    if(s===null && p===null) return 'No hay suficientes datos de Cobertura Cuota para calcular el InStock3% en el día seleccionado.';
+    return `Para el día seleccionado, sobre ${filtered.length} combinaciones filtradas: <strong>InStock3% Simple = ${s===null?'—':s.toFixed(1)+'%'}</strong> (portafolio completo) · <strong>InStock3% Ponderado = ${p===null?'—':p.toFixed(1)+'%'}</strong> (por Plan comercial, foco Pareto). InStock3 se calcula sobre la Cobertura Cuota (1 si &gt; 3 días).`;
+  }
+  // Volumen perdido
+  if(/volumen perdido|volumen perdid|perdido|quiebre/.test(q)){
+    const vp = volumenPerdido(filtered, di);
+    const totalCuotaDia = filtered.reduce((s,c)=> s + (c.demanda[di]||0), 0);
+    const pct = totalCuotaDia>0 ? (vp/totalCuotaDia*100) : null;
+    return `El volumen perdido del día seleccionado es de <strong>${fmtPkg(vp)} paquetes</strong> — el faltante para que las combinaciones filtradas alcancen 3 días de Cobertura Cuota (Σ máx(0, 3 − Cobertura Cuota) × Cuota diaria)${pct!==null ? `, equivalente a ${pct.toFixed(1)}% de la cuota diaria filtrada` : ''}.`;
+  }
   // Resumen del día
   if(/resumen|resumen del día|resumen general/.test(q)){
     const counts = {rojo:0,amarillo:0,verde:0,exceso:0,sindatos:0};
     filtered.forEach(c=> counts[classify(c.covReal[di],c)]++);
     const m = avg(filtered.map(c=>c.covReal[di]));
-    return `Resumen para el día ${VIEW.day} (${filtered.length} combinaciones filtradas): cobertura real promedio <strong>${m===null?'—':fmtDays(m)+' días'}</strong>. Zonas: 🔴 ${counts.rojo} · 🟡 ${counts.amarillo} · 🟢 ${counts.verde} · 🔵 ${counts.exceso} · ⚪ ${counts.sindatos}.`;
+    const s = instock3Simple(filtered, di);
+    const p = instock3Ponderado(filtered, di);
+    const vp = volumenPerdido(filtered, di);
+    return `Resumen para el día ${VIEW.day} (${filtered.length} combinaciones filtradas): cobertura real promedio <strong>${m===null?'—':fmtDays(m)+' días'}</strong>. Zonas: 🔴 ${counts.rojo} · 🟡 ${counts.amarillo} · 🟢 ${counts.verde} · 🔵 ${counts.exceso} · ⚪ ${counts.sindatos}. InStock3%: Simple ${s===null?'—':s.toFixed(1)+'%'} · Ponderado ${p===null?'—':p.toFixed(1)+'%'}. Volumen perdido: ${fmtPkg(vp)} paq.`;
   }
 
-  return 'No reconocí esa pregunta todavía. Puedes preguntar por la combinación con menor/mayor cobertura, cuántas están en una zona específica, la cobertura promedio, las que están en exceso, o pedir un resumen del día — siempre sobre los filtros activos del toolbar.';
+  return 'No reconocí esa pregunta todavía. Puedes preguntar por la combinación con menor/mayor cobertura, cuántas están en una zona específica, la cobertura promedio, las que están en exceso, el InStock3%, el volumen perdido, o pedir un resumen del día — siempre sobre los filtros activos del toolbar.';
 }
 
 function renderIaTab(){
@@ -1588,7 +1751,9 @@ function exportDetalleRows(){
     CD: c.cd, Codigo: c.codigo, Descripcion: c.desc, Formato: c.formato,
     Cobertura_Real_d: c.covReal[di], Cobertura_Cuota_d: c.covCuota[di],
     Zona: ZONE_LABEL[classify(c.covReal[di], c)],
-    Cuota_dia: c.demanda[di], Salida_real_dia: c.salidaReal[di], Sugerido_abast: c.abastSugerido[di]
+    Cuota_dia: c.demanda[di], Salida_real_dia: c.salidaReal[di], Sugerido_abast: c.abastSugerido[di],
+    Plan_Comercial_Mensual_UCO: c.planComercial, InStock3: c.instock3[di],
+    Volumen_Perdido_dia: volumenPerdidoCombo(c, di)
   }));
 }
 function doExport(type){
@@ -1609,16 +1774,24 @@ function doExport(type){
   } else if(type==='xlsx-matriz'){
     const filtered = getFiltered();
     const labels = buildDateLabels();
+    const valueFor = (c,d) => {
+      if(VIEW.matrixMode==='volumen') return c.invInicial[d];
+      if(VIEW.matrixMode==='covCuota') return c.covCuota[d];
+      if(VIEW.matrixMode==='instock3') return c.instock3[d];
+      if(VIEW.matrixMode==='volPerdido') return volumenPerdidoCombo(c, d);
+      return c.covReal[d];
+    };
     const rows = filtered.map(c=>{
       const row = {'SKU': c.codigo, 'CD': c.cd, 'Descripcion': c.desc};
       for(let d=0; d<N_DAYS; d++){
-        row[labels[d]] = VIEW.matrixMode==='volumen' ? c.invInicial[d] : c.covReal[d];
+        row[labels[d]] = valueFor(c,d);
       }
       return row;
     });
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, VIEW.matrixMode==='volumen' ? 'Volumen' : 'Cobertura');
+    const sheetNames = {covReal:'CoberturaReal', covCuota:'CoberturaCuota', volumen:'Volumen', instock3:'InStock3', volPerdido:'VolumenPerdido'};
+    XLSX.utils.book_append_sheet(wb, ws, sheetNames[VIEW.matrixMode] || 'Datos');
     XLSX.writeFile(wb, `Matriz_SKUxDia_${VIEW.matrixMode}.xlsx`);
     logExport(`Matriz SKU × Día (${VIEW.matrixMode})`);
   } else if(type==='json-insights'){
@@ -1753,6 +1926,28 @@ function renderMethodology(){
         Es una clasificación de referencia rápida — no reemplaza un análisis ABC formal.`
     },
     {
+      title: 'InStock3 — disponibilidad para 3 días de venta',
+      body: `InStock3 mide, día por día, si la <strong>Cobertura Cuota</strong> de una combinación
+        supera los 3 días de venta. Es un indicador binario por combinación y día; para verlo
+        agregado sobre un conjunto de combinaciones existen dos formas de promediarlo:
+        <strong>Simple</strong> (todas las combinaciones pesan igual — vista de portafolio
+        completo) y <strong>Ponderado</strong> (pesado por el Plan comercial mensual de cada
+        combinación — símil a la metodología de Fill Rate, con foco en las combinaciones Pareto).
+        Se calcula en el dashboard, no en el Excel.`,
+      formula: `Plan_comercial_mensual = SUMA( Demanda_Cuota[día 1 .. día 31] )   (usado solo como peso del Ponderado)\nInStock3(d) = 1  si  Cobertura_Cuota(d) > 3 días\nInStock3(d) = 0  en caso contrario\n\nInStock3% Simple    = PROMEDIO( InStock3(d) )  sobre todas las combinaciones\nInStock3% Ponderado = SUMA( InStock3(d) * Plan_comercial_mensual ) / SUMA( Plan_comercial_mensual )`
+    },
+    {
+      title: 'Volumen perdido',
+      body: `Traduce el InStock3 de un porcentaje abstracto a un número concreto en paquetes,
+        ponderado por severidad: para cada combinación calcula cuánto le falta a su Cobertura
+        Cuota para llegar a 3 días, y valoriza ese faltante en paquetes de cuota diaria. Una
+        combinación a 2.9 días pesa poco; una a 0.1 días pesa casi tres días completos de cuota
+        — no es un "todo o nada", escala con qué tan lejos está cada combinación del umbral.
+        Se muestra como tarjeta KPI en Resumen General, como insight automático, y como un modo
+        adicional de la Matriz SKU × Día.`,
+      formula: `Volumen_perdido(d, combinación) = MÁX( 0,  3 − Cobertura_Cuota(d) )  ×  Demanda_Cuota(d)\nVolumen_perdido(d) total = SUMA( Volumen_perdido(d, combinación) )  sobre las combinaciones filtradas`
+    },
+    {
       title: 'Supuestos clave',
       body: `Lead Time: 0.5 días para todos los CDs salvo Cobán y Huehuetenango (1 día) — con LT
         ≤1 día se asume que el Plan_Abastecimiento del día llega el mismo día. Código SKU: los
@@ -1815,6 +2010,7 @@ function renderResumenTab(){
   renderKPIs(filtered);
   renderCoverageChart(filtered);
   renderZoneChart(filtered);
+  renderInstock3Chart(filtered);
   renderTable(filtered);
 }
 
