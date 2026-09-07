@@ -130,4 +130,13 @@ const ISM_APPS = [
     estado: "nuevo",
     url: "apps/mi-inmovilizados/index.html",
   },
+  {
+    nombre: "Venta Perdida y Stock-Out Potencial",
+    categoria: "Planeamiento",
+    proceso: "Planeamiento de Demanda",
+    sensibilidad: "media",
+    paises: ["PE", "RD", "HT", "GT"],
+    estado: "nuevo",
+    url: "apps/vp-so-potencial/index.html",
+  },
 ];
