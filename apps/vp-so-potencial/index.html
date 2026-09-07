@@ -1,1 +1,3026 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Venta Perdida y Stock-Out Potencial · ISM Supply Chain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+/* ═══ ISM-SCM-THEME v1.3 — Variables ═══════════════════════ */
+:root{
+  --ism-green:#00953B; --ism-green-dark:#006B2B; --ism-green-10:#E8F5EE;
+  --ism-red:#EE3124; --ism-black:#302A1B;
+  --ism-ok-bg:#E8F5EE;       --ism-ok-text:#004D1E;       --ism-ok-border:#99D4B1;
+  --ism-warning-bg:#FFF8E1;  --ism-warning-text:#7A5A00;  --ism-warning-border:#FFBC36;
+  --ism-critical-bg:#FDEDEC; --ism-critical-text:#9B1A10; --ism-critical-border:#F89C95;
+  --ism-nd-bg:#F3F4F6;       --ism-nd-text:#374151;       --ism-nd-border:#D1D5DB;
+  --chart-1:#00953B; --chart-2:#EE3124; --chart-3:#0624BA; --chart-4:#FFBC36;
+  --chart-5:#EC6B00; --chart-6:#7CD7FC; --chart-7:#F47E67;
+  --chart-4-on-light:#C58300; --chart-6-on-light:#059CDA; --chart-7-on-light:#F2664A;
+  --font-display:'Work Sans','Segoe UI',Arial,sans-serif;
+  --font-body:'Nunito','Segoe UI',Arial,sans-serif;
+  --font-data:'Work Sans','Segoe UI',Arial,sans-serif;
+  --text-3xl:2.25rem; --text-2xl:1.75rem; --text-xl:1.375rem; --text-md:1rem;
+  --text-base:0.9375rem; --text-sm:0.8125rem; --text-xs:0.6875rem;
+  --ism-bg:#FFFFFF; --ism-surface:#FFFFFF; --ism-surface-2:#F9FAFB; --ism-surfacealt:#F9FAFB;
+  --ism-border:#E5E7EB; --ism-text:#302A1B; --ism-text-secondary:#6B7280;
+  --ism-green-on-surface:#006B2B; --ism-red-on-surface:#9B1A10;
+  --ism-header-text:#FFFFFF; --ism-header-chip-bg:rgba(255,255,255,.16); --ism-header-chip-text:#FFFFFF;
+  --ism-focus-ring:#0624BA; --ism-focus-ring-width:2px; --ism-focus-ring-offset:2px;
+  --header-height:56px; --sidebar-width:236px; --sidebar-collapsed:56px;
+  --radius-sm:6px; --radius-md:10px; --radius-full:9999px;
+  --ease-out:cubic-bezier(.23,1,.32,1); --ease-in-out:cubic-bezier(.77,0,.175,1);
+  --duration-instant:100ms; --duration-fast:160ms; --duration-base:200ms;
+  --duration-moderate:250ms; --duration-modal:300ms; --theme-transition:180ms;
+  --ism-ink-900:#302A1B; --ism-ink-700:#374151; --ism-ink-500:#6B7280; --ism-ink-300:#9CA3AF;
+  --ism-tone-good-bg:#E8F5EE;  --ism-tone-good-text:#004D1E;
+  --ism-tone-warn-bg:#FFF8E1;  --ism-tone-warn-text:#7A5A00;
+  --ism-tone-bad-bg:#FDEDEC;   --ism-tone-bad-text:#9B1A10;
+  --ism-tone-neutral-bg:#F3F4F6; --ism-tone-neutral-text:#374151;
+}
+[data-theme="dark"]{
+  --ism-bg:#0E1210; --ism-surface:#1B2420; --ism-surface-2:#223028; --ism-surfacealt:#223028;
+  --ism-border:#2E3B34; --ism-text:#F5F7F6; --ism-text-secondary:#A9B4AE;
+  --ism-green-on-surface:#3DDB84; --ism-red-on-surface:#FF6B5E;
+  --ism-ok-bg:rgba(0,149,59,.18);        --ism-ok-text:#4ADE80;      --ism-ok-border:rgba(74,222,128,.35);
+  --ism-warning-bg:rgba(255,188,54,.16); --ism-warning-text:#FFC94D; --ism-warning-border:rgba(255,201,77,.35);
+  --ism-critical-bg:rgba(238,49,36,.18); --ism-critical-text:#FF8A80; --ism-critical-border:rgba(255,138,128,.35);
+  --ism-nd-bg:rgba(255,255,255,.06);     --ism-nd-text:#9CA3AF;      --ism-nd-border:rgba(255,255,255,.14);
+  --ism-ink-900:#F2F5F3; --ism-ink-700:#C9D2CE; --ism-ink-500:#9AA6A0; --ism-ink-300:#6B7670;
+  --ism-tone-good-bg:rgba(0,149,59,.18);       --ism-tone-good-text:#4ADE80;
+  --ism-tone-warn-bg:rgba(255,188,54,.18);      --ism-tone-warn-text:#FFBC36;
+  --ism-tone-bad-bg:rgba(238,49,36,.18);        --ism-tone-bad-text:#F87171;
+  --ism-tone-neutral-bg:rgba(156,163,175,.18);  --ism-tone-neutral-text:#9CA3AF;
+}
+/* ═══ Reset ════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{transition:background-color var(--theme-transition) ease,color var(--theme-transition) ease}
+body{background:var(--ism-bg);color:var(--ism-text);font-family:var(--font-body);font-size:var(--text-base);line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-display);color:var(--ism-text);margin:0}
+*{scrollbar-width:thin;scrollbar-color:var(--ism-ok-border) transparent}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--ism-ok-border);border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  html{transition:background-color 200ms ease,color 200ms ease!important}
+}
+/* ═══ Header ═══════════════════════════════════════════════ */
+.ism-header{position:fixed;top:0;left:0;right:0;height:var(--header-height);z-index:1000;
+  background:var(--ism-green);color:var(--ism-header-text);display:flex;align-items:center;gap:12px;
+  padding:0 16px;font-family:var(--font-display)}
+.ism-header__app-name{font-size:var(--text-md);font-weight:600;white-space:nowrap}
+.ism-header__spacer{flex:1}
+.ism-header__chip,.ism-header__meta{display:inline-flex;align-items:center;gap:4px;
+  background:var(--ism-header-chip-bg);color:var(--ism-header-chip-text);font-size:var(--text-xs);
+  font-weight:600;letter-spacing:.02em;text-transform:uppercase;padding:4px 10px;
+  border-radius:var(--radius-full);line-height:1;white-space:nowrap}
+.ism-header__meta{text-transform:none;font-weight:500;max-width:340px;overflow:hidden;text-overflow:ellipsis}
+.ism-header__avatar{width:32px;height:32px;border-radius:var(--radius-full);background:rgba(255,255,255,.22);
+  color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);
+  font-weight:700;font-size:var(--text-sm);flex-shrink:0}
+.ism-theme-toggle{width:32px;height:32px;border-radius:var(--radius-full);background:rgba(255,255,255,.16);
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;
+  font-size:15px;line-height:1;flex-shrink:0;transition:transform var(--duration-instant) var(--ease-out)}
+.ism-theme-toggle:hover{background:rgba(255,255,255,.26)}
+.ism-theme-toggle:active{transform:scale(.9) rotate(-8deg)}
+.ism-burger{display:none;background:rgba(255,255,255,.16);border:none;color:#fff;width:32px;height:32px;
+  border-radius:var(--radius-sm);cursor:pointer;font-size:15px;align-items:center;justify-content:center}
+/* ═══ Sidebar ══════════════════════════════════════════════ */
+.ism-sidebar{position:fixed;top:var(--header-height);left:0;bottom:0;width:var(--sidebar-width);
+  background:var(--ism-surface);border-right:1px solid var(--ism-border);overflow-y:auto;z-index:900;
+  transition:transform var(--duration-moderate) var(--ease-in-out)}
+.ism-sidebar__group-label{font-family:var(--font-display);font-size:var(--text-xs);font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em;color:var(--ism-text-secondary);padding:16px 16px 6px}
+.ism-nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:var(--ism-text);
+  font-family:var(--font-display);font-size:var(--text-sm);font-weight:500;text-decoration:none;
+  cursor:pointer;border-left:3px solid transparent;background:none;border-top:0;border-right:0;border-bottom:0;
+  width:100%;text-align:left;position:relative;
+  transition:background-color var(--duration-fast) var(--ease-out),transform var(--duration-instant) var(--ease-out)}
+.ism-nav-item:hover{background:var(--ism-green-10)}
+[data-theme="dark"] .ism-nav-item:hover{background:rgba(0,149,59,.14)}
+.ism-nav-item:active{transform:scale(.99)}
+.ism-nav-item.is-active{border-left-color:var(--ism-green);background:var(--ism-green-10);
+  color:var(--ism-green-on-surface);font-weight:700}
+[data-theme="dark"] .ism-nav-item.is-active{background:rgba(0,149,59,.16)}
+.ism-nav-item:disabled{opacity:.38;cursor:not-allowed}
+.ism-nav-item:disabled:hover{background:none}
+.ism-nav-item__icon{width:18px;text-align:center;flex-shrink:0;font-size:14px}
+.ism-nav-item__label{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ism-nav-item__badge{min-width:18px;height:18px;padding:0 5px;border-radius:var(--radius-full);
+  background:var(--ism-red);color:#fff;font-size:10px;font-weight:700;display:flex;
+  align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:850}
+/* ═══ Buttons ══════════════════════════════════════════════ */
+.ism-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;
+  border-radius:var(--radius-sm);border:1px solid transparent;font-family:var(--font-display);
+  font-size:var(--text-sm);font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:transform var(--duration-instant) var(--ease-out),background-color var(--duration-fast) var(--ease-out),filter var(--duration-fast) var(--ease-out)}
+.ism-btn:active{transform:scale(.97)}
+.ism-btn:disabled{opacity:.5;cursor:not-allowed}
+.ism-btn--primary{background:var(--ism-green);color:#fff;border-color:var(--ism-green)}
+.ism-btn--primary:hover:not(:disabled){background:var(--ism-green-dark);border-color:var(--ism-green-dark)}
+.ism-btn--secondary{background:var(--ism-surface);color:var(--ism-text);border-color:var(--ism-border)}
+.ism-btn--secondary:hover:not(:disabled){background:var(--ism-surface-2)}
+.ism-btn--ghost{background:transparent;color:var(--ism-green-on-surface)}
+.ism-btn--ghost:hover:not(:disabled){background:var(--ism-green-10)}
+.ism-btn--danger{background:var(--ism-red);color:#fff;border-color:var(--ism-red)}
+.ism-btn--sm{padding:5px 12px;font-size:var(--text-xs)}
+.ism-btn:focus-visible,.ism-nav-item:focus-visible,.ism-theme-toggle:focus-visible,
+input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{
+  outline:var(--ism-focus-ring-width) solid var(--ism-focus-ring);outline-offset:var(--ism-focus-ring-offset)}
+/* ═══ Badges ═══════════════════════════════════════════════ */
+.ism-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:var(--radius-full);
+  border:1px solid transparent;font-family:var(--font-display);font-weight:700;font-size:var(--text-xs);
+  text-transform:uppercase;letter-spacing:.02em;white-space:nowrap}
+.ism-badge__dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.ism-badge--ok{background:var(--ism-ok-bg);color:var(--ism-ok-text);border-color:var(--ism-ok-border)}
+.ism-badge--warning{background:var(--ism-warning-bg);color:var(--ism-warning-text);border-color:var(--ism-warning-border)}
+.ism-badge--critical{background:var(--ism-critical-bg);color:var(--ism-critical-text);border-color:var(--ism-critical-border)}
+.ism-badge--nd{background:var(--ism-nd-bg);color:var(--ism-nd-text);border-color:var(--ism-nd-border)}
+/* ═══ Table ════════════════════════════════════════════════ */
+.ism-table-wrap{overflow-x:auto;border-radius:var(--radius-md);border:1px solid var(--ism-border);max-height:640px}
+.ism-table{width:100%;border-collapse:collapse;font-family:var(--font-body);font-size:var(--text-sm)}
+.ism-table thead th{background:var(--ism-green);color:#fff;font-family:var(--font-display);font-weight:600;
+  font-size:var(--text-xs);text-transform:uppercase;letter-spacing:.03em;text-align:left;padding:9px 12px;
+  position:sticky;top:0;z-index:1;white-space:nowrap}
+.ism-table tbody td{padding:8px 12px;border-bottom:1px solid var(--ism-border);color:var(--ism-text);white-space:nowrap}
+.ism-table tbody tr:nth-child(even) td{background:var(--ism-surface-2)}
+.ism-table tbody tr:hover td{background:var(--ism-green-10)}
+[data-theme="dark"] .ism-table tbody tr:hover td{background:rgba(0,149,59,.12)}
+.ism-table td.is-numeric{font-family:var(--font-data);font-variant-numeric:tabular-nums;text-align:right}
+.ism-table tr.ism-table__row--critical td{background:var(--ism-critical-bg)}
+.ism-table tr.ism-table__row--warning td{background:var(--ism-warning-bg)}
+.ism-table tr.ism-table__row--total td{background:var(--ism-green-10);border-top:2px solid var(--ism-green-10);font-weight:700}
+.ism-table tbody tr.is-clickable{cursor:pointer}
+/* ═══ KPI Tile ═════════════════════════════════════════════ */
+.ism-kpi-tile{background:var(--ism-surface);border:1px solid var(--ism-border);border-radius:var(--radius-md);padding:14px 16px}
+.ism-kpi-tile__label{font-family:var(--font-display);font-size:var(--text-xs);font-weight:600;
+  color:var(--ism-text-secondary);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px;line-height:1.3}
+.ism-kpi-tile__value{font-family:var(--font-data);font-size:var(--text-2xl);font-weight:700;
+  font-variant-numeric:tabular-nums;color:var(--ism-text);line-height:1.1}
+.ism-kpi-tile__sub{font-size:var(--text-xs);color:var(--ism-ink-300);margin-top:2px}
+.ism-kpi-tile--good .ism-kpi-tile__value{color:var(--ism-tone-good-text)}
+.ism-kpi-tile--warn .ism-kpi-tile__value{color:var(--ism-tone-warn-text)}
+.ism-kpi-tile--bad  .ism-kpi-tile__value{color:var(--ism-tone-bad-text)}
+.ism-kpi-tile--neutral .ism-kpi-tile__value{color:var(--ism-tone-neutral-text)}
+.kpi-ytd{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:8px;
+  padding-top:7px;border-top:1px dashed var(--ism-border);font-size:var(--text-xs)}
+.kpi-ytd__lbl{color:var(--ism-ink-300);font-family:var(--font-display);font-weight:600;letter-spacing:.03em}
+.kpi-ytd__val{font-family:var(--font-data);font-variant-numeric:tabular-nums;font-weight:700;color:var(--ism-ink-700)}
+.kpi-meta{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:var(--text-xs);
+  font-family:var(--font-display);font-weight:600}
+.kpi-meta--ok{color:var(--ism-tone-good-text)} .kpi-meta--bad{color:var(--ism-tone-bad-text)}
+.kpi-meta--nd{color:var(--ism-ink-300)}
+/* ═══ Forms ════════════════════════════════════════════════ */
+.ism-select,.ism-input{background:var(--ism-surface);color:var(--ism-text);border:1px solid var(--ism-border);
+  border-radius:var(--radius-sm);padding:6px 10px;font-family:var(--font-body);font-size:var(--text-sm);
+  transition:border-color var(--duration-fast) var(--ease-out)}
+.ism-select:hover,.ism-input:hover{border-color:var(--ism-green)}
+.ism-input::placeholder{color:var(--ism-text-secondary)}
+.ism-range{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:var(--radius-full);
+  background:var(--ism-border);outline:none}
+.ism-range::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;
+  background:var(--ism-green);cursor:pointer;border:2px solid var(--ism-surface);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.ism-range::-moz-range-thumb{width:17px;height:17px;border-radius:50%;background:var(--ism-green);
+  cursor:pointer;border:2px solid var(--ism-surface)}
+/* ═══ Upload ═══════════════════════════════════════════════ */
+.ism-upload-zone{border:2px dashed var(--ism-border);border-radius:var(--radius-md);padding:48px 40px;
+  text-align:center;color:var(--ism-text-secondary);background:var(--ism-surface-2);cursor:pointer;
+  transition:border-color var(--duration-fast) var(--ease-out),background-color var(--duration-fast) var(--ease-out)}
+.ism-upload-zone.is-dragover{border-color:var(--ism-green);background:var(--ism-green-10)}
+.ism-progress{width:100%;height:6px;border-radius:var(--radius-full);background:var(--ism-border);overflow:hidden}
+.ism-progress__bar{height:100%;background:var(--ism-green);border-radius:var(--radius-full);
+  transition:width var(--duration-base) var(--ease-out)}
+/* ═══ Alert ════════════════════════════════════════════════ */
+.ism-alert{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--radius-md);
+  font-size:var(--text-sm);border:1px solid transparent;line-height:1.55}
+.ism-alert--ok{background:var(--ism-ok-bg);color:var(--ism-ok-text);border-color:var(--ism-ok-border)}
+.ism-alert--warning{background:var(--ism-warning-bg);color:var(--ism-warning-text);border-color:var(--ism-warning-border)}
+.ism-alert--critical{background:var(--ism-critical-bg);color:var(--ism-critical-text);border-color:var(--ism-critical-border)}
+/* ═══ Misc ISM ═════════════════════════════════════════════ */
+.ism-eyebrow{font-family:var(--font-display);font-size:var(--text-xs);font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--ism-green-on-surface);display:block;margin-bottom:4px}
+.tabular,.ism-data{font-family:var(--font-data);font-feature-settings:"tnum" 1;font-variant-numeric:tabular-nums;font-weight:500}
+.ism-settings-panel{background:var(--ism-surface);border:1px solid var(--ism-border);border-radius:var(--radius-md);padding:16px 18px}
+.ism-settings-panel+.ism-settings-panel{margin-top:12px}
+.ism-settings-panel__title{font-family:var(--font-display);font-size:var(--text-base);font-weight:700;color:var(--ism-text);margin-bottom:4px}
+.ism-settings-panel__desc{font-size:var(--text-xs);color:var(--ism-text-secondary);margin-bottom:14px;line-height:1.6}
+.ism-param-group{display:flex;flex-direction:column;gap:5px}
+.ism-param-group__label{font-family:var(--font-display);font-size:var(--text-xs);font-weight:600;color:var(--ism-ink-700)}
+.ism-param-group__hint{font-size:.6875rem;color:var(--ism-ink-300);line-height:1.5}
+.ism-logic-accordion{border:1px solid var(--ism-border);border-radius:var(--radius-md);overflow:hidden}
+.ism-logic-accordion__item{border-bottom:1px solid var(--ism-border)}
+.ism-logic-accordion__item:last-child{border-bottom:none}
+.ism-logic-accordion__trigger{width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;background:var(--ism-surface-2);font-family:var(--font-display);font-weight:600;
+  font-size:var(--text-sm);cursor:pointer;border:none;color:var(--ism-text);text-align:left}
+.ism-logic-accordion__trigger:hover{background:var(--ism-green-10)}
+[data-theme="dark"] .ism-logic-accordion__trigger:hover{background:rgba(0,149,59,.12)}
+.ism-logic-accordion__panel{padding:16px;font-size:var(--text-sm);background:var(--ism-surface);
+  line-height:1.7;display:none}
+.ism-logic-accordion__panel.is-open{display:block}
+.ism-formula{font-family:'JetBrains Mono','Fira Code','Courier New',monospace;background:var(--ism-surface-2);
+  border:1px solid var(--ism-border);border-radius:var(--radius-sm);padding:11px 13px;font-size:var(--text-xs);
+  color:var(--ism-text);white-space:pre-wrap;overflow-x:auto;line-height:1.7;margin:8px 0}
+.ism-empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:44px 24px;text-align:center;
+  color:var(--ism-text-secondary);font-size:var(--text-sm)}
+.ism-footer{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;
+  border-top:1px solid var(--ism-border);color:var(--ism-text-secondary);font-size:var(--text-xs);
+  margin-top:12px;flex-wrap:wrap;gap:6px}
+/* ═══ Layout ═══════════════════════════════════════════════ */
+.app-shell{margin-left:var(--sidebar-width);padding-top:var(--header-height);min-height:100vh}
+.app-shell.is-full{margin-left:0}
+.view-container{max-width:1560px;margin:0 auto;padding:16px 20px}
+.view-head{margin-bottom:14px}
+.view-head h2{font-size:var(--text-xl);font-weight:700}
+.view-head p{font-size:var(--text-xs);color:var(--ism-text-secondary);margin-top:3px;line-height:1.6}
+.dash-card{background:var(--ism-surface);border:1px solid var(--ism-border);border-radius:var(--radius-md);padding:15px 17px}
+.dash-card__title{font-family:var(--font-display);font-size:var(--text-sm);font-weight:700;color:var(--ism-text);
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dash-card__title small{font-family:var(--font-body);font-weight:400;color:var(--ism-ink-300);font-size:var(--text-xs)}
+.mb-14{margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:11px}
+.kpi-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.kpi-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+/* ═══ Filter bar ═══════════════════════════════════════════ */
+.filter-bar{background:var(--ism-surface);border:1px solid var(--ism-border);border-radius:var(--radius-md);
+  padding:11px 14px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:9px;align-items:flex-end}
+.filter-item{display:flex;flex-direction:column;gap:3px}
+.filter-item label{font-family:var(--font-display);font-size:.625rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--ism-ink-500)}
+.filter-item select{min-width:118px;max-width:172px}
+.filter-item.is-disabled{opacity:.42}
+.filter-spacer{flex:1}
+.filter-note{font-size:.625rem;color:var(--ism-ink-300);width:100%;margin-top:2px;line-height:1.5}
 
+/* ═══ Multi-select ═════════════════════════════════════════ */
+.ms{position:relative}
+.ms__btn{width:100%;display:flex;align-items:center;gap:6px;
+  background:var(--ism-surface);color:var(--ism-text);border:1px solid var(--ism-border);
+  border-radius:var(--radius-sm);padding:6px 9px;font-family:var(--font-body);
+  font-size:var(--text-sm);cursor:pointer;text-align:left;
+  transition:border-color var(--duration-fast) var(--ease-out)}
+.ms__btn:hover:not(:disabled){border-color:var(--ism-green)}
+.ms__btn:disabled{cursor:not-allowed}
+.ms.is-open .ms__btn{border-color:var(--ism-green);box-shadow:0 0 0 2px var(--ism-green-10)}
+.ms__txt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ms__car{font-size:9px;color:var(--ism-text-secondary);transition:transform var(--duration-fast) var(--ease-out)}
+.ms.is-open .ms__car{transform:rotate(180deg)}
+.ms__badge{min-width:17px;height:17px;padding:0 5px;border-radius:var(--radius-full);
+  background:var(--ism-green);color:#fff;font-family:var(--font-display);font-size:10px;
+  font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ms__panel{position:absolute;top:calc(100% + 4px);left:0;z-index:700;min-width:100%;
+  max-width:300px;background:var(--ism-surface);border:1px solid var(--ism-border);
+  border-radius:var(--radius-md);box-shadow:0 6px 20px rgba(0,0,0,.13);padding:6px;
+  animation:ms-in var(--duration-fast) var(--ease-out)}
+[data-theme="dark"] .ms__panel{box-shadow:0 6px 22px rgba(0,0,0,.5)}
+@keyframes ms-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.ms__actions{display:flex;gap:5px;padding:2px 2px 6px;border-bottom:1px solid var(--ism-border);margin-bottom:5px}
+.ms__act{flex:1;padding:4px 8px;border:1px solid var(--ism-border);border-radius:4px;
+  background:var(--ism-surface-2);color:var(--ism-text);font-family:var(--font-display);
+  font-size:var(--text-xs);font-weight:600;cursor:pointer}
+.ms__act:hover{background:var(--ism-green-10);border-color:var(--ism-green);color:var(--ism-green-on-surface)}
+.ms__search{width:100%;margin-bottom:5px;padding:5px 8px;font-size:var(--text-xs)}
+.ms__list{max-height:230px;overflow-y:auto}
+.ms__opt{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:4px;
+  cursor:pointer;font-size:var(--text-sm);line-height:1.35}
+.ms__opt:hover{background:var(--ism-green-10)}
+[data-theme="dark"] .ms__opt:hover{background:rgba(0,149,59,.14)}
+.ms__opt input{accent-color:var(--ism-green);width:14px;height:14px;flex-shrink:0;cursor:pointer;margin:0}
+.ms__opt span{flex:1}
+.ms__btn:focus-visible{outline:var(--ism-focus-ring-width) solid var(--ism-focus-ring);outline-offset:var(--ism-focus-ring-offset)}
+.filter-bar{align-items:flex-end;position:relative;z-index:10}
+/* ═══ Loading ══════════════════════════════════════════════ */
+.load-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - var(--header-height));padding:20px}
+.load-card{background:var(--ism-surface);border:1px solid var(--ism-border);border-radius:var(--radius-md);
+  padding:40px 44px;text-align:center;max-width:470px;width:100%;box-shadow:0 4px 20px rgba(0,0,0,.07)}
+.pulse-wrap{position:relative;width:78px;height:78px;margin:0 auto 22px;display:flex;align-items:center;justify-content:center}
+.pulse-ring{position:absolute;inset:0;border-radius:50%;background:var(--ism-green);opacity:.16;animation:pulse-ring 2s var(--ease-out) infinite}
+.pulse-ring:nth-child(2){animation-delay:.65s} .pulse-ring:nth-child(3){animation-delay:1.3s}
+@keyframes pulse-ring{0%{transform:scale(.62);opacity:.3}100%{transform:scale(1.35);opacity:0}}
+.pulse-core{position:relative;width:52px;height:52px;border-radius:50%;background:var(--ism-green);
+  display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;
+  animation:pulse-core 1.6s var(--ease-in-out) infinite;z-index:1}
+@keyframes pulse-core{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+.sparkle{position:absolute;font-size:12px;opacity:0;animation:sparkle 2.4s var(--ease-in-out) infinite;z-index:2}
+.sparkle:nth-child(4){top:-2px;right:4px;animation-delay:0s}
+.sparkle:nth-child(5){bottom:2px;left:-1px;animation-delay:.8s}
+.sparkle:nth-child(6){top:14px;left:-6px;animation-delay:1.6s}
+@keyframes sparkle{0%,100%{opacity:0;transform:scale(.4)}45%{opacity:1;transform:scale(1.15)}}
+.load-msg{font-family:var(--font-display);font-size:var(--text-md);font-weight:700;color:var(--ism-text);
+  min-height:26px;margin-bottom:6px;transition:opacity var(--duration-moderate) var(--ease-out)}
+.load-msg.is-fading{opacity:0}
+.load-file{font-size:var(--text-xs);color:var(--ism-ink-500);margin-bottom:18px;font-family:var(--font-data)}
+.load-hint{display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:6px 13px;
+  background:var(--ism-surface-2);border:1px solid var(--ism-border);border-radius:var(--radius-full);
+  font-size:var(--text-xs);color:var(--ism-text-secondary)}
+.load-steps{list-style:none;text-align:left;margin-top:18px;font-size:var(--text-xs);display:flex;
+  flex-direction:column;gap:4px;max-height:126px;overflow:hidden}
+.load-steps li{color:var(--ism-ink-300);animation:fade-slide var(--duration-moderate) var(--ease-out)}
+.load-steps li.done::before{content:"✓ ";color:var(--ism-green);font-weight:700}
+.load-steps li.active{color:var(--ism-text);font-weight:600}
+.load-steps li.active::before{content:"→ ";color:var(--ism-green)}
+@keyframes fade-slide{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+/* ═══ Upload landing ═══════════════════════════════════════ */
+.upload-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:calc(100vh - var(--header-height));gap:16px;padding:20px}
+.upload-icon{font-size:50px;margin-bottom:8px}
+.upload-title{font-family:var(--font-display);font-size:1.15rem;font-weight:700;color:var(--ism-text);margin-bottom:6px}
+.upload-sub{font-size:var(--text-sm);color:var(--ism-text-secondary);margin-bottom:20px}
+.upload-schema{background:var(--ism-surface);border:1px solid var(--ism-border);border-radius:var(--radius-md);
+  padding:14px 18px;font-size:var(--text-xs);color:var(--ism-text-secondary);max-width:620px;line-height:1.85}
+.upload-schema strong{color:var(--ism-text);font-family:var(--font-display)}
+/* ═══ Bits ═════════════════════════════════════════════════ */
+.nd-msg{text-align:center;padding:22px;color:var(--ism-ink-300);font-style:italic;font-size:var(--text-sm)}
+.bar-bg{height:7px;background:var(--ism-surface-2);border-radius:var(--radius-full);min-width:60px}
+.bar-fill{height:7px;border-radius:var(--radius-full)}
+.pager{display:flex;align-items:center;gap:8px;margin-top:10px;justify-content:flex-end}
+.pager span{font-size:var(--text-xs);color:var(--ism-ink-500);font-family:var(--font-display)}
+.chip-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.stat-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:var(--radius-full);
+  background:var(--ism-surface-2);border:1px solid var(--ism-border);font-size:var(--text-xs);
+  font-family:var(--font-display);font-weight:600;color:var(--ism-ink-700)}
+.stat-chip b{font-family:var(--font-data);font-variant-numeric:tabular-nums;color:var(--ism-text)}
+.hm-cell{padding:6px 4px;text-align:center;font-family:var(--font-data);font-variant-numeric:tabular-nums;
+  font-size:var(--text-xs);font-weight:600;border-radius:3px;color:#fff}
+.meta-line{font-size:var(--text-xs);color:var(--ism-text-secondary);margin-bottom:12px;
+  padding:9px 13px;background:var(--ism-surface-2);border:1px solid var(--ism-border);border-radius:var(--radius-md)}
+@media(max-width:1100px){.kpi-row,.kpi-row-4{grid-template-columns:repeat(2,1fr)}.grid2,.grid3{grid-template-columns:1fr}}
+@media(max-width:860px){
+  .ism-sidebar{transform:translateX(-100%)}
+  .ism-sidebar.is-open{transform:translateX(0)}
+  .app-shell{margin-left:0}
+  .ism-burger{display:flex}
+  .sidebar-backdrop.is-open{display:block}
+  .kpi-row,.kpi-row-4,.kpi-row-3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="ism-header">
+  <button class="ism-burger" onclick="toggleSidebar()" aria-label="Menú">☰</button>
+  <span class="ism-header__app-name">Venta Perdida y Stock-Out Potencial</span>
+  <span class="ism-header__chip">SC-CORP</span>
+  <div class="ism-header__spacer"></div>
+  <span class="ism-header__meta" id="header-meta" style="display:none"></span>
+  <button class="ism-theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+  <div class="ism-header__avatar">SC</div>
+</header>
+
+<div class="sidebar-backdrop" id="sb-backdrop" onclick="toggleSidebar()"></div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="ism-sidebar" id="sidebar">
+  <div class="ism-sidebar__group-label">Datos</div>
+  <button class="ism-nav-item is-active" data-view="upload" onclick="go('upload')">
+    <span class="ism-nav-item__icon">📥</span><span class="ism-nav-item__label">Cargar archivo</span></button>
+
+  <div class="ism-sidebar__group-label">Análisis</div>
+  <button class="ism-nav-item nav-locked" data-view="resumen" onclick="go('resumen')" disabled>
+    <span class="ism-nav-item__icon">📊</span><span class="ism-nav-item__label">Resumen ejecutivo</span></button>
+  <button class="ism-nav-item nav-locked" data-view="vp" onclick="go('vp')" disabled>
+    <span class="ism-nav-item__icon">📉</span><span class="ism-nav-item__label">Venta Perdida</span></button>
+  <button class="ism-nav-item nav-locked" data-view="so" onclick="go('so')" disabled>
+    <span class="ism-nav-item__icon">📦</span><span class="ism-nav-item__label">Stock-Out</span></button>
+  <button class="ism-nav-item nav-locked" data-view="cobertura" onclick="go('cobertura')" disabled>
+    <span class="ism-nav-item__icon">🗓</span><span class="ism-nav-item__label" data-dyn="navCob">Cobertura & InStock-3</span></button>
+  <button class="ism-nav-item nav-locked" data-view="diario" onclick="go('diario')" disabled>
+    <span class="ism-nav-item__icon">📈</span><span class="ism-nav-item__label">Análisis Diario</span></button>
+  <button class="ism-nav-item nav-locked" data-view="sku" onclick="go('sku')" disabled>
+    <span class="ism-nav-item__icon">🔎</span><span class="ism-nav-item__label">Ficha SKU</span></button>
+  <button class="ism-nav-item nav-locked" data-view="ventas" onclick="go('ventas')" disabled>
+    <span class="ism-nav-item__icon">💰</span><span class="ism-nav-item__label">Análisis de Ventas</span></button>
+
+  <div class="ism-sidebar__group-label">Operación</div>
+  <button class="ism-nav-item nav-locked" data-view="export" onclick="go('export')" disabled>
+    <span class="ism-nav-item__icon">⬇</span><span class="ism-nav-item__label">Exportar</span></button>
+  <button class="ism-nav-item" data-view="settings" onclick="go('settings')">
+    <span class="ism-nav-item__icon">⚙</span><span class="ism-nav-item__label">Configuración</span></button>
+  <button class="ism-nav-item" data-view="logic" onclick="go('logic')">
+    <span class="ism-nav-item__icon">📐</span><span class="ism-nav-item__label">Lógica de Análisis</span></button>
+  <div style="height:24px"></div>
+</aside>
+
+<!-- ═══ SHELL ═══ -->
+<div class="app-shell" id="app-shell">
+
+  <!-- ── VIEW: UPLOAD ── -->
+  <section class="view" id="view-upload">
+    <div class="upload-wrap">
+      <div id="dropzone" class="ism-upload-zone" style="max-width:620px;width:100%">
+        <div class="upload-icon">📊</div>
+        <p class="upload-title">Arrastra tu archivo Excel aquí</p>
+        <p class="upload-sub">O selecciónalo manualmente · Hojas requeridas: Maestro · Venta · Inv.Diario</p>
+        <button class="ism-btn ism-btn--primary" onclick="document.getElementById('fileInput').click()">Seleccionar archivo</button>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+      </div>
+      <div class="upload-schema">
+        <strong>Estructura esperada</strong><br>
+        🗂 <em>Maestro</em>: Código Canal · Descripción Canal · Código CD · Descripción CD · Código SKU · Categoría · Marca · Formato · Sabor · Envase · Descripción SKU<br>
+        📋 <em>Venta</em>: Fecha · Código Canal · Código CD · Código SKU · Volumen Litros · Facturación · Tipo de Movimiento<br>
+        📦 <em>Inv.Diario</em>: Fecha · SKUCODE · Código CD · Stock Disponible en Litros
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VIEW: LOADING ── -->
+  <section class="view" id="view-loading" style="display:none">
+    <div class="load-wrap">
+      <div class="load-card">
+        <div class="pulse-wrap">
+          <div class="pulse-ring"></div><div class="pulse-ring"></div><div class="pulse-ring"></div>
+          <span class="sparkle">✨</span><span class="sparkle">✨</span><span class="sparkle">✨</span>
+          <div class="pulse-core">📊</div>
+        </div>
+        <div class="load-msg" id="load-msg">Analizando la base de datos...</div>
+        <div class="load-file" id="load-file"></div>
+        <div class="ism-progress"><div class="ism-progress__bar" id="load-bar" style="width:0%"></div></div>
+        <ul class="load-steps" id="load-steps"></ul>
+        <div class="load-hint">⏱ Este proceso puede tardar entre 10 y 15 segundos</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VIEW: RESUMEN ── -->
+  <section class="view" id="view-resumen" style="display:none">
+    <div class="view-container">
+      <div class="view-head"><span class="ism-eyebrow">Análisis</span>
+        <h2>Resumen ejecutivo</h2>
+        <p>Indicadores del período seleccionado con comparación contra meta y acumulado YTD.</p></div>
+      <div id="fb-resumen"></div>
+      <div class="meta-line" id="meta-resumen"></div>
+      <div class="kpi-row mb-14" id="kpi-resumen"></div>
+      <div id="dq-resumen"></div>
+      <div id="notice-resumen"></div>
+      <div class="dash-card mb-14">
+        <div class="dash-card__title">📈 Tendencia mensual — %VP y %SO Potencial <small>Líneas punteadas = metas configuradas</small></div>
+        <canvas id="ch-res-tend" height="95"></canvas>
+      </div>
+      <div class="grid2 mb-14">
+        <div class="dash-card"><div class="dash-card__title">📊 %VP Potencial por CD</div><canvas id="ch-res-vpcd" height="210"></canvas></div>
+        <div class="dash-card"><div class="dash-card__title">📊 %SO Potencial por CD</div><div id="wrap-res-socd"><canvas id="ch-res-socd" height="210"></canvas></div></div>
+      </div>
+      <div class="dash-card mb-14">
+        <div class="dash-card__title">🏭 Semáforo por Centro de Distribución <small>Período filtrado</small></div>
+        <div class="ism-table-wrap"><table class="ism-table" id="tbl-res-cd"></table></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card__title">🧭 Resumen por Categoría</div>
+        <div class="ism-table-wrap"><table class="ism-table" id="tbl-res-cat"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VIEW: VP ── -->
+  <section class="view" id="view-vp" style="display:none">
+    <div class="view-container">
+      <div class="view-head"><span class="ism-eyebrow">Análisis</span>
+        <h2>Venta Perdida Potencial</h2>
+        <p>Días con venta por debajo del LCI = max(0, Promedio − k·σ). Cuantifica el gap frente al promedio del mes.</p></div>
+      <div id="fb-vp"></div>
+      <div class="meta-line" id="meta-vp"></div>
+      <div class="kpi-row-4 mb-14" id="kpi-vp"></div>
+      <div class="dash-card mb-14">
+        <div class="dash-card__title">🔥 Heatmap %VP — CD × Mes</div>
+        <div class="ism-table-wrap"><table class="ism-table" id="tbl-vp-heat"></table></div>
+      </div>
+      <div class="grid2 mb-14">
+        <div class="dash-card"><div class="dash-card__title">📊 Distribución de %VP por SKU</div><canvas id="ch-vp-dist" height="215"></canvas></div>
+        <div class="dash-card"><div class="dash-card__title">🏷 %VP por Categoría</div><canvas id="ch-vp-cat" height="215"></canvas></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card__title">📉 Top 25 SKUs por Litros Perdidos <small>ordenado por volumen absoluto, no por %</small></div>
+        <div class="ism-table-wrap"><table class="ism-table" id="tbl-vp-top"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VIEW: SO ── -->
+  <section class="view" id="view-so" style="display:none">
+    <div class="view-container">
+      <div class="view-head"><span class="ism-eyebrow">Análisis</span>
+        <h2>Stock-Out Potencial</h2>
+        <p>Subconjunto de la venta perdida donde el stock físico del día confirma el quiebre. %SO ≤ %VP por construcción.</p></div>
+      <div id="fb-so"></div>
+      <div class="meta-line" id="meta-so"></div>
+      <div class="kpi-row-4 mb-14" id="kpi-so"></div>
+      <div id="dq-so"></div>
+      <div id="notice-so"></div>
+      <div class="dash-card mb-14">
+        <div class="dash-card__title">🧩 Descomposición %VP → %SO por mes <small>El gap es venta perdida no explicada por inventario</small></div>
+        <canvas id="ch-so-gap" height="95"></canvas>
+      </div>
+      <div class="grid2 mb-14">
+        <div class="dash-card"><div class="dash-card__title">🔥 Heatmap %SO — CD × Mes</div>
+          <div class="ism-table-wrap"><table class="ism-table" id="tbl-so-heat"></table></div></div>
+        <div class="dash-card"><div class="dash-card__title">🏷 %SO por Categoría</div><canvas id="ch-so-cat" height="215"></canvas></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card__title">🔴 SKUs Críticos y en Alerta por %SO</div>
+        <div class="ism-table-wrap"><table class="ism-table" id="tbl-so-top"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VIEW: COBERTURA ── -->
+  <section class="view" id="view-cobertura" style="display:none">
+    <div class="view-container">
+      <div class="view-head"><span class="ism-eyebrow">Análisis</span>
+        <h2 data-dyn="h2Cob">Cobertura y %InStock-3</h2>
+        <p>Días de inventario = Stock diario / Venta promedio diaria (días activos). Solo disponible en meses con Inv.Diario.</p></div>
+      <div id="fb-cobertura"></div>
+      <div class="meta-line" id="meta-cobertura"></div>
+      <div class="kpi-row-4 mb-14" id="kpi-cob"></div>
+      <div id="notice-cob"></div>
+      <div class="grid2 mb-14">
+        <div class="dash-card"><div class="dash-card__title" data-dyn="cardTend">📈 Evolución mensual — Cobertura y %InStock-3</div><canvas id="ch-cob-tend" height="215"></canvas></div>
+        <div class="dash-card"><div class="dash-card__title">📊 Distribución de días de cobertura</div><canvas id="ch-cob-dist" height="215"></canvas></div>
+      </div>
+      <div class="dash-card mb-14">
+        <div class="dash-card__title"><span data-dyn="cardCD">🏭 Cobertura y %InStock-3 por CD</span> <small>agregación vertical: Σ stock / Σ venta promedio diaria</small></div>
+        <div class="ism-table-wrap"><table class="ism-table" id="tbl-cob-cd"></table></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card__title"><span data-dyn="cardSKU">⚠ SKUs con mayor exposición InStock-3</span> <small>mayor % de días-combinatoria bajo el umbral</small></div>
+        <div class="ism-table-wrap"><table class="ism-table" id="tbl-cob-sku"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VIEW: DIARIO ── -->
+  <section class="view" id="view-diario" style="display:none">
+    <div class="view-container">
+      <div class="view-head"><span class="ism-eyebrow">Análisis</span>
+        <h2>Análisis Diario</h2>
+        <p>Serie diaria de una combinatoria CD × SKU con banda de control, días atípicos y stock superpuesto. Vista de auditoría del cálculo.</p></div>
+      <div class="filter-bar">
+        <div class="filter-item"><label>Centro de Distribución</label><select id="d-cd" class="ism-select"></select></div>
+        <div class="filter-item"><label>SKU</label><select id="d-sku" class="ism-select" style="min-width:290px;max-width:380px"></select></div>
+        <div class="filter-item"><label>Mes</label><select id="d-mes" class="ism-select"></select></div>
+        <div class="filter-spacer"></div>
+        <button class="ism-btn ism-btn--secondary ism-btn--sm" onclick="pickWorstDaily()">🎯 Ir al peor caso</button>
+      </div>
+      <div class="chip-row" id="d-chips"></div>
+      <div class="dash-card mb-14">
+        <div class="dash-card__title">📈 Serie diaria vs banda de control <small>LCS = Prom + k·σ · LCI = max(0, Prom − k·σ)</small></div>
+        <canvas id="ch-d-serie" height="105"></canvas>
+      </div>
+      <div class="grid2 mb-14">
+        <div class="dash-card"><div class="dash-card__title">📦 Stock disponible vs gap del día</div><canvas id="ch-d-stock" height="200"></canvas></div>
+        <div class="dash-card"><div class="dash-card__title">🗓 Días de cobertura</div><canvas id="ch-d-cob" height="200"></canvas></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card__title">📋 Detalle día a día</div>
+        <div class="ism-table-wrap"><table class="ism-table" id="tbl-d-detalle"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VIEW: FICHA SKU ── -->
+  <section class="view" id="view-sku" style="display:none">
+    <div class="view-container">
+      <div class="view-head"><span class="ism-eyebrow">Análisis</span>
+        <h2>Ficha SKU</h2>
+        <p>Un SKU en todos sus centros de distribución y meses. Los filtros globales de CD y Mes no aplican en esta vista.</p></div>
+      <div class="filter-bar">
+        <div class="filter-item"><label>SKU</label><select id="s-sku" class="ism-select" style="min-width:330px;max-width:430px"></select></div>
+        <div class="filter-spacer"></div>
+        <button class="ism-btn ism-btn--secondary ism-btn--sm" onclick="pickWorstSKU()">🎯 Ir al SKU más crítico</button>
+      </div>
+      <div id="s-ident" class="meta-line"></div>
+      <div class="kpi-row mb-14" id="kpi-sku"></div>
+      <div class="grid2 mb-14">
+        <div class="dash-card"><div class="dash-card__title">📈 Evolución mensual del SKU</div><canvas id="ch-s-tend" height="210"></canvas></div>
+        <div class="dash-card"><div class="dash-card__title">🏭 Comparativo entre CDs</div><canvas id="ch-s-cd" height="210"></canvas></div>
+      </div>
+      <div class="dash-card mb-14">
+        <div class="dash-card__title">🗺 Matriz CD × Mes — %SO Potencial</div>
+        <div class="ism-table-wrap"><table class="ism-table" id="tbl-s-matriz"></table></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card__title">📋 Detalle por CD × Mes</div>
+        <div class="ism-table-wrap"><table class="ism-table" id="tbl-s-detalle"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VIEW: VENTAS ── -->
+  <section class="view" id="view-ventas" style="display:none">
+    <div class="view-container">
+      <div class="view-head"><span class="ism-eyebrow">Análisis</span>
+        <h2>Análisis de Ventas</h2>
+        <p>Única vista donde el filtro de Canal aplica. Inv.Diario no tiene dimensión de canal, por lo que los KPIs de quiebre no se segmentan por él.</p></div>
+      <div id="fb-ventas"></div>
+      <div class="meta-line" id="meta-ventas"></div>
+      <div class="kpi-row-4 mb-14" id="kpi-ventas"></div>
+      <div class="grid2 mb-14">
+        <div class="dash-card"><div class="dash-card__title">📈 Evolución mensual de venta</div><canvas id="ch-v-tend" height="215"></canvas></div>
+        <div class="dash-card"><div class="dash-card__title">🛒 Participación por Canal</div><canvas id="ch-v-canal" height="215"></canvas></div>
+      </div>
+      <div class="grid2 mb-14">
+        <div class="dash-card"><div class="dash-card__title">🏷 Venta por Categoría</div><canvas id="ch-v-cat" height="200"></canvas></div>
+        <div class="dash-card"><div class="dash-card__title">🏭 Venta por CD</div><canvas id="ch-v-cd" height="200"></canvas></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card__title">📋 Top 30 SKUs por volumen</div>
+        <div class="ism-table-wrap"><table class="ism-table" id="tbl-v-top"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VIEW: EXPORT ── -->
+  <section class="view" id="view-export" style="display:none">
+    <div class="view-container">
+      <div class="view-head"><span class="ism-eyebrow">Operación</span>
+        <h2>Exportar resultados</h2>
+        <p>Los archivos se generan con los filtros globales activos y los parámetros de Configuración vigentes.</p></div>
+      <div id="fb-export"></div>
+      <div class="meta-line" id="meta-export"></div>
+      <div class="grid3 mb-14">
+        <div class="dash-card">
+          <div class="dash-card__title">📗 Excel con formato</div>
+          <p style="font-size:var(--text-xs);color:var(--ism-text-secondary);line-height:1.75;margin-bottom:14px">
+            5 hojas listas para trabajar: portada de parámetros, Resumen por CD, Detalle CD×SKU, Top Críticos y
+            Cobertura. Cabecera Verde ISM congelada, autofiltro, semáforo de color en las columnas de %,
+            formatos numéricos y anchos de columna ajustados.</p>
+          <button class="ism-btn ism-btn--primary" style="width:100%" onclick="downloadExcel()">⬇ Descargar Excel</button>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card__title">🗓 Excel — cobertura diaria</div>
+          <p style="font-size:var(--text-xs);color:var(--ism-text-secondary);line-height:1.75;margin-bottom:14px">
+            <span data-dyn="expCob">Cobertura día a día por CD×SKU con marca de InStock-3.</span>
+            Mismo formato ISM, con semáforo en la marca de riesgo. Solo meses con Inv.Diario.</p>
+          <button class="ism-btn ism-btn--secondary" style="width:100%" onclick="downloadCobXlsx()">⬇ Descargar Excel</button>
+        </div>
+        <div class="dash-card">
+          <div class="dash-card__title">📄 CSV plano</div>
+          <p style="font-size:var(--text-xs);color:var(--ism-text-secondary);line-height:1.75;margin-bottom:14px">
+            Detalle CD×SKU×Mes sin formato, UTF-8 con BOM. Para cargar en Power BI, SAP o cualquier
+            proceso que consuma texto plano.</p>
+          <button class="ism-btn ism-btn--secondary" style="width:100%" onclick="downloadCSV()">⬇ Descargar CSV</button>
+        </div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-card__title">🔄 Reiniciar</div>
+        <p style="font-size:var(--text-xs);color:var(--ism-text-secondary);line-height:1.7;margin-bottom:14px">
+          Descarta los datos cargados y vuelve a la pantalla de carga. Los parámetros de Configuración se conservan.</p>
+        <button class="ism-btn ism-btn--ghost" onclick="resetTool()">↺ Cargar otro archivo</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VIEW: SETTINGS ── -->
+  <section class="view" id="view-settings" style="display:none">
+    <div class="view-container">
+      <div class="view-head"><span class="ism-eyebrow">Operación</span>
+        <h2>Configuración de parámetros</h2>
+        <p>Los cambios recalculan el motor completo y se propagan a todas las vistas. Se guardan en este navegador.</p></div>
+
+      <div class="ism-settings-panel">
+        <div class="ism-settings-panel__title">Ventana móvil de cálculo</div>
+        <div class="ism-settings-panel__desc">Define sobre qué histórico se calculan el promedio y la desviación de cada día. La ventana toma los N días calendario anteriores al día evaluado (sin incluirlo) y promedia solo los días con venta dentro de ella. El primer mes de cada CD×SKU no tiene histórico, por lo que usa la estadística del mes completo.</div>
+        <div class="grid2">
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Ventana — <span class="tabular" id="lbl-ventana">28</span> días calendario (<span class="tabular" id="lbl-semanas">4</span> semanas)</label>
+            <input type="range" id="cfg-ventana" class="ism-range" min="7" max="42" step="7" value="28">
+            <div style="display:flex;justify-content:space-between;font-size:.625rem;color:var(--ism-ink-300)">
+              <span>7 · 1 semana</span><span>42 · 6 semanas</span></div>
+            <div class="ism-param-group__hint">El paso es de 7 días para que cada día de la semana entre el mismo número de veces. En estos datos el indicador solo se mueve al completar semanas: 7 y 10 días dan prácticamente el mismo resultado, pero 10 sobrepondera dos días de la semana.</div>
+          </div>
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Mínimo de días con venta dentro de la ventana</label>
+            <input type="number" id="cfg-minventana" class="ism-input" min="2" max="20" step="1" value="3">
+            <div class="ism-param-group__hint">Si la ventana contiene menos días con venta que este mínimo, ese día no se evalúa. Es independiente del mínimo mensual del panel siguiente, que solo aplica al primer mes.</div>
+            <div id="ventana-diag" class="ism-formula" style="margin-top:8px">Carga un archivo para ver el diagnóstico.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ism-settings-panel">
+        <div class="ism-settings-panel__title">Sensibilidad del cálculo de Venta Perdida</div>
+        <div class="ism-settings-panel__desc">Define la amplitud de la banda de control. Un k menor amplía el LCI y detecta más días como atípicos; un k mayor lo restringe a caídas más severas.</div>
+        <div class="grid2">
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Desviaciones estándar (k) — <span class="tabular" id="lbl-k">1.0</span></label>
+            <input type="range" id="cfg-k" class="ism-range" min="0.5" max="3" step="0.1" value="1">
+            <div style="display:flex;justify-content:space-between;font-size:.625rem;color:var(--ism-ink-300)">
+              <span>0.5 · más sensible</span><span>3.0 · más restrictivo</span></div>
+            <div class="ism-formula" style="margin-top:8px">LCI = max(0, Promedio_móvil − k·σ_móvil)
+LCS = Promedio_móvil + k·σ_móvil
+σ muestral (ddof = 1)</div>
+          </div>
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Mínimo de días activos — primer mes</label>
+            <input type="number" id="cfg-mindias" class="ism-input" min="2" max="20" step="1" value="5">
+            <div class="ism-param-group__hint">Aplica solo al primer mes de cada CD×SKU, que usa la estadística del mes completo por no tener histórico previo. Por debajo de este umbral la combinatoria se marca "Datos insuficientes" y su VP se fija en 0.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ism-settings-panel">
+        <div class="ism-settings-panel__title">Metas de los indicadores principales</div>
+        <div class="ism-settings-panel__desc">Se muestran como referencia en las tarjetas KPI y como línea punteada en las tendencias. %VP, %SO e <span data-dyn="metaDesc">%InStock-3</span> son indicadores de riesgo: la meta actúa como techo. Cobertura actúa como piso.</div>
+        <div class="grid2" style="gap:16px 20px">
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Meta %VP Potencial (techo, %)</label>
+            <input type="number" id="cfg-meta-vp" class="ism-input" min="0" max="100" step="0.1" value="5">
+            <div class="ism-param-group__hint">Se cumple cuando el resultado es menor o igual a la meta.</div>
+          </div>
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Meta %SO Potencial (techo, %)</label>
+            <input type="number" id="cfg-meta-so" class="ism-input" min="0" max="100" step="0.1" value="2">
+            <div class="ism-param-group__hint">Se cumple cuando el resultado es menor o igual a la meta.</div>
+          </div>
+          <div class="ism-param-group">
+            <label class="ism-param-group__label" data-dyn="metaLbl">Meta %InStock-3 (techo, %)</label>
+            <input type="number" id="cfg-meta-instock" class="ism-input" min="0" max="100" step="0.1" value="10">
+            <div class="ism-param-group__hint">% de días-combinatoria bajo el umbral de cobertura. Menor es mejor.</div>
+          </div>
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Meta Cobertura (piso, días)</label>
+            <input type="number" id="cfg-meta-cob" class="ism-input" min="0" max="120" step="0.5" value="7">
+            <div class="ism-param-group__hint">Se cumple cuando la cobertura promedio es mayor o igual a la meta.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ism-settings-panel">
+        <div class="ism-settings-panel__title" data-dyn="umbTitle">Umbral de cobertura para %InStock-3</div>
+        <div class="ism-settings-panel__desc">Días de inventario por debajo de los cuales una combinatoria CD×SKU se considera en riesgo de quiebre en ese día.</div>
+        <div class="grid2">
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Días de cobertura mínimos</label>
+            <input type="number" id="cfg-instock-dias" class="ism-input" min="1" max="30" step="1" value="3">
+            <div class="ism-param-group__hint">Cambiarlo renombra el indicador en toda la interfaz (ej. 5 → %InStock-5).</div>
+          </div>
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Cobertura máxima a graficar (días)</label>
+            <input type="number" id="cfg-cob-cap" class="ism-input" min="10" max="365" step="5" value="60">
+            <div class="ism-param-group__hint">Solo afecta la escala visual de gráficos y tablas. No altera el cálculo del indicador.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ism-settings-panel">
+        <div class="ism-settings-panel__title">Umbrales de clasificación de SKUs</div>
+        <div class="ism-settings-panel__desc">Definen el semáforo y los conteos de SKUs Críticos e En Alerta. Se aplican sobre %SO en meses con inventario y sobre %VP cuando no lo hay.</div>
+        <div class="grid3" style="gap:16px 20px">
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Umbral Crítico (≥ %)</label>
+            <input type="number" id="cfg-th-crit" class="ism-input" min="0" max="100" step="0.5" value="15">
+            <div class="ism-param-group__hint">Rojo ISM. Alimenta la hoja "Top Críticos" del Excel.</div>
+          </div>
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Umbral Alerta (≥ %)</label>
+            <input type="number" id="cfg-th-alert" class="ism-input" min="0" max="100" step="0.5" value="5">
+            <div class="ism-param-group__hint">Amarillo ISM. Debe ser menor que el umbral crítico.</div>
+          </div>
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Umbral Insuficiente (&lt; días activos)</label>
+            <input type="number" id="cfg-th-insuf" class="ism-input" min="2" max="20" step="1" value="5">
+            <div class="ism-param-group__hint">Se sincroniza con el mínimo de días activos del primer panel.</div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="ism-settings-panel">
+        <div class="ism-settings-panel__title">Calidad de datos — registros duplicados en Inv.Diario</div>
+        <div class="ism-settings-panel__desc">Cuando Inv.Diario trae más de un registro para la misma llave Fecha × CD × SKU (típicamente por doble extracción del snapshot), esta regla decide qué valor de stock se usa. <strong>Sumar crea inventario inexistente y subestima el %SO</strong>, por lo que no es el valor por defecto.</div>
+        <div class="grid2">
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Regla de deduplicación</label>
+            <select id="cfg-dedup" class="ism-select">
+              <option value="max">Máximo — el stock más alto del día (conservador para el %SO)</option>
+              <option value="last">Último registro — el que aparece al final del archivo</option>
+              <option value="avg">Promedio de los registros del día</option>
+              <option value="min">Mínimo — el stock más bajo (agresivo: detecta más quiebres)</option>
+              <option value="sum">Suma — solo si los registros son almacenes físicos distintos</option>
+            </select>
+            <div class="ism-param-group__hint"><strong>Máximo</strong> da el beneficio de la duda al inventario: si aun con la lectura más alta se detecta quiebre, el quiebre es robusto. Usa <strong>Suma</strong> únicamente si confirmas que los duplicados corresponden a bodegas separadas dentro del mismo CD.</div>
+          </div>
+          <div class="ism-param-group">
+            <label class="ism-param-group__label">Diagnóstico del archivo cargado</label>
+            <div id="dedup-diag" class="ism-formula" style="margin:0">Carga un archivo para ver el diagnóstico.</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+        <button class="ism-btn ism-btn--primary" onclick="applyConfig()">✓ Aplicar y recalcular</button>
+        <button class="ism-btn ism-btn--secondary" onclick="resetConfig()">↺ Restaurar valores por defecto</button>
+        <span id="cfg-status" style="align-self:center;font-size:var(--text-xs);color:var(--ism-ink-500)"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VIEW: LOGIC ── -->
+  <section class="view" id="view-logic" style="display:none">
+    <div class="view-container" style="max-width:1000px">
+      <div class="view-head"><span class="ism-eyebrow">Operación</span>
+        <h2>Lógica de Análisis</h2>
+        <p>Fórmulas, reglas de cobertura y decisiones de diseño del motor de cálculo. Todo el procesamiento ocurre en el navegador; ningún dato sale del equipo.</p></div>
+      <div class="ism-logic-accordion" id="logic-acc"></div>
+    </div>
+  </section>
+
+</div><!-- /app-shell -->
+
+<footer class="ism-footer">
+  <span>ISM Supply Chain · Jefatura Corporativa (SC-CORP)</span>
+  <span class="tabular" id="footer-params">LCI = max(0, Promedio − 1.0·σ) · %SO ≤ %VP por construcción</span>
+</footer>
+
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════════
+   CONFIG · ESTADO GLOBAL
+   ════════════════════════════════════════════════════════════ */
+const DEFAULTS={k:1.0,minDias:5,metaVP:5,metaSO:2,metaInstock:10,metaCob:7,
+                instockDias:3,cobCap:60,thCrit:15,thAlert:5,thInsuf:5,dedup:'max',
+                ventana:28,minVentana:3};
+let CFG={...DEFAULTS};
+try{const s=localStorage.getItem('ism-vpso-cfg'); if(s) CFG={...DEFAULTS,...JSON.parse(s)};}catch(e){}
+
+const MES_FULL={1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'};
+const MES_S={1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'};
+const DEDUP_LBL={max:'Máximo',min:'Mínimo',last:'Último registro',avg:'Promedio',sum:'Suma'};
+const CO={green:'#00953B',red:'#EE3124',blue:'#0624BA',yellow:'#FFBC36',yellowL:'#C58300',
+          orange:'#EC6B00',cyan:'#059CDA',salmon:'#F2664A',grey:'#D1D5DB'};
+
+let RAW={venta:[],inv:[],maestro:{sku:new Map(),cd:new Map(),canal:new Map()},
+         meses:[],mesesConInv:new Set(),nV:0,nI:0,fname:'',dupKeys:0,dupRows:0,dupFechas:[]};
+let ENG={rows:[],dias:[],cobDias:[],days:[],dayIdx:new Map(),diag:{}};
+let F={mes:[],tipo:[],canal:[],cd:[],cat:[],fmt:[],sabor:[],envase:[]};
+let CH={};                     // instancias Chart.js
+let VIEW='upload';
+let dataLoaded=false;
+
+/* ════════════════════════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════════════════════════ */
+const mean=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:0;
+const stdD=a=>{if(a.length<2)return 0;const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));};
+const r2=v=>Math.round(v*100)/100, r1=v=>Math.round(v*10)/10;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fPct=v=>(v===null||v===undefined||isNaN(v))?'—':v.toFixed(2)+'%';
+const fPct1=v=>(v===null||v===undefined||isNaN(v))?'—':v.toFixed(1)+'%';
+const fNum=(v,d=1)=>(v===null||v===undefined||isNaN(v))?'—':Number(v).toLocaleString('es-GT',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fInt=v=>(v===null||v===undefined||isNaN(v))?'—':Math.round(v).toLocaleString('es-GT');
+const instockName=()=>'%InStock-'+CFG.instockDias;
+
+function sem(v){ if(v===null||v===undefined||isNaN(v))return 'N/A';
+  return v>=CFG.thCrit?'Crítico':v>=CFG.thAlert?'Alerta':'OK'; }
+function semColor(v){ if(v===null||v===undefined||isNaN(v))return CO.grey;
+  return v>=CFG.thCrit?CO.red:v>=CFG.thAlert?CO.yellow:CO.green; }
+function badge(e){
+  if(!e||e==='N/A')return '<span class="ism-badge ism-badge--nd">N/A</span>';
+  if(e==='Crítico')return '<span class="ism-badge ism-badge--critical"><span class="ism-badge__dot"></span>Crítico</span>';
+  if(e==='Alerta') return '<span class="ism-badge ism-badge--warning"><span class="ism-badge__dot"></span>Alerta</span>';
+  if(e==='Insuf.') return '<span class="ism-badge ism-badge--nd">Insuf.</span>';
+  return '<span class="ism-badge ism-badge--ok"><span class="ism-badge__dot"></span>OK</span>';
+}
+function toneOf(v){ const e=sem(v); return e==='Crítico'?'bad':e==='Alerta'?'warn':e==='OK'?'good':'neutral'; }
+
+function parseXlDate(v){
+  if(v instanceof Date) return isNaN(v.getTime())?null:v;
+  if(typeof v==='number'&&v>0) return new Date(Math.round((v-25569)*86400000));
+  if(typeof v==='string'&&v.trim()){const d=new Date(v.trim().replace(/(\d{2})\/(\d{2})\/(\d{4})/,'$3-$2-$1'));return isNaN(d.getTime())?null:d;}
+  return null;
+}
+const dStr=d=>d.toISOString().slice(0,10);
+
+/* ════════════════════════════════════════════════════════════
+   TEMA · NAVEGACIÓN
+   ════════════════════════════════════════════════════════════ */
+function initTheme(){const s=localStorage.getItem('ism-theme');
+  if(s==='dark')document.documentElement.setAttribute('data-theme','dark');
+  document.getElementById('theme-toggle').textContent=s==='dark'?'☀':'🌙';}
+function toggleTheme(){const d=document.documentElement.getAttribute('data-theme')==='dark';
+  if(d){document.documentElement.removeAttribute('data-theme');localStorage.setItem('ism-theme','light');document.getElementById('theme-toggle').textContent='🌙';}
+  else{document.documentElement.setAttribute('data-theme','dark');localStorage.setItem('ism-theme','dark');document.getElementById('theme-toggle').textContent='☀';}
+  if(dataLoaded) renderView(VIEW);}
+initTheme();
+
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('is-open');
+  document.getElementById('sb-backdrop').classList.toggle('is-open');
+}
+function go(v){
+  VIEW=v;
+  document.querySelectorAll('.view').forEach(s=>s.style.display='none');
+  const el=document.getElementById('view-'+v); if(el) el.style.display='';
+  document.querySelectorAll('.ism-nav-item').forEach(b=>b.classList.toggle('is-active',b.dataset.view===v));
+  if(window.innerWidth<=860){document.getElementById('sidebar').classList.remove('is-open');
+    document.getElementById('sb-backdrop').classList.remove('is-open');}
+  window.scrollTo(0,0);
+  if(dataLoaded) renderView(v);
+  if(v==='logic') renderLogic();
+}
+function unlockNav(){ document.querySelectorAll('.nav-locked').forEach(b=>b.disabled=false); }
+
+/* ════════════════════════════════════════════════════════════
+   CARGA DE ARCHIVO · PANTALLA DE PROCESAMIENTO
+   ════════════════════════════════════════════════════════════ */
+const LOAD_MSGS=['Analizando la base de datos...','Reconociendo listas maestras',
+                 'Calculando venta perdida potencial...','Estimando stock-out potencial...'];
+let msgTimer=null, msgIdx=0, loadSteps=[];
+
+function startMsgRotation(){
+  msgIdx=0; const el=document.getElementById('load-msg');
+  el.textContent=LOAD_MSGS[0];
+  msgTimer=setInterval(()=>{
+    el.classList.add('is-fading');
+    setTimeout(()=>{ msgIdx=(msgIdx+1)%LOAD_MSGS.length; el.textContent=LOAD_MSGS[msgIdx]; el.classList.remove('is-fading'); },250);
+  },2000);
+}
+function stopMsgRotation(){ if(msgTimer){clearInterval(msgTimer);msgTimer=null;} }
+function lstep(t,pct){
+  loadSteps.push(t);
+  const ul=document.getElementById('load-steps');
+  const show=loadSteps.slice(-6);
+  ul.innerHTML=show.map((s,i)=>`<li class="${i===show.length-1?'active':'done'}">${esc(s)}</li>`).join('');
+  if(pct!=null) document.getElementById('load-bar').style.width=pct+'%';
+}
+function showLoading(fname){
+  document.querySelectorAll('.view').forEach(s=>s.style.display='none');
+  document.getElementById('view-loading').style.display='';
+  document.getElementById('load-file').textContent=fname;
+  document.getElementById('load-bar').style.width='0%';
+  loadSteps=[]; document.getElementById('load-steps').innerHTML='';
+  document.getElementById('load-msg').style.color='';
+  startMsgRotation();
+}
+function loadError(m){
+  stopMsgRotation();
+  const el=document.getElementById('load-msg');
+  el.style.color='var(--ism-red-on-surface)'; el.textContent='❌ '+m;
+  setTimeout(()=>{ if(!dataLoaded) go('upload'); },5200);
+}
+
+document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[0]);e.target.value='';});
+const dz=document.getElementById('dropzone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('is-dragover');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('is-dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('is-dragover');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+
+async function handleFile(file){
+  showLoading(file.name); await sleep(60);
+  try{
+    lstep('Leyendo archivo: '+file.name,6); await sleep(120);
+    const wb=XLSX.read(await file.arrayBuffer(),{cellDates:true,raw:true});
+    lstep('Hojas detectadas: '+wb.SheetNames.join(' · '),14); await sleep(150);
+
+    lstep('Cargando listas maestras...',22); await sleep(180);
+    const maestro=parseMaestro(wb);
+    lstep(`✓ Maestro: ${maestro.sku.size} SKUs · ${maestro.cd.size} CDs · ${maestro.canal.size} canales`,32);
+    await sleep(200);
+
+    lstep('Procesando hoja Venta...',40); await sleep(150);
+    const venta=parseVenta(wb,maestro);
+    const meses=[...new Set(venta.map(r=>r.mes))].sort((a,b)=>a-b);
+    lstep(`✓ Venta: ${venta.length.toLocaleString()} registros · ${meses.length} meses`,52);
+    await sleep(200);
+
+    lstep('Procesando hoja Inv.Diario...',60); await sleep(150);
+    const {inv,invRaw,mesesConInv,dupKeys,dupRows,dupFechas}=parseInvDiario(wb);
+    lstep(`✓ Inventario: ${inv.length.toLocaleString()} registros · cobertura ${[...mesesConInv].sort((a,b)=>a-b).map(m=>MES_S[m]).join(', ')||'ninguna'}`,70);
+    await sleep(220);
+
+    if(dupKeys) lstep(`⚠ ${dupKeys.toLocaleString()} llaves Fecha×CD×SKU duplicadas — regla: ${DEDUP_LBL[CFG.dedup]}`,74);
+    RAW={venta,inv,invRaw,maestro,meses,mesesConInv,nV:venta.length,nI:inv.length,fname:file.name,dupKeys,dupRows,dupFechas};
+
+    lstep(`Calculando bandas de control (k = ${CFG.k.toFixed(1)})...`,80); await sleep(260);
+    runEngine();
+    lstep(`✓ ${ENG.rows.length.toLocaleString()} combinatorias CD×SKU×Mes procesadas`,90);
+    await sleep(200);
+
+    lstep('Construyendo vistas...',97); await sleep(240);
+    dataLoaded=true;
+    unlockNav();
+    initGlobalFilters();
+    initDiarioSelectors();
+    initSKUSelector();
+    lstep('✓ Listo',100); await sleep(320);
+    stopMsgRotation();
+
+    document.getElementById('header-meta').textContent=meses.map(m=>MES_S[m]).join(' · ');
+    document.getElementById('header-meta').style.display='';
+    go('resumen');
+  }catch(err){ console.error(err); loadError(err.message||'Error al procesar el archivo'); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   PARSERS
+   ════════════════════════════════════════════════════════════ */
+function parseMaestro(wb){
+  const ws=wb.Sheets['Maestro'];
+  const sku=new Map(), cd=new Map(), canal=new Map();
+  if(!ws) return {sku,cd,canal};
+  const rows=XLSX.utils.sheet_to_json(ws,{raw:true,defval:null});
+  for(const r of rows){
+    const ck=r['Código Canal']??r['Codigo Canal'];
+    if(ck!=null&&String(ck).trim()!=='') canal.set(String(ck).trim(),String(r['Descripción Canal']??r['Descripcion Canal']??'').trim());
+    const dk=r['Código CD']??r['Codigo CD'];
+    if(dk!=null&&String(dk).trim()!=='') cd.set(String(dk).trim(),String(r['Descripción CD']??r['Descripcion CD']??'').trim());
+    const sk=r['Código SKU']??r['Codigo SKU'];
+    if(sk!=null&&String(sk).trim()!==''){
+      const key=String(sk).trim();
+      if(!sku.has(key)) sku.set(key,{
+        cat:String(r['Categoría']??r['Categoria']??'').trim()||'(sin categoría)',
+        marca:String(r['Marca']??'').trim()||'(sin marca)',
+        fmt:String(r['Formato']??'').trim()||'(sin formato)',
+        sabor:String(r['Sabor']??'').trim()||'(sin sabor)',
+        envase:String(r['Envase']??'').trim()||'(sin envase)',
+        desc:String(r['Descripción SKU']??r['Descripcion SKU']??'').trim()
+      });
+    }
+  }
+  return {sku,cd,canal};
+}
+
+function parseVenta(wb,maestro){
+  const ws=wb.Sheets['Venta'];
+  if(!ws) throw new Error('No se encontró la hoja "Venta".');
+  const rows=XLSX.utils.sheet_to_json(ws,{cellDates:true,raw:true});
+  const out=[];
+  for(const r of rows){
+    const tipo=String(r['Tipo de Movimiento']??'').trim().normalize('NFC');
+    if(tipo!=='Venta'&&tipo!=='Bonificación'&&tipo!=='Bonificacion') continue;
+    const f=parseXlDate(r['Fecha']); if(!f) continue;
+    const sku=String(r['Código SKU']??r['Codigo SKU']??'').trim(); if(!sku) continue;
+    const cd=String(r['Código CD']??r['Codigo CD']??'').trim(); if(!cd) continue;
+    const m=maestro.sku.get(sku);
+    out.push({
+      mes:f.getMonth()+1, fechaStr:dStr(f), cd, sku, tipo,
+      canal:String(r['Código Canal']??r['Codigo Canal']??'').trim(),
+      canalDesc:String(r['Descripción Canal']??r['Descripcion Canal']??'').trim(),
+      descCD:maestro.cd.get(cd)||String(r['Descripción CD']??r['Descripcion CD']??'').trim(),
+      descSKU:(m&&m.desc)||String(r['Descripción SKU']??r['Descripcion SKU']??'').trim(),
+      cat:m?m.cat:'(sin categoría)', marca:m?m.marca:'(sin marca)',
+      fmt:m?m.fmt:'(sin formato)', sabor:m?m.sabor:'(sin sabor)', envase:m?m.envase:'(sin envase)',
+      vol:parseFloat(r['Volumen Litros'])||0,
+      fact:parseFloat(r['Facturación']??r['Facturacion'])||0
+    });
+  }
+  if(!out.length) throw new Error('No se encontraron filas de Venta o Bonificación.');
+  return out;
+}
+
+function parseInvDiario(wb){
+  const ws=wb.Sheets['Inv.Diario'];
+  if(!ws) throw new Error('No se encontró la hoja "Inv.Diario".');
+  const raw=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,cellDates:true});
+  if(raw.length<2) throw new Error('La hoja "Inv.Diario" no contiene datos.');
+  const hdr=(raw[0]||[]).map(h=>String(h??'').trim());
+  const fi=(names,fb)=>{const i=hdr.findIndex(h=>names.includes(h));return i>=0?i:fb;};
+  const iF=fi(['Fecha'],17), iS=fi(['SKUCODE','Código SKU','Codigo SKU'],4),
+        iQ=fi(['Stock Disponible en Litros'],18), iC=fi(['Código CD','Codigo CD'],19);
+  const invRaw=[], mesesConInv=new Set();
+  for(let i=1;i<raw.length;i++){
+    const row=raw[i]; if(!row) continue;
+    const f=parseXlDate(row[iF]); if(!f) continue;
+    const cd=String(row[iC]??'').trim(), sku=String(row[iS]??'').trim();
+    if(!cd||!sku) continue;
+    mesesConInv.add(f.getMonth()+1);
+    invRaw.push({fechaStr:dStr(f),mes:f.getMonth()+1,cd,sku,stock:Math.max(0,parseFloat(row[iQ])||0)});
+  }
+  // ── Deduplicación por (Fecha, CD, SKU) ──
+  // Inv.Diario puede traer más de un registro para la misma llave (doble extracción
+  // del snapshot). Sumarlos crearía inventario inexistente y subestimaría el %SO.
+  const g=new Map(), fechasDup=new Set();
+  let dupRows=0;
+  for(const r of invRaw){
+    const k=r.fechaStr+'|'+r.cd+'|'+r.sku;
+    let a=g.get(k);
+    if(!a){ a={fechaStr:r.fechaStr,mes:r.mes,cd:r.cd,sku:r.sku,vals:[]}; g.set(k,a); }
+    else { dupRows++; fechasDup.add(r.fechaStr); }
+    a.vals.push(r.stock);
+  }
+  let dupKeys=0;
+  const inv=[];
+  for(const a of g.values()){
+    if(a.vals.length>1) dupKeys++;
+    let s;
+    switch(CFG.dedup){
+      case 'sum':  s=a.vals.reduce((x,y)=>x+y,0); break;
+      case 'min':  s=Math.min(...a.vals); break;
+      case 'last': s=a.vals[a.vals.length-1]; break;
+      case 'avg':  s=a.vals.reduce((x,y)=>x+y,0)/a.vals.length; break;
+      default:     s=Math.max(...a.vals);            // 'max'
+    }
+    inv.push({fechaStr:a.fechaStr,mes:a.mes,cd:a.cd,sku:a.sku,stock:s,nDup:a.vals.length});
+  }
+  return {inv,invRaw,mesesConInv,dupKeys,dupRows,dupFechas:[...fechasDup].sort()};
+}
+
+/* Re-aplica la regla de deduplicación sobre el inventario crudo,
+   sin necesidad de volver a leer el archivo. */
+function redoDedup(){
+  if(!RAW.invRaw||!RAW.invRaw.length) return;
+  const g=new Map();
+  for(const r of RAW.invRaw){
+    const k=r.fechaStr+'|'+r.cd+'|'+r.sku;
+    let a=g.get(k);
+    if(!a){a={fechaStr:r.fechaStr,mes:r.mes,cd:r.cd,sku:r.sku,vals:[]};g.set(k,a);}
+    a.vals.push(r.stock);
+  }
+  const inv=[];
+  for(const a of g.values()){
+    let s;
+    switch(CFG.dedup){
+      case 'sum':  s=a.vals.reduce((x,y)=>x+y,0); break;
+      case 'min':  s=Math.min(...a.vals); break;
+      case 'last': s=a.vals[a.vals.length-1]; break;
+      case 'avg':  s=a.vals.reduce((x,y)=>x+y,0)/a.vals.length; break;
+      default:     s=Math.max(...a.vals);
+    }
+    inv.push({fechaStr:a.fechaStr,mes:a.mes,cd:a.cd,sku:a.sku,stock:s,nDup:a.vals.length});
+  }
+  RAW.inv=inv; RAW.nI=inv.length;
+}
+
+/* ════════════════════════════════════════════════════════════
+   MOTOR DE CÁLCULO — ventana móvil
+   ── Estadística: por cada día se toma la ventana de los N días
+      CALENDARIO anteriores (sin incluir el día evaluado) y se
+      promedia SOLO sobre los días con venta dentro de esa ventana.
+   ── Primer mes de cada CD×SKU: no hay histórico suficiente, así
+      que se usa la estadística del mes completo (días activos).
+   ── σ muestral (ddof = 1).
+   ── LCI y LCS dejan de ser constantes mensuales: son un valor
+      por día. La banda de control es una curva.
+   ════════════════════════════════════════════════════════════ */
+function runEngine(){
+  const {venta,inv,maestro,mesesConInv}=RAW;
+  const K=CFG.k, MINmes=CFG.minDias, N=CFG.ventana, MINven=CFG.minVentana, UMB=CFG.instockDias;
+
+  /* ── 1. Rango de fechas continuo ────────────────────────── */
+  let minS=null,maxS=null;
+  const upd=s=>{ if(minS===null||s<minS)minS=s; if(maxS===null||s>maxS)maxS=s; };
+  for(const r of venta) upd(r.fechaStr);
+  for(const r of inv)   upd(r.fechaStr);
+  if(minS===null) throw new Error('No hay fechas válidas en los datos.');
+  const days=[], dayIdx=new Map();
+  for(let t=Date.parse(minS+'T00:00:00Z'); t<=Date.parse(maxS+'T00:00:00Z'); t+=86400000){
+    const s=new Date(t).toISOString().slice(0,10);
+    dayIdx.set(s,days.length); days.push(s);
+  }
+  const nD=days.length;
+  const dayMes=days.map(s=>+s.slice(5,7));
+
+  /* ── 2. Series diarias por CD×SKU ───────────────────────── */
+  const ser=new Map(), meta=new Map();
+  for(const r of venta){
+    const k=r.cd+'|'+r.sku;
+    let e=ser.get(k);
+    if(!e){ e={cd:r.cd,sku:r.sku,vol:new Float64Array(nD),fact:new Float64Array(nD)}; ser.set(k,e); }
+    const i=dayIdx.get(r.fechaStr); if(i===undefined) continue;
+    e.vol[i]+=r.vol; e.fact[i]+=r.fact;
+    if(!meta.has(k)) meta.set(k,{descCD:r.descCD,descSKU:r.descSKU,cat:r.cat,
+      marca:r.marca,fmt:r.fmt,sabor:r.sabor,envase:r.envase});
+  }
+  /* Inventario: NaN = sin registro (distinto de stock 0) */
+  const invS=new Map();
+  for(const r of inv){
+    const k=r.cd+'|'+r.sku;
+    let a=invS.get(k);
+    if(!a){ a=new Float64Array(nD).fill(NaN); invS.set(k,a); }
+    const i=dayIdx.get(r.fechaStr); if(i===undefined) continue;
+    a[i]=isNaN(a[i])?r.stock:r.stock;
+    if(!ser.has(k)){ ser.set(k,{cd:r.cd,sku:r.sku,vol:new Float64Array(nD),fact:new Float64Array(nD)}); }
+  }
+
+  /* ── 3. Primer mes de cada serie y su estadística ────────── */
+  for(const e of ser.values()){
+    let f=-1;
+    for(let i=0;i<nD;i++) if(e.vol[i]>0){ f=i; break; }
+    e.m1 = f>=0 ? dayMes[f] : null;
+    const a=[];
+    if(e.m1!==null) for(let i=0;i<nD;i++) if(dayMes[i]===e.m1 && e.vol[i]>0) a.push(e.vol[i]);
+    e.n1=a.length;
+    if(a.length>=MINmes){ e.p1=mean(a); e.s1=stdD(a); } else { e.p1=null; e.s1=null; }
+  }
+
+  /* ── 4. Estadística aplicable al día i ──────────────────────
+     Primer mes  → estadística del mes completo.
+     Resto       → ventana de N días calendario previos,
+                   promediando solo los días con venta.        */
+  function statsAt(e,i){
+    if(dayMes[i]===e.m1)
+      return e.p1!==null ? {prom:e.p1,sig:e.s1,n:e.n1,src:'mes'} : null;
+    const lo=Math.max(0,i-N), w=[];
+    for(let j=lo;j<i;j++) if(e.vol[j]>0) w.push(e.vol[j]);
+    if(w.length<MINven) return null;
+    return {prom:mean(w),sig:stdD(w),n:w.length,src:'movil'};
+  }
+
+  /* ── 5. Recorrido día a día ─────────────────────────────── */
+  const dias=[], cobDias=[], rowMap=new Map();
+  for(const e of ser.values()){
+    const key=e.cd+'|'+e.sku;
+    const invA=invS.get(key);
+    for(let i=0;i<nD;i++){
+      const vol=e.vol[i];
+      const hasMov = vol!==0;                        // incluye devoluciones (vol < 0)
+      const hasInv = invA ? !isNaN(invA[i]) : false;
+      if(!hasMov && !hasInv) continue;
+      const mes=dayMes[i];
+      const rk=mes+'|'+e.cd+'|'+e.sku;
+      let R=rowMap.get(rk);
+      if(!R){ R={mes,cd:e.cd,sku:e.sku,vt:0,fact:0,nDias:0,nVP:0,vpMes:0,nSO:0,soMes:0,
+                 sProm:0,sSig:0,sLci:0,sLcs:0,nStat:0,nSinStat:0,srcMes:0,srcMov:0,sWin:0};
+              rowMap.set(rk,R); }
+      /* Venta Total incluye todo el movimiento del día, también las
+         devoluciones netas negativas. La estadística y el test de VP
+         solo miran los días con venta neta positiva.                 */
+      if(hasMov){ R.vt+=vol; R.fact+=e.fact[i]; }
+      if(vol>0) R.nDias++;
+
+      const st=statsAt(e,i);
+      let prom=null,sig=null,lci=null,lcs=null,vpDia=0;
+      if(st){
+        prom=st.prom; sig=st.sig;
+        lci=Math.max(0,prom-K*sig); lcs=prom+K*sig;
+        if(vol>0){
+          R.nStat++; R.sProm+=prom; R.sSig+=sig; R.sLci+=lci; R.sLcs+=lcs; R.sWin+=st.n;
+          if(st.src==='mes') R.srcMes++; else R.srcMov++;
+          if(vol<lci){ vpDia=Math.max(0,prom-vol); if(vpDia>0){ R.vpMes+=vpDia; R.nVP++; } }
+        }
+      } else if(vol>0) R.nSinStat++;
+
+      /* Stock-Out: solo meses con cobertura de Inv.Diario.
+         Sin registro dentro de un mes cubierto = stock 0.      */
+      let stock=null, soDia=null;
+      if(mesesConInv.has(mes)){
+        stock = hasInv ? invA[i] : 0;
+        if(vpDia>0){
+          soDia=Math.max(0,vpDia-stock);
+          R.soMes+=soDia; if(soDia>0) R.nSO++;
+        }
+      }
+
+      /* Cobertura: solo días con registro real de inventario
+         y con promedio móvil válido en ese día.                */
+      let cob=null;
+      if(hasInv && prom!==null && prom>0){
+        cob=invA[i]/prom;
+        cobDias.push({mes,fechaStr:days[i],cd:e.cd,sku:e.sku,
+                      stock:invA[i],prom,cob,bajo:cob<UMB});
+      }
+      dias.push({mes,fechaStr:days[i],cd:e.cd,sku:e.sku,vol,fact:e.fact[i],
+                 vpDia,stock,prom,sig,lci,lcs,cob,
+                 src:st?st.src:null, nWin:st?st.n:null});
+    }
+  }
+
+  /* ── 6. Agregado de cobertura por CD×SKU×Mes ────────────── */
+  const cobAgg=new Map();
+  for(const d of cobDias){
+    const k=d.mes+'|'+d.cd+'|'+d.sku;
+    let a=cobAgg.get(k);
+    if(!a){ a={sum:0,n:0,bajo:0,stock:0}; cobAgg.set(k,a); }
+    a.sum+=d.cob; a.n++; a.stock+=d.stock; if(d.bajo) a.bajo++;
+  }
+
+  /* ── 7. Filas CD×SKU×Mes ────────────────────────────────── */
+  const rows=[];
+  for(const R of rowMap.values()){
+    const m=meta.get(R.cd+'|'+R.sku)||{};
+    const pctVP=R.vt>0?r2(R.vpMes/R.vt*100):0;
+    const sinInv=!mesesConInv.has(R.mes);
+    const pctSO=sinInv?null:(R.vt>0?r2(Math.min(R.soMes/R.vt*100,pctVP)):0);
+    const a=cobAgg.get(R.mes+'|'+R.cd+'|'+R.sku);
+    let flag='';
+    if(R.vt===0) flag='Sin venta';
+    else if(R.nStat===0) flag='Datos insuficientes';
+    const nS=R.nStat||1;
+    rows.push({
+      mes:R.mes, cd:R.cd, descCD:m.descCD||'', sku:R.sku, descSKU:m.descSKU||'',
+      cat:m.cat||'', marca:m.marca||'', fmt:m.fmt||'', sabor:m.sabor||'', envase:m.envase||'',
+      vt:r1(R.vt), fact:r1(R.fact), nDias:R.nDias,
+      prom:R.nStat?r2(R.sProm/nS):null, sig:R.nStat?r2(R.sSig/nS):null,
+      lci:R.nStat?r2(R.sLci/nS):null,  lcs:R.nStat?r2(R.sLcs/nS):null,
+      nWinProm:R.nStat?r1(R.sWin/nS):null,
+      nStat:R.nStat, nSinStat:R.nSinStat, srcMes:R.srcMes, srcMov:R.srcMov,
+      base:R.srcMov>0&&R.srcMes>0?'Mixta':(R.srcMes>0?'Mes completo':'Ventana móvil'),
+      nVP:R.nVP, vpL:r1(R.vpMes), pctVP, flagVP:flag,
+      nSO:R.nSO, soL:r1(R.soMes), pctSO, sinInv,
+      cobProm:a&&a.n?r2(a.sum/a.n):null, pctIS:a&&a.n?r2(a.bajo/a.n*100):null,
+      nDiasInv:a?a.n:0, nBajo:a?a.bajo:0, sumStock:a?r1(a.stock):0,
+      estVP:flag?'Insuf.':sem(pctVP),
+      estSO:sinInv?'N/A':(flag?'Insuf.':sem(pctSO))
+    });
+  }
+  rows.sort((a,b)=>a.mes-b.mes||a.cd.localeCompare(b.cd)||((b.pctSO??-1)-(a.pctSO??-1)));
+
+  /* Diagnóstico de cobertura estadística */
+  const evalMov=rows.reduce((s,r)=>s+r.srcMov+r.nSinStat,0);
+  const skipMov=rows.reduce((s,r)=>s+r.nSinStat,0);
+  ENG={rows,dias,cobDias,days,dayIdx,
+       diag:{evalMov,skipMov,pctSkip:evalMov?r2(skipMov/evalMov*100):0}};
+
+  const el=document.getElementById('footer-params');
+  if(el) el.textContent=`Ventana móvil ${CFG.ventana}d · LCI = max(0, Promedio − ${CFG.k.toFixed(1)}·σ) · σ muestral · Crítico ≥ ${CFG.thCrit}% · ${instockName()}`;
+}
+
+/* ════════════════════════════════════════════════════════════
+   FILTROS GLOBALES — selección múltiple
+   Cada clave de F es un array. Array vacío = "todos".
+   ════════════════════════════════════════════════════════════ */
+const FILTER_DEFS=[
+  {k:'mes',   lbl:'Mes',      w:120},
+  {k:'tipo',  lbl:'Tipo Mov.',w:150},
+  {k:'canal', lbl:'Canal',    w:160},
+  {k:'cd',    lbl:'CD',       w:170},
+  {k:'cat',   lbl:'Categoría',w:150},
+  {k:'fmt',   lbl:'Formato',  w:120},
+  {k:'sabor', lbl:'Sabor',    w:150},
+  {k:'envase',lbl:'Envase',   w:120},
+];
+/* Vistas donde Canal y Tipo de Movimiento tienen sentido:
+   Inv.Diario no tiene ninguna de las dos dimensiones. */
+const CANAL_VIEWS=new Set(['ventas']);
+const TIPO_VIEWS =new Set(['ventas']);
+
+function uniqSorted(arr){
+  return [...new Set(arr.filter(v=>v!=null&&v!==''))]
+    .sort((a,b)=>String(a).localeCompare(String(b),'es',{numeric:true,sensitivity:'base'}));
+}
+function filterOptions(){
+  const rows=ENG.rows;
+  return {
+    mes:RAW.meses.map(m=>({v:String(m),t:MES_FULL[m]})),
+    tipo:uniqSorted(RAW.venta.map(r=>r.tipo)).map(v=>({v,t:v})),
+    canal:[...RAW.maestro.canal.entries()].map(([v,t])=>({v,t:t||v}))
+          .sort((a,b)=>a.t.localeCompare(b.t,'es')),
+    cd:uniqSorted(rows.map(r=>r.cd)).map(v=>{const d=RAW.maestro.cd.get(v);return {v,t:d?v+' · '+d:v};}),
+    cat:uniqSorted(rows.map(r=>r.cat)).map(v=>({v,t:v})),
+    fmt:uniqSorted(rows.map(r=>r.fmt)).map(v=>({v,t:v+' ml'})),
+    sabor:uniqSorted(rows.map(r=>r.sabor)).map(v=>({v,t:v})),
+    envase:uniqSorted(rows.map(r=>r.envase)).map(v=>({v,t:v})),
+  };
+}
+let OPTS={};
+
+/* ── Texto resumen del botón según la selección ── */
+function msSummary(key,sel,opts){
+  if(!sel.length) return key==='mes'?'Todos (YTD)':'Todos';
+  if(sel.length===1){
+    const o=opts.find(o=>o.v===sel[0]);
+    return o?o.t:sel[0];
+  }
+  if(sel.length===opts.length) return 'Todos ('+opts.length+')';
+  return sel.length+' seleccionados';
+}
+
+/* ── HTML de un multi-select ── */
+function buildMS(key,lbl,opts,width,disabled,tip){
+  const sel=F[key]||[];
+  const withSearch=opts.length>8;
+  return `<div class="filter-item${disabled?' is-disabled':''}">
+    <label>${esc(lbl)}</label>
+    <div class="ms" data-ms="${key}" style="width:${width}px">
+      <button type="button" class="ms__btn"${disabled?' disabled':''}${tip?' title="'+esc(tip)+'"':''}>
+        <span class="ms__txt">${esc(msSummary(key,sel,opts))}</span>
+        ${sel.length?`<span class="ms__badge">${sel.length}</span>`:''}
+        <span class="ms__car">▾</span>
+      </button>
+      <div class="ms__panel" hidden>
+        <div class="ms__actions">
+          <button type="button" class="ms__act" data-act="all">Todos</button>
+          <button type="button" class="ms__act" data-act="none">Limpiar</button>
+        </div>
+        ${withSearch?'<input type="text" class="ms__search ism-input" placeholder="Buscar...">':''}
+        <div class="ms__list">
+          ${opts.map(o=>`<label class="ms__opt" data-t="${esc(String(o.t).toLowerCase())}">
+            <input type="checkbox" value="${esc(o.v)}"${sel.includes(o.v)?' checked':''}>
+            <span>${esc(o.t)}</span></label>`).join('')}
+        </div>
+      </div>
+    </div></div>`;
+}
+
+function buildFilterBar(view){
+  OPTS=filterOptions();
+  const canalOn=CANAL_VIEWS.has(view), tipoOn=TIPO_VIEWS.has(view);
+  let html='<div class="filter-bar">';
+  for(const d of FILTER_DEFS){
+    if(d.k==='tipo'&&!tipoOn) continue;           // solo se dibuja en Ventas
+    const dis=(d.k==='canal'&&!canalOn);
+    html+=buildMS(d.k,d.lbl,OPTS[d.k]||[],d.w,dis,
+      dis?'El filtro de Canal solo aplica en Análisis de Ventas':'');
+  }
+  html+=`<div class="filter-spacer"></div>
+    <button class="ism-btn ism-btn--ghost ism-btn--sm" onclick="clearFilters()">↺ Limpiar todo</button>`;
+  if(!canalOn) html+=`<div class="filter-note">⚠ Canal y Tipo de Movimiento están deshabilitados en esta vista: Inv.Diario no tiene esas dimensiones, por lo que %SO, Cobertura e ${instockName()} no pueden segmentarse por ellas sin distorsión. Disponibles en <strong>Análisis de Ventas</strong>.</div>`;
+  html+='</div>';
+  return html;
+}
+
+/* ── Delegación de eventos: sobrevive a los re-render ── */
+function msClose(except){
+  document.querySelectorAll('.ms').forEach(m=>{
+    if(m!==except){ m.querySelector('.ms__panel').hidden=true; m.classList.remove('is-open'); }
+  });
+}
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('.ms__btn');
+  if(btn){
+    const ms=btn.closest('.ms');
+    const p=ms.querySelector('.ms__panel');
+    const wasOpen=!p.hidden;
+    msClose(ms);
+    p.hidden=wasOpen; ms.classList.toggle('is-open',!wasOpen);
+    if(!wasOpen){ const s=p.querySelector('.ms__search'); if(s){s.value='';s.dispatchEvent(new Event('input'));s.focus();} }
+    e.stopPropagation(); return;
+  }
+  const act=e.target.closest('.ms__act');
+  if(act){
+    const ms=act.closest('.ms'), key=ms.dataset.ms;
+    F[key]=act.dataset.act==='all'?(OPTS[key]||[]).map(o=>o.v):[];
+    syncFilterBars(); renderView(VIEW);
+    e.stopPropagation(); return;
+  }
+  if(!e.target.closest('.ms__panel')) msClose(null);
+});
+document.addEventListener('change',e=>{
+  const cb=e.target.closest('.ms__panel input[type=checkbox]');
+  if(!cb) return;
+  const key=cb.closest('.ms').dataset.ms;
+  const cur=new Set(F[key]||[]);
+  if(cb.checked) cur.add(cb.value); else cur.delete(cb.value);
+  F[key]=[...cur];
+  syncFilterBars(); renderView(VIEW);
+});
+document.addEventListener('input',e=>{
+  const s=e.target.closest('.ms__search');
+  if(!s) return;
+  const q=s.value.trim().toLowerCase();
+  s.closest('.ms__panel').querySelectorAll('.ms__opt').forEach(o=>{
+    o.style.display=(!q||o.dataset.t.includes(q))?'':'none';
+  });
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') msClose(null); });
+
+/* Refleja el estado de F en todas las barras de filtro abiertas */
+function syncFilterBars(){
+  document.querySelectorAll('.ms').forEach(ms=>{
+    const key=ms.dataset.ms, sel=F[key]||[], opts=OPTS[key]||[];
+    ms.querySelectorAll('input[type=checkbox]').forEach(cb=>{cb.checked=sel.includes(cb.value);});
+    const t=ms.querySelector('.ms__txt'); if(t) t.textContent=msSummary(key,sel,opts);
+    const b=ms.querySelector('.ms__badge');
+    if(sel.length){
+      if(b) b.textContent=sel.length;
+      else { const s=document.createElement('span'); s.className='ms__badge'; s.textContent=sel.length;
+             ms.querySelector('.ms__car').before(s); }
+    } else if(b) b.remove();
+  });
+}
+function initGlobalFilters(){
+  F={mes:[String(RAW.meses[RAW.meses.length-1])],tipo:[],canal:[],cd:[],cat:[],fmt:[],sabor:[],envase:[]};
+  OPTS=filterOptions();
+  rebuildFilterBars();
+}
+function rebuildFilterBars(){
+  OPTS=filterOptions();
+  ['resumen','vp','so','cobertura','ventas','export'].forEach(v=>{
+    const h=document.getElementById('fb-'+v); if(h) h.innerHTML=buildFilterBar(v);
+  });
+}
+function clearFilters(){
+  F={mes:[],tipo:[],canal:[],cd:[],cat:[],fmt:[],sabor:[],envase:[]};
+  syncFilterBars(); renderView(VIEW);
+}
+
+/* ── Predicados ─────────────────────────────────────────────
+   Array vacío = sin restricción. Canal y Tipo nunca filtran
+   los indicadores de quiebre (ver nota metodológica).        */
+const inSel=(arr,v)=>!arr||!arr.length||arr.includes(v);
+const mesSel=m=>!F.mes.length||F.mes.includes(String(m));
+function dimOK(r){
+  return inSel(F.cd,r.cd)&&inSel(F.cat,r.cat)&&inSel(F.fmt,r.fmt)
+      &&inSel(F.sabor,r.sabor)&&inSel(F.envase,r.envase);
+}
+function fRows(){  return ENG.rows.filter(r=>mesSel(r.mes)&&dimOK(r)); }
+function ytdRows(){return ENG.rows.filter(r=>dimOK(r)); }
+function dimKeySet(){ const s=new Set(); for(const r of ytdRows()) s.add(r.cd+'|'+r.sku); return s; }
+function fCobDias(){  const k=dimKeySet(); return ENG.cobDias.filter(d=>mesSel(d.mes)&&k.has(d.cd+'|'+d.sku)); }
+function ytdCobDias(){const k=dimKeySet(); return ENG.cobDias.filter(d=>k.has(d.cd+'|'+d.sku)); }
+/* Vista de Ventas: aquí Canal y Tipo de Movimiento SÍ aplican */
+function fVentaRows(){
+  return RAW.venta.filter(r=>mesSel(r.mes)&&inSel(F.tipo,r.tipo)&&inSel(F.canal,r.canal)&&dimOK(r));
+}
+/* Meses activos según el filtro, en orden */
+function selMeses(){ return F.mes.length?RAW.meses.filter(m=>F.mes.includes(String(m))):RAW.meses.slice(); }
+/* ¿Algún mes seleccionado carece de inventario? */
+function mesesSinInvSel(){ return selMeses().filter(m=>!RAW.mesesConInv.has(m)); }
+function algunMesConInv(){ return selMeses().some(m=>RAW.mesesConInv.has(m)); }
+
+/* ════════════════════════════════════════════════════════════
+   AGREGACIONES
+   ════════════════════════════════════════════════════════════ */
+function aggVP(rows){ const vt=rows.reduce((s,r)=>s+r.vt,0), vp=rows.reduce((s,r)=>s+r.vpL,0);
+  return vt>0?r2(vp/vt*100):null; }
+function aggSO(rows){
+  const v=rows.filter(r=>!r.sinInv&&!r.flagVP);
+  const vt=v.reduce((s,r)=>s+r.vt,0), so=v.reduce((s,r)=>s+r.soL,0);
+  return vt>0?r2(so/vt*100):null;
+}
+/* Cobertura vertical: Σ stock diario / Σ venta promedio diaria — luego promedio por día */
+function aggCob(cobD){
+  if(!cobD.length) return null;
+  const byDay=new Map();
+  for(const d of cobD){
+    const k=d.fechaStr;
+    let a=byDay.get(k); if(!a){a={st:0,pr:0};byDay.set(k,a);}
+    a.st+=d.stock; a.pr+=d.prom;
+  }
+  const vals=[...byDay.values()].filter(a=>a.pr>0).map(a=>a.st/a.pr);
+  return vals.length?r2(mean(vals)):null;
+}
+function aggIS(cobD){ if(!cobD.length) return null;
+  return r2(cobD.filter(d=>d.bajo).length/cobD.length*100); }
+function countStates(rows){
+  const v=rows.filter(r=>!r.flagVP);
+  const usable=v.filter(r=>!r.sinInv);
+  const val=r=>r.sinInv?r.pctVP:r.pctSO;
+  return {
+    crit:usable.filter(r=>val(r)>=CFG.thCrit).length,
+    alert:usable.filter(r=>val(r)>=CFG.thAlert&&val(r)<CFG.thCrit).length,
+    insuf:rows.filter(r=>r.flagVP==='Datos insuficientes').length
+  };
+}
+/* YTD de conteos: combinatorias CD×SKU DISTINTAS que estuvieron en el estado algún mes */
+function countStatesYTD(rows){
+  const c=new Set(),a=new Set(),i=new Set();
+  const val=r=>r.sinInv?r.pctVP:r.pctSO;
+  for(const r of rows){
+    const k=r.cd+'|'+r.sku;
+    if(r.flagVP==='Datos insuficientes'){i.add(k);continue;}
+    if(r.sinInv&&r.pctVP==null) continue;
+    const v=val(r); if(v==null) continue;
+    if(v>=CFG.thCrit)c.add(k); else if(v>=CFG.thAlert)a.add(k);
+  }
+  return {crit:c.size,alert:a.size,insuf:i.size};
+}
+function periodLabel(){
+  const ms=selMeses();
+  if(!F.mes.length) return 'YTD (todos los meses)';
+  if(ms.length===1) return MES_FULL[ms[0]];
+  if(ms.length===RAW.meses.length) return 'YTD (todos los meses)';
+  return ms.map(m=>MES_S[m]).join(' + ')+' ('+ms.length+' meses)';
+}
+function activeFilterText(){
+  const p=[];
+  const lst=(arr,lbl,fmt,max)=>{
+    if(!arr||!arr.length) return;
+    const n=arr.length, m=max||3;
+    p.push(lbl+': '+(n<=m ? arr.map(fmt||(x=>x)).join(', ') : n+' seleccionados'));
+  };
+  if(F.mes.length) lst(selMeses().map(String),'Mes',v=>MES_S[+v],4);
+  if(TIPO_VIEWS.has(VIEW))  lst(F.tipo,'Tipo Mov.');
+  if(CANAL_VIEWS.has(VIEW)) lst(F.canal,'Canal',v=>RAW.maestro.canal.get(v)||v);
+  lst(F.cd,'CD',v=>RAW.maestro.cd.get(v)||v);
+  lst(F.cat,'Categoría'); lst(F.fmt,'Formato',v=>v+' ml');
+  lst(F.sabor,'Sabor');   lst(F.envase,'Envase');
+  return p.length?p.join(' · '):'Sin filtros — portafolio completo';
+}
+</script>
+
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════════
+   COMPONENTES DE RENDER
+   ════════════════════════════════════════════════════════════ */
+function kpiTile(o){
+  // o: {lbl, val, sub, tone, ytd, ytdLbl, meta:{val,ok,txt}}
+  let h=`<div class="ism-kpi-tile ism-kpi-tile--${o.tone||'neutral'}">
+    <div class="ism-kpi-tile__label">${esc(o.lbl)}</div>
+    <div class="ism-kpi-tile__value tabular">${o.val}</div>
+    <div class="ism-kpi-tile__sub">${esc(o.sub||'')}</div>`;
+  if(o.meta) h+=`<div class="kpi-meta kpi-meta--${o.meta.cls}">${o.meta.txt}</div>`;
+  if(o.ytd!==undefined) h+=`<div class="kpi-ytd"><span class="kpi-ytd__lbl">${esc(o.ytdLbl||'YTD')}</span><span class="kpi-ytd__val">${o.ytd}</span></div>`;
+  return h+'</div>';
+}
+function metaBlock(val,meta,isCeiling){
+  if(val==null||isNaN(val)||meta==null) return null;
+  const ok=isCeiling? val<=meta : val>=meta;
+  const d=val-meta, sign=d>0?'+':'';
+  return {cls:ok?'ok':'bad', txt:`${ok?'✓':'▲'} Meta ${isCeiling?'≤':'≥'} ${meta}${isCeiling?'%':'d'} · ${sign}${d.toFixed(2)}`};
+}
+function destroyChart(id){ if(CH[id]){CH[id].destroy();delete CH[id];} }
+function axisFont(){ return {family:'Work Sans, Segoe UI, sans-serif',size:11}; }
+function gridColor(){ return document.documentElement.getAttribute('data-theme')==='dark'?'rgba(255,255,255,.07)':'rgba(0,0,0,.05)'; }
+function tickColor(){ return document.documentElement.getAttribute('data-theme')==='dark'?'#A9B4AE':'#6B7280'; }
+function baseOpts(extra){
+  return Object.assign({responsive:true,maintainAspectRatio:true,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:axisFont(),color:tickColor()}}},
+    scales:{y:{grid:{color:gridColor()},ticks:{font:axisFont(),color:tickColor()}},
+            x:{grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}}},extra||{});
+}
+function mkChart(id,cfg){ destroyChart(id); const el=document.getElementById(id); if(!el)return; CH[id]=new Chart(el,cfg); }
+
+function tbl(id,heads,rowsHtml,emptyMsg){
+  const el=document.getElementById(id); if(!el) return;
+  el.innerHTML=`<thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${
+    rowsHtml||`<tr><td colspan="${heads.length}" class="nd-msg">${esc(emptyMsg||'Sin datos para los filtros aplicados')}</td></tr>`}</tbody>`;
+}
+function heatColor(v,max){
+  if(v==null||isNaN(v)) return {bg:'var(--ism-nd-bg)',fg:'var(--ism-ink-300)',txt:'—'};
+  const c=semColor(v); const alpha=max>0?Math.max(.18,Math.min(1,v/max)):.2;
+  return {bg:c,fg:'#fff',txt:v.toFixed(1)+'%',alpha};
+}
+function heatCell(v,max){
+  if(v==null||isNaN(v)) return `<td style="text-align:center;color:var(--ism-ink-300)">—</td>`;
+  const c=semColor(v), a=max>0?Math.max(.22,Math.min(1,v/max)):.3;
+  const dark=a>.55;
+  return `<td style="padding:4px"><div class="hm-cell" style="background:${c};opacity:${(0.35+a*0.65).toFixed(2)};color:${dark?'#fff':'#fff'}">${v.toFixed(1)}%</div></td>`;
+}
+function bar(v,max,color){
+  const w=max>0?Math.min(100,v/max*100):0;
+  return `<div class="bar-bg"><div class="bar-fill" style="width:${w.toFixed(0)}%;background:${color}"></div></div>`;
+}
+function metaLine(id,extra){
+  const el=document.getElementById(id); if(!el) return;
+  el.innerHTML=`<strong>${esc(RAW.fname)}</strong> · ${RAW.nV.toLocaleString()} reg. venta · ${RAW.nI.toLocaleString()} reg. inventario · <strong>${esc(periodLabel())}</strong> · ${esc(activeFilterText())}${extra?' · '+extra:''} · k = ${CFG.k.toFixed(1)}`;
+}
+function perLabel(){
+  const ms=selMeses();
+  if(!F.mes.length||ms.length===RAW.meses.length) return 'YTD';
+  if(ms.length===1) return MES_S[ms[0]];
+  return ms.length+' meses';
+}
+function noticeInv(id){
+  const el=document.getElementById(id); if(!el) return;
+  const sin=mesesSinInvSel();
+  if(!sin.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="ism-alert ism-alert--warning mb-14"><span>⚠</span><div>
+    <strong>Cobertura parcial de Inv.Diario.</strong> Los meses <strong>${sin.map(m=>MES_S[m]).join(', ')}</strong> no tienen inventario diario:
+    %SO Potencial, Cobertura e ${instockName()} quedan en N/A para esos períodos y no se asume ningún valor.
+    El gap (%VP − %SO) en meses cubiertos es venta perdida no explicada por falta de stock — comportamiento esperado en distribución FMCG.</div></div>`;
+}
+
+/* ════════════════════════════════════════════════════════════
+   ROUTER DE RENDER
+   ════════════════════════════════════════════════════════════ */
+function renderView(v){
+  if(!dataLoaded&&v!=='settings'&&v!=='logic'&&v!=='upload') return;
+  syncFilterBars();
+  ({resumen:renderResumen, vp:renderVP, so:renderSO, cobertura:renderCob,
+    diario:renderDiario, sku:renderSKU, ventas:renderVentas,
+    export:renderExport, settings:renderSettings, logic:renderLogic}[v]||function(){})();
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISTA: RESUMEN EJECUTIVO
+   ════════════════════════════════════════════════════════════ */
+function renderResumen(){
+  metaLine('meta-resumen'); dqBanner('dq-resumen'); noticeInv('notice-resumen');
+  const cur=fRows(), ytd=ytdRows();
+  const vpC=aggVP(cur), vpY=aggVP(ytd), soC=aggSO(cur), soY=aggSO(ytd);
+  const cC=countStates(cur), cY=countStatesYTD(ytd);
+  const isC=aggIS(fCobDias()), isY=aggIS(ytdCobDias());
+  const per=perLabel();
+
+  document.getElementById('kpi-resumen').innerHTML=[
+    kpiTile({lbl:'%VP Potencial',val:fPct(vpC),sub:per,tone:toneOf(vpC),
+             meta:metaBlock(vpC,CFG.metaVP,true),ytd:fPct(vpY),ytdLbl:'YTD'}),
+    kpiTile({lbl:'%SO Potencial',val:fPct(soC),sub:RAW.mesesConInv.size?'Meses con Inv.Diario':'Sin inventario',
+             tone:toneOf(soC),meta:metaBlock(soC,CFG.metaSO,true),ytd:fPct(soY),ytdLbl:'YTD'}),
+    kpiTile({lbl:"SKU's Críticos SO",val:fInt(cC.crit),sub:`≥ ${CFG.thCrit}%`,
+             tone:cC.crit>0?'bad':'good',ytd:fInt(cY.crit),ytdLbl:'YTD distintos'}),
+    kpiTile({lbl:"SKU's en Alerta SO",val:fInt(cC.alert),sub:`${CFG.thAlert}% – ${CFG.thCrit}%`,
+             tone:cC.alert>0?'warn':'good',ytd:fInt(cY.alert),ytdLbl:'YTD distintos'}),
+    kpiTile({lbl:"SKU's Insuficientes",val:fInt(cC.insuf),sub:`< ${CFG.minDias} días activos`,
+             tone:'neutral',ytd:fInt(cY.insuf),ytdLbl:'YTD distintos'}),
+  ].join('');
+
+  // Tendencia mensual
+  const ms=RAW.meses, base=ytdRows();
+  const vpD=ms.map(m=>aggVP(base.filter(r=>r.mes===m)));
+  const soD=ms.map(m=>RAW.mesesConInv.has(m)?aggSO(base.filter(r=>r.mes===m)):null);
+  mkChart('ch-res-tend',{data:{labels:ms.map(m=>MES_S[m]),datasets:[
+      {type:'line',label:'%VP Potencial',data:vpD,borderColor:CO.blue,backgroundColor:'rgba(6,36,186,.06)',tension:.35,pointRadius:5,fill:true,pointBackgroundColor:CO.blue},
+      {type:'line',label:'%SO Potencial',data:soD,borderColor:CO.red,tension:.35,pointRadius:5,spanGaps:false,fill:false,pointBackgroundColor:CO.red},
+      {type:'line',label:`Meta %VP (${CFG.metaVP}%)`,data:ms.map(_=>CFG.metaVP),borderColor:CO.blue,borderDash:[5,4],borderWidth:1.4,pointRadius:0,fill:false},
+      {type:'line',label:`Meta %SO (${CFG.metaSO}%)`,data:ms.map(_=>CFG.metaSO),borderColor:CO.red,borderDash:[5,4],borderWidth:1.4,pointRadius:0,fill:false},
+    ]},options:baseOpts({interaction:{mode:'index',intersect:false},
+      scales:{y:{min:0,grid:{color:gridColor()},ticks:{font:axisFont(),color:tickColor(),callback:v=>v+'%'}},
+              x:{grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:axisFont(),color:tickColor()}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.parsed.y!=null?c.parsed.y.toFixed(2)+'%':'N/A')}}}})});
+
+  // Barras por CD — cada gráfico se ordena por su propio indicador (mayor a menor)
+  const cds=[...new Set(cur.map(r=>r.cd))].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
+  const cdBase=cds.map(cd=>{const rs=cur.filter(r=>r.cd===cd);
+    return {cd,lbl:cd+(RAW.maestro.cd.get(cd)?' · '+RAW.maestro.cd.get(cd):''),vp:aggVP(rs),so:aggSO(rs),
+            vt:rs.reduce((s,r)=>s+r.vt,0),crit:countStates(rs).crit,n:rs.length};});
+  const cdBar=(id,arr,key)=>mkChart(id,{type:'bar',
+    data:{labels:arr.map(d=>d.lbl),datasets:[{data:arr.map(d=>d[key]),
+      backgroundColor:arr.map(d=>semColor(d[key])),borderRadius:4}]},
+    options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>fPct(c.parsed.x)}}},
+      scales:{x:{min:0,grid:{color:gridColor()},ticks:{font:axisFont(),color:tickColor(),callback:v=>v+'%'}},
+              y:{grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}}})});
+
+  const cdVP=[...cdBase].sort((a,b)=>(b.vp??-1)-(a.vp??-1));
+  cdBar('ch-res-vpcd',cdVP,'vp');
+
+  const wrap=document.getElementById('wrap-res-socd');
+  if(cdBase.some(d=>d.so!=null)){
+    wrap.innerHTML='<canvas id="ch-res-socd" height="210"></canvas>';
+    const cdSO=[...cdBase].sort((a,b)=>(b.so??-1)-(a.so??-1));
+    cdBar('ch-res-socd',cdSO,'so');
+  } else { destroyChart('ch-res-socd'); wrap.innerHTML='<div class="nd-msg">Sin datos de Inv.Diario en el período seleccionado</div>'; }
+
+  // Tabla semáforo por CD — orden alfabético por código de CD
+  const maxVT=Math.max(...cdBase.map(d=>d.vt),1);
+  tbl('tbl-res-cd',['CD','Centro de Distribución','Venta (L)','','%VP','Est. VP','%SO','Est. SO','Críticos','SKUs'],
+    cdBase.map(d=>`<tr class="${sem(d.so??d.vp)==='Crítico'?'ism-table__row--critical':sem(d.so??d.vp)==='Alerta'?'ism-table__row--warning':''}">
+      <td class="tabular"><strong>${esc(d.cd)}</strong></td><td>${esc(RAW.maestro.cd.get(d.cd)||'')}</td>
+      <td class="is-numeric">${fInt(d.vt)}</td><td style="width:90px">${bar(d.vt,maxVT,CO.green)}</td>
+      <td class="is-numeric">${fPct(d.vp)}</td><td>${badge(sem(d.vp))}</td>
+      <td class="is-numeric">${fPct(d.so)}</td><td>${badge(d.so==null?'N/A':sem(d.so))}</td>
+      <td class="is-numeric">${d.crit}</td><td class="is-numeric">${d.n}</td></tr>`).join(''));
+
+  // Tabla por categoría
+  const cats=[...new Set(cur.map(r=>r.cat))].sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}));
+  // Orden alfabético por categoría
+  const catData=cats.map(c=>{const rs=cur.filter(r=>r.cat===c);
+    return {c,vp:aggVP(rs),so:aggSO(rs),vt:rs.reduce((s,r)=>s+r.vt,0),n:new Set(rs.map(r=>r.sku)).size,crit:countStates(rs).crit};})
+    .sort((a,b)=>a.c.localeCompare(b.c,'es',{sensitivity:'base'}));
+  const maxCVT=Math.max(...catData.map(d=>d.vt),1);
+  const totVT=catData.reduce((s,d)=>s+d.vt,0);
+  tbl('tbl-res-cat',['Categoría','Venta (L)','% Part.','','%VP','Est. VP','%SO','Est. SO','SKUs','Críticos'],
+    catData.map(d=>`<tr>
+      <td><strong>${esc(d.c)}</strong></td><td class="is-numeric">${fInt(d.vt)}</td>
+      <td class="is-numeric">${totVT>0?(d.vt/totVT*100).toFixed(1)+'%':'—'}</td>
+      <td style="width:90px">${bar(d.vt,maxCVT,CO.green)}</td>
+      <td class="is-numeric">${fPct(d.vp)}</td><td>${badge(sem(d.vp))}</td>
+      <td class="is-numeric">${fPct(d.so)}</td><td>${badge(d.so==null?'N/A':sem(d.so))}</td>
+      <td class="is-numeric">${d.n}</td><td class="is-numeric">${d.crit}</td></tr>`).join(''));
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISTA: VENTA PERDIDA
+   ════════════════════════════════════════════════════════════ */
+function renderVP(){
+  metaLine('meta-vp');
+  const cur=fRows(), ytd=ytdRows();
+  const vpC=aggVP(cur), vpY=aggVP(ytd);
+  const vpLC=cur.reduce((s,r)=>s+r.vpL,0), vpLY=ytd.reduce((s,r)=>s+r.vpL,0);
+  const nDC=cur.reduce((s,r)=>s+r.nVP,0), nDY=ytd.reduce((s,r)=>s+r.nVP,0);
+  const afC=cur.filter(r=>r.pctVP>0).length, afY=new Set(ytd.filter(r=>r.pctVP>0).map(r=>r.cd+'|'+r.sku)).size;
+  const per=perLabel();
+  document.getElementById('kpi-vp').innerHTML=[
+    kpiTile({lbl:'%VP Potencial',val:fPct(vpC),sub:per,tone:toneOf(vpC),meta:metaBlock(vpC,CFG.metaVP,true),ytd:fPct(vpY)}),
+    kpiTile({lbl:'Litros perdidos',val:fInt(vpLC),sub:'Volumen estimado',tone:'neutral',ytd:fInt(vpLY)}),
+    kpiTile({lbl:'Días con VP',val:fInt(nDC),sub:'Días-combinatoria bajo LCI',tone:'neutral',ytd:fInt(nDY)}),
+    kpiTile({lbl:'Combinatorias afectadas',val:fInt(afC),sub:'CD×SKU con VP > 0',tone:'neutral',ytd:fInt(afY),ytdLbl:'YTD distintas'}),
+  ].join('');
+
+  // Heatmap CD × Mes
+  const cds=[...new Set(ytd.map(r=>r.cd))].sort(), ms=RAW.meses;
+  const cells=[]; const hm=cds.map(cd=>{const row=ms.map(m=>{const v=aggVP(ytd.filter(r=>r.cd===cd&&r.mes===m));cells.push(v);return v;});return {cd,row};});
+  const maxH=Math.max(...cells.filter(v=>v!=null),1);
+  tbl('tbl-vp-heat',['CD','Centro',...ms.map(m=>MES_S[m]),'YTD'],
+    hm.map(h=>{const y=aggVP(ytd.filter(r=>r.cd===h.cd));
+      return `<tr><td class="tabular"><strong>${esc(h.cd)}</strong></td><td>${esc(RAW.maestro.cd.get(h.cd)||'')}</td>
+      ${h.row.map(v=>heatCell(v,maxH)).join('')}
+      <td class="is-numeric"><strong>${fPct(y)}</strong></td></tr>`;}).join(''));
+
+  // Distribución
+  const buckets=[[0,2],[2,5],[5,10],[10,15],[15,25],[25,Infinity]];
+  const labels=['0–2%','2–5%','5–10%','10–15%','15–25%','>25%'];
+  const valid=cur.filter(r=>!r.flagVP);
+  const counts=buckets.map(([a,b])=>valid.filter(r=>r.pctVP>=a&&r.pctVP<b).length);
+  const bcol=[CO.green,CO.green,CO.yellow,CO.yellow,CO.red,CO.red];
+  mkChart('ch-vp-dist',{type:'bar',data:{labels,datasets:[{label:'Combinatorias CD×SKU',data:counts,backgroundColor:bcol,borderRadius:4}]},
+    options:baseOpts({plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y.toLocaleString()+' combinatorias'}}}})});
+
+  // Por categoría
+  const cats=[...new Set(cur.map(r=>r.cat))].sort();
+  const cv=cats.map(c=>aggVP(cur.filter(r=>r.cat===c)));
+  mkChart('ch-vp-cat',{type:'bar',data:{labels:cats,datasets:[{data:cv,backgroundColor:cv.map(v=>semColor(v)),borderRadius:4}]},
+    options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fPct(c.parsed.x)}}},
+      scales:{x:{min:0,grid:{color:gridColor()},ticks:{font:axisFont(),color:tickColor(),callback:v=>v+'%'}},
+              y:{grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}}})});
+
+  // Top por litros
+  const top=[...cur].filter(r=>r.vpL>0).sort((a,b)=>b.vpL-a.vpL).slice(0,25);
+  const maxL=top.length?top[0].vpL:1;
+  tbl('tbl-vp-top',['SKU','Descripción','CD','Mes','Categoría','Venta (L)','Perdido (L)','','%VP','Est.','Días VP'],
+    top.map(r=>`<tr class="${r.estVP==='Crítico'?'ism-table__row--critical':r.estVP==='Alerta'?'ism-table__row--warning':''}">
+      <td class="tabular"><strong>${esc(r.sku)}</strong></td>
+      <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis">${esc(r.descSKU)}</td>
+      <td>${esc(r.cd)}</td><td>${MES_S[r.mes]}</td><td>${esc(r.cat)}</td>
+      <td class="is-numeric">${fInt(r.vt)}</td><td class="is-numeric"><strong>${fInt(r.vpL)}</strong></td>
+      <td style="width:80px">${bar(r.vpL,maxL,semColor(r.pctVP))}</td>
+      <td class="is-numeric">${fPct(r.pctVP)}</td><td>${badge(r.estVP)}</td>
+      <td class="is-numeric">${r.nVP}</td></tr>`).join(''));
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISTA: STOCK-OUT
+   ════════════════════════════════════════════════════════════ */
+function renderSO(){
+  metaLine('meta-so'); dqBanner('dq-so'); noticeInv('notice-so');
+  const cur=fRows(), ytd=ytdRows();
+  const soC=aggSO(cur), soY=aggSO(ytd), vpC=aggVP(cur);
+  const soLC=cur.filter(r=>!r.sinInv).reduce((s,r)=>s+r.soL,0);
+  const soLY=ytd.filter(r=>!r.sinInv).reduce((s,r)=>s+r.soL,0);
+  const cC=countStates(cur), cY=countStatesYTD(ytd);
+  const gap=(vpC!=null&&soC!=null)?r2(vpC-soC):null;
+  const per=perLabel();
+  document.getElementById('kpi-so').innerHTML=[
+    kpiTile({lbl:'%SO Potencial',val:fPct(soC),sub:per,tone:toneOf(soC),meta:metaBlock(soC,CFG.metaSO,true),ytd:fPct(soY)}),
+    kpiTile({lbl:'Litros en quiebre',val:fInt(soLC),sub:'Confirmado por stock',tone:'neutral',ytd:fInt(soLY)}),
+    kpiTile({lbl:'Gap %VP − %SO',val:fPct(gap),sub:'No explicado por inventario',tone:'neutral'}),
+    kpiTile({lbl:"SKU's Críticos SO",val:fInt(cC.crit),sub:`≥ ${CFG.thCrit}%`,tone:cC.crit>0?'bad':'good',ytd:fInt(cY.crit),ytdLbl:'YTD distintos'}),
+  ].join('');
+
+  // Descomposición
+  const ms=RAW.meses, base=ytdRows();
+  const soD=ms.map(m=>RAW.mesesConInv.has(m)?aggSO(base.filter(r=>r.mes===m)):null);
+  const gapD=ms.map((m,i)=>{const vp=aggVP(base.filter(r=>r.mes===m));return (vp!=null&&soD[i]!=null)?r2(vp-soD[i]):null;});
+  mkChart('ch-so-gap',{type:'bar',data:{labels:ms.map(m=>MES_S[m]),datasets:[
+      {label:'%SO — confirmado por stock',data:soD,backgroundColor:CO.red,borderRadius:3,stack:'a'},
+      {label:'Gap — no explicado por inventario',data:gapD,backgroundColor:CO.yellow,borderRadius:3,stack:'a'},
+    ]},options:baseOpts({interaction:{mode:'index',intersect:false},
+      scales:{y:{min:0,stacked:true,grid:{color:gridColor()},ticks:{font:axisFont(),color:tickColor(),callback:v=>v+'%'}},
+              x:{stacked:true,grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:axisFont(),color:tickColor()}},
+        tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.parsed.y!=null?c.parsed.y.toFixed(2)+'%':'N/A')}}}})});
+
+  // Heatmap SO
+  const cds=[...new Set(ytd.map(r=>r.cd))].sort();
+  const cells=[];
+  const hm=cds.map(cd=>({cd,row:ms.map(m=>{const v=RAW.mesesConInv.has(m)?aggSO(ytd.filter(r=>r.cd===cd&&r.mes===m)):null;cells.push(v);return v;})}));
+  const maxH=Math.max(...cells.filter(v=>v!=null),1);
+  tbl('tbl-so-heat',['CD',...ms.map(m=>MES_S[m])],
+    hm.map(h=>`<tr><td class="tabular"><strong>${esc(h.cd)}</strong></td>${h.row.map(v=>heatCell(v,maxH)).join('')}</tr>`).join(''));
+
+  // Por categoría
+  const cats=[...new Set(cur.map(r=>r.cat))].sort();
+  const cv=cats.map(c=>aggSO(cur.filter(r=>r.cat===c)));
+  mkChart('ch-so-cat',{type:'bar',data:{labels:cats,datasets:[{data:cv,backgroundColor:cv.map(v=>semColor(v)),borderRadius:4}]},
+    options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fPct(c.parsed.x)}}},
+      scales:{x:{min:0,grid:{color:gridColor()},ticks:{font:axisFont(),color:tickColor(),callback:v=>v+'%'}},
+              y:{grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}}})});
+
+  // Top críticos
+  const top=cur.filter(r=>!r.sinInv&&!r.flagVP&&r.pctSO>=CFG.thAlert).sort((a,b)=>b.pctSO-a.pctSO).slice(0,40);
+  const maxSO=top.length?top[0].pctSO:1;
+  tbl('tbl-so-top',['SKU','Descripción','CD','Mes','Categoría','Venta (L)','%VP','SO (L)','%SO','','Est.','Días SO'],
+    top.map(r=>`<tr class="${r.estSO==='Crítico'?'ism-table__row--critical':'ism-table__row--warning'}">
+      <td class="tabular"><strong>${esc(r.sku)}</strong></td>
+      <td style="max-width:230px;overflow:hidden;text-overflow:ellipsis">${esc(r.descSKU)}</td>
+      <td>${esc(r.cd)}</td><td>${MES_S[r.mes]}</td><td>${esc(r.cat)}</td>
+      <td class="is-numeric">${fInt(r.vt)}</td><td class="is-numeric">${fPct(r.pctVP)}</td>
+      <td class="is-numeric">${fInt(r.soL)}</td><td class="is-numeric"><strong>${fPct(r.pctSO)}</strong></td>
+      <td style="width:80px">${bar(r.pctSO,maxSO,semColor(r.pctSO))}</td>
+      <td>${badge(r.estSO)}</td><td class="is-numeric">${r.nSO}</td></tr>`).join(''),
+    'Sin SKUs por encima del umbral de alerta en el período seleccionado');
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISTA: COBERTURA & INSTOCK-3
+   ════════════════════════════════════════════════════════════ */
+function renderCob(){
+  metaLine('meta-cobertura');
+  const el=document.getElementById('notice-cob');
+  const curD=fCobDias(), ytdD=ytdCobDias();
+  if(!ytdD.length){
+    el.innerHTML=`<div class="ism-alert ism-alert--warning mb-14"><span>⚠</span><div><strong>Sin datos de inventario.</strong> La cobertura y el ${instockName()} requieren registros en Inv.Diario.</div></div>`;
+  } else if(!algunMesConInv()){
+    el.innerHTML=`<div class="ism-alert ism-alert--warning mb-14"><span>⚠</span><div><strong>Ningún mes seleccionado tiene inventario diario.</strong> Selecciona al menos un mes con cobertura (${[...RAW.mesesConInv].sort((a,b)=>a-b).map(m=>MES_S[m]).join(', ')}) o quita el filtro de mes.</div></div>`;
+  } else if(mesesSinInvSel().length){
+    el.innerHTML=`<div class="ism-alert ism-alert--warning mb-14"><span>⚠</span><div><strong>Selección mixta de meses.</strong> ${mesesSinInvSel().map(m=>MES_S[m]).join(', ')} no tiene${mesesSinInvSel().length>1?'n':''} inventario diario y queda${mesesSinInvSel().length>1?'n':''} fuera del cálculo de cobertura e ${instockName()}. Los indicadores se calculan solo sobre ${selMeses().filter(m=>RAW.mesesConInv.has(m)).map(m=>MES_S[m]).join(', ')}.</div></div>`;
+  } else el.innerHTML='';
+
+  const cobC=aggCob(curD), cobY=aggCob(ytdD), isC=aggIS(curD), isY=aggIS(ytdD);
+  const nBajo=curD.filter(d=>d.bajo).length;
+  const combos=new Set(curD.filter(d=>d.bajo).map(d=>d.cd+'|'+d.sku)).size;
+  const per=perLabel();
+  document.getElementById('kpi-cob').innerHTML=[
+    kpiTile({lbl:'Cobertura promedio',val:cobC!=null?fNum(cobC,1)+' d':'—',sub:per,
+             tone:cobC==null?'neutral':(cobC>=CFG.metaCob?'good':cobC>=CFG.instockDias?'warn':'bad'),
+             meta:metaBlock(cobC,CFG.metaCob,false),ytd:cobY!=null?fNum(cobY,1)+' d':'—'}),
+    kpiTile({lbl:instockName(),val:fPct(isC),sub:`Días-comb. < ${CFG.instockDias} días`,
+             tone:isC==null?'neutral':(isC<=CFG.metaInstock?'good':isC<=CFG.metaInstock*2?'warn':'bad'),
+             meta:metaBlock(isC,CFG.metaInstock,true),ytd:fPct(isY)}),
+    kpiTile({lbl:'Días-combinatoria en riesgo',val:fInt(nBajo),sub:`de ${fInt(curD.length)} evaluados`,tone:'neutral'}),
+    kpiTile({lbl:'Combinatorias afectadas',val:fInt(combos),sub:'CD×SKU con al menos 1 día bajo umbral',tone:'neutral'}),
+  ].join('');
+
+  // Evolución mensual
+  const ms=RAW.meses.filter(m=>RAW.mesesConInv.has(m));
+  const keys=dimKeySet();
+  const cobM=ms.map(m=>aggCob(ENG.cobDias.filter(d=>d.mes===m&&keys.has(d.cd+'|'+d.sku))));
+  const isM =ms.map(m=>aggIS (ENG.cobDias.filter(d=>d.mes===m&&keys.has(d.cd+'|'+d.sku))));
+  if(ms.length){
+    mkChart('ch-cob-tend',{data:{labels:ms.map(m=>MES_S[m]),datasets:[
+        {type:'line',label:'Cobertura (días)',data:cobM,borderColor:CO.green,backgroundColor:'rgba(0,149,59,.07)',tension:.35,pointRadius:5,fill:true,yAxisID:'y'},
+        {type:'line',label:instockName(),data:isM,borderColor:CO.red,tension:.35,pointRadius:5,fill:false,yAxisID:'y1'},
+        {type:'line',label:`Meta cobertura (${CFG.metaCob}d)`,data:ms.map(_=>CFG.metaCob),borderColor:CO.green,borderDash:[5,4],borderWidth:1.4,pointRadius:0,fill:false,yAxisID:'y'},
+      ]},options:baseOpts({interaction:{mode:'index',intersect:false},
+        scales:{y:{position:'left',min:0,grid:{color:gridColor()},title:{display:true,text:'Días',font:axisFont(),color:tickColor()},ticks:{font:axisFont(),color:tickColor()}},
+                y1:{position:'right',min:0,grid:{display:false},title:{display:true,text:'%',font:axisFont(),color:tickColor()},ticks:{font:axisFont(),color:tickColor(),callback:v=>v+'%'}},
+                x:{grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}}})});
+  } else destroyChart('ch-cob-tend');
+
+  // Distribución
+  const bs=[[0,1],[1,3],[3,7],[7,15],[15,30],[30,Infinity]];
+  const bl=['<1 d','1–3 d','3–7 d','7–15 d','15–30 d','>30 d'];
+  const bc=[CO.red,CO.red,CO.yellow,CO.green,CO.green,CO.blue];
+  const bd=bs.map(([a,b])=>curD.filter(d=>d.cob>=a&&d.cob<b).length);
+  mkChart('ch-cob-dist',{type:'bar',data:{labels:bl,datasets:[{label:'Días-combinatoria',data:bd,backgroundColor:bc,borderRadius:4}]},
+    options:baseOpts({plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y.toLocaleString()+' días-combinatoria'}}}})});
+
+  // Por CD
+  const cds=[...new Set(curD.map(d=>d.cd))].sort();
+  const cdD=cds.map(cd=>{const ds=curD.filter(d=>d.cd===cd);
+    return {cd,cob:aggCob(ds),is:aggIS(ds),n:ds.length,bajo:ds.filter(d=>d.bajo).length,
+            combos:new Set(ds.map(d=>d.sku)).size};}).sort((a,b)=>(b.is??-1)-(a.is??-1));
+  tbl('tbl-cob-cd',['CD','Centro','Cobertura (d)','Meta','ID','% en riesgo','','Días-comb.','SKUs'],
+    cdD.map(d=>{const okc=d.cob!=null&&d.cob>=CFG.metaCob;
+      return `<tr class="${d.is>=CFG.metaInstock*2?'ism-table__row--critical':d.is>CFG.metaInstock?'ism-table__row--warning':''}">
+      <td class="tabular"><strong>${esc(d.cd)}</strong></td><td>${esc(RAW.maestro.cd.get(d.cd)||'')}</td>
+      <td class="is-numeric"><strong>${fNum(d.cob,1)}</strong></td>
+      <td>${d.cob==null?badge('N/A'):badge(okc?'OK':'Alerta')}</td>
+      <td class="is-numeric">${fInt(d.bajo)}</td>
+      <td class="is-numeric"><strong>${fPct(d.is)}</strong></td>
+      <td style="width:90px">${bar(d.is??0,Math.max(...cdD.map(x=>x.is??0),1),d.is>CFG.metaInstock?CO.red:CO.green)}</td>
+      <td class="is-numeric">${fInt(d.n)}</td><td class="is-numeric">${d.combos}</td></tr>`;}).join(''),
+    'Sin datos de inventario para los filtros aplicados');
+
+  // Por SKU
+  const agg=new Map();
+  for(const d of curD){const k=d.cd+'|'+d.sku;let a=agg.get(k);
+    if(!a){a={cd:d.cd,sku:d.sku,n:0,bajo:0,sum:0};agg.set(k,a);}
+    a.n++; a.sum+=d.cob; if(d.bajo)a.bajo++;}
+  const skuD=[...agg.values()].map(a=>{const r=ENG.rows.find(x=>x.cd===a.cd&&x.sku===a.sku);
+    return {...a,is:r2(a.bajo/a.n*100),cob:r2(a.sum/a.n),desc:r?r.descSKU:'',cat:r?r.cat:''};})
+    .filter(a=>a.bajo>0).sort((a,b)=>b.is-a.is||b.bajo-a.bajo).slice(0,30);
+  tbl('tbl-cob-sku',['SKU','Descripción','CD','Categoría','Cobertura (d)','Días bajo umbral','Días eval.','% en riesgo',''],
+    skuD.map(a=>`<tr class="${a.is>=50?'ism-table__row--critical':a.is>=25?'ism-table__row--warning':''}">
+      <td class="tabular"><strong>${esc(a.sku)}</strong></td>
+      <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis">${esc(a.desc)}</td>
+      <td>${esc(a.cd)}</td><td>${esc(a.cat)}</td>
+      <td class="is-numeric">${fNum(a.cob,1)}</td><td class="is-numeric">${a.bajo}</td>
+      <td class="is-numeric">${a.n}</td><td class="is-numeric"><strong>${fPct(a.is)}</strong></td>
+      <td style="width:80px">${bar(a.is,100,a.is>=50?CO.red:a.is>=25?CO.yellow:CO.green)}</td></tr>`).join(''),
+    'Ninguna combinatoria por debajo del umbral en el período seleccionado');
+}
+</script>
+
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════════
+   ETIQUETAS DINÁMICAS — al cambiar el umbral de cobertura,
+   %InStock-3 pasa a %InStock-N en toda la interfaz sin recargar.
+   ════════════════════════════════════════════════════════════ */
+function refreshDynLabels(){
+  const N=instockName(), bare=N.replace('%','');
+  const map={
+    navCob:  `Cobertura & ${bare}`,
+    h2Cob:   `Cobertura y ${N}`,
+    cardTend:`📈 Evolución mensual — Cobertura y ${N}`,
+    cardCD:  `🏭 Cobertura y ${N} por CD`,
+    cardSKU: `⚠ SKUs con mayor exposición ${bare}`,
+    expCob:  `Cobertura día a día por CD×SKU con marca de ${bare}.`,
+    metaDesc:N,
+    metaLbl: `Meta ${N} (techo, %)`,
+    umbTitle:`Umbral de cobertura para ${N}`,
+  };
+  for(const k in map)
+    document.querySelectorAll('[data-dyn="'+k+'"]').forEach(e=>{e.textContent=map[k];});
+}
+
+/* ════════════════════════════════════════════════════════════
+   BANNER DE CALIDAD DE DATOS
+   ════════════════════════════════════════════════════════════ */
+function dqBanner(id){
+  const el=document.getElementById(id); if(!el) return;
+  if(!RAW.dupKeys){el.innerHTML='';return;}
+  el.innerHTML=`<div class="ism-alert ism-alert--critical mb-14"><span>🔍</span><div>
+    <strong>Calidad de datos — ${RAW.dupKeys.toLocaleString()} llaves Fecha × CD × SKU duplicadas en Inv.Diario</strong>
+    (${RAW.dupRows.toLocaleString()} registros excedentes en ${RAW.dupFechas.length} fechas).
+    Se está aplicando la regla <strong>${DEDUP_LBL[CFG.dedup]}</strong>.
+    Sumar los duplicados generaría inventario inexistente y subestimaría el %SO;
+    puedes cambiar la regla en <strong>Configuración</strong> para medir la sensibilidad del resultado.</div></div>`;
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISTA: ANÁLISIS DIARIO
+   ════════════════════════════════════════════════════════════ */
+function initDiarioSelectors(){
+  const cds=[...new Set(ENG.rows.map(r=>r.cd))].sort();
+  const selCD=document.getElementById('d-cd');
+  selCD.innerHTML=cds.map(c=>`<option value="${esc(c)}">${esc(c)} · ${esc(RAW.maestro.cd.get(c)||'')}</option>`).join('');
+  selCD.onchange=()=>{fillDiarioSKU();renderDiario();};
+  document.getElementById('d-sku').onchange=renderDiario;
+  document.getElementById('d-mes').onchange=renderDiario;
+  fillDiarioSKU();
+}
+function fillDiarioSKU(){
+  const cd=document.getElementById('d-cd').value;
+  const rows=ENG.rows.filter(r=>r.cd===cd);
+  const skus=[...new Map(rows.map(r=>[r.sku,r.descSKU])).entries()].sort((a,b)=>a[1].localeCompare(b[1],'es'));
+  document.getElementById('d-sku').innerHTML=skus.map(([s,d])=>`<option value="${esc(s)}">${esc(s)} · ${esc(d)}</option>`).join('');
+  fillDiarioMes();
+}
+function fillDiarioMes(){
+  const cd=document.getElementById('d-cd').value, sku=document.getElementById('d-sku').value;
+  const ms=[...new Set(ENG.rows.filter(r=>r.cd===cd&&r.sku===sku).map(r=>r.mes))].sort((a,b)=>a-b);
+  const sel=document.getElementById('d-mes');
+  const prev=sel.value;
+  sel.innerHTML=ms.map(m=>`<option value="${m}">${MES_FULL[m]}</option>`).join('');
+  if(ms.includes(+prev)) sel.value=prev;
+}
+function pickWorstDaily(){
+  const c=ENG.rows.filter(r=>!r.flagVP&&!r.sinInv).sort((a,b)=>b.pctSO-a.pctSO)[0]
+       || ENG.rows.filter(r=>!r.flagVP).sort((a,b)=>b.pctVP-a.pctVP)[0];
+  if(!c) return;
+  document.getElementById('d-cd').value=c.cd; fillDiarioSKU();
+  document.getElementById('d-sku').value=c.sku; fillDiarioMes();
+  document.getElementById('d-mes').value=String(c.mes);
+  renderDiario();
+}
+function renderDiario(){
+  const cd=document.getElementById('d-cd').value;
+  const sku=document.getElementById('d-sku').value;
+  const mes=+document.getElementById('d-mes').value;
+  if(!cd||!sku||!mes) return;
+  fillDiarioMes();
+  const row=ENG.rows.find(r=>r.cd===cd&&r.sku===sku&&r.mes===mes);
+  const dias=ENG.dias.filter(d=>d.cd===cd&&d.sku===sku&&d.mes===mes).sort((a,b)=>a.fechaStr.localeCompare(b.fechaStr));
+
+  if(!row||!dias.length){ document.getElementById('d-chips').innerHTML='<div class="nd-msg">Sin datos para esta combinación</div>'; return; }
+
+  const hasInv=RAW.mesesConInv.has(mes);
+  document.getElementById('d-chips').innerHTML=[
+    `<span class="stat-chip">📦 <b>${esc(row.descSKU)}</b></span>`,
+    `<span class="stat-chip">🏭 <b>${esc(cd)} · ${esc(RAW.maestro.cd.get(cd)||'')}</b></span>`,
+    `<span class="stat-chip">🏷 ${esc(row.cat)} · ${esc(row.marca)} · ${esc(row.fmt)}ml · ${esc(row.envase)}</span>`,
+    `<span class="stat-chip">Base <b>${esc(row.base||'—')}</b></span>`,
+    row.base!=='Mes completo'?`<span class="stat-chip">Ventana <b>${CFG.ventana}</b> d · n medio <b>${fNum(row.nWinProm,1)}</b></span>`:'',
+    `<span class="stat-chip">Promedio medio <b>${fNum(row.prom)}</b> L</span>`,
+    `<span class="stat-chip">σ media <b>${fNum(row.sig)}</b> L</span>`,
+    `<span class="stat-chip">LCI medio <b>${fNum(row.lci)}</b> L</span>`,
+    `<span class="stat-chip">Días activos <b>${row.nDias}</b></span>`,
+    row.nSinStat?`<span class="stat-chip" style="border-color:var(--ism-warning-border);background:var(--ism-warning-bg);color:var(--ism-warning-text)">Sin ventana <b>${row.nSinStat}</b> d</span>`:'',
+    `<span class="stat-chip">%VP <b>${fPct(row.pctVP)}</b> ${badge(row.estVP)}</span>`,
+    hasInv?`<span class="stat-chip">%SO <b>${fPct(row.pctSO)}</b> ${badge(row.estSO)}</span>`:`<span class="stat-chip">%SO <b>N/A</b> ${badge('N/A')}</span>`,
+    row.cobProm!=null?`<span class="stat-chip">Cobertura <b>${fNum(row.cobProm,1)}</b> d</span>`:'',
+  ].filter(Boolean).join('');
+
+  const labels=dias.map(d=>d.fechaStr.slice(8,10));
+  const vol=dias.map(d=>r1(d.vol));
+  const stock=dias.map(d=>d.stock!=null?r1(d.stock):null);
+  const cobArr=dias.map(d=>d.cob!=null?r2(Math.min(d.cob,CFG.cobCap)):null);
+  const ptCol=dias.map(d=>d.vpDia>0?CO.red:(d.lcs!=null&&d.vol>d.lcs?CO.cyan:(d.prom==null?'#D1D5DB':CO.green)));
+
+  // La banda de control ya no es constante: se dibuja como curva
+  const promA=dias.map(d=>d.prom!=null?r1(d.prom):null);
+  const lcsA =dias.map(d=>d.lcs !=null?r1(d.lcs ):null);
+  const lciA =dias.map(d=>d.lci !=null?r1(d.lci ):null);
+  mkChart('ch-d-serie',{data:{labels,datasets:[
+      {type:'bar',label:'Venta diaria (L)',data:vol,backgroundColor:ptCol,borderRadius:3,order:5},
+      {type:'line',label:'Promedio móvil',data:promA,borderColor:CO.blue,borderWidth:2,pointRadius:0,fill:false,spanGaps:false,tension:.25,order:1},
+      {type:'line',label:'LCS',data:lcsA,borderColor:CO.cyan,borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false,spanGaps:false,tension:.25,order:2},
+      {type:'line',label:'LCI',data:lciA,borderColor:CO.red,borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:'-1',backgroundColor:'rgba(0,149,59,.05)',spanGaps:false,tension:.25,order:3},
+    ]},options:baseOpts({interaction:{mode:'index',intersect:false},
+      scales:{y:{min:0,grid:{color:gridColor()},title:{display:true,text:'Litros',font:axisFont(),color:tickColor()},ticks:{font:axisFont(),color:tickColor()}},
+              x:{grid:{display:false},title:{display:true,text:'Día del mes',font:axisFont(),color:tickColor()},ticks:{font:axisFont(),color:tickColor()}}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:axisFont(),color:tickColor()}},
+        tooltip:{callbacks:{afterBody:items=>{const i=items[0].dataIndex,d=dias[i];
+          if(!d.vpDia) return '';
+          const c=d.cob;
+          return ['','Gap VP: '+fNum(d.vpDia)+' L',
+                  'Stock: '+(d.stock!=null?fNum(d.stock)+' L':'sin dato'),
+                  'SO: '+(d.stock!=null?fNum(Math.max(0,d.vpDia-d.stock))+' L':'N/A'),
+                  c!=null?'Cobertura: '+fNum(c,1)+' d':''].filter(Boolean);}}}}})});
+
+  if(hasInv){
+    const gapArr=dias.map(d=>d.vpDia>0?r1(d.vpDia):0);
+    mkChart('ch-d-stock',{data:{labels,datasets:[
+        {type:'bar',label:'Stock disponible (L)',data:stock,backgroundColor:'rgba(0,149,59,.55)',borderRadius:3},
+        {type:'line',label:'Gap del día (L)',data:gapArr,borderColor:CO.red,tension:.3,pointRadius:3,fill:false},
+      ]},options:baseOpts({interaction:{mode:'index',intersect:false},
+        scales:{y:{min:0,grid:{color:gridColor()},ticks:{font:axisFont(),color:tickColor()}},x:{grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}}})});
+    mkChart('ch-d-cob',{data:{labels,datasets:[
+        {type:'line',label:'Cobertura (días)',data:cobArr,borderColor:CO.green,backgroundColor:'rgba(0,149,59,.09)',tension:.3,pointRadius:3,fill:true},
+        {type:'line',label:`Umbral ${CFG.instockDias} días`,data:labels.map(_=>CFG.instockDias),borderColor:CO.red,borderDash:[5,4],borderWidth:1.4,pointRadius:0,fill:false},
+      ]},options:baseOpts({interaction:{mode:'index',intersect:false},
+        scales:{y:{min:0,grid:{color:gridColor()},title:{display:true,text:'Días',font:axisFont(),color:tickColor()},ticks:{font:axisFont(),color:tickColor()}},
+                x:{grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}}})});
+  } else { destroyChart('ch-d-stock'); destroyChart('ch-d-cob'); }
+
+  tbl('tbl-d-detalle',['Fecha','Día','Venta (L)','Base','n','Promedio (L)','σ (L)','LCI (L)','Estado','Gap VP (L)','Stock (L)','SO (L)','Cobertura (d)','InStock'],
+    dias.map(d=>{
+      const c=d.cob;
+      const bajo=c!=null&&c<CFG.instockDias;
+      const so=(hasInv&&d.vpDia>0&&d.stock!=null)?Math.max(0,d.vpDia-d.stock):null;
+      const est=d.vol<0?'Devolución':d.vol===0?'Sin venta':(d.prom==null?'Sin ventana':(d.vpDia>0?'Bajo LCI':(d.lcs!=null&&d.vol>d.lcs?'Sobre LCS':'En rango')));
+      const estB=est==='Bajo LCI'?'<span class="ism-badge ism-badge--critical">Bajo LCI</span>'
+                :est==='Sobre LCS'?'<span class="ism-badge ism-badge--ok" style="background:rgba(5,156,218,.12);color:#0369a1;border-color:rgba(5,156,218,.35)">Sobre LCS</span>'
+                :est==='Sin venta'?'<span class="ism-badge ism-badge--nd">Sin venta</span>'
+                :est==='Devolución'?'<span class="ism-badge ism-badge--warning">Devolución</span>'
+                :est==='Sin ventana'?'<span class="ism-badge ism-badge--warning">Sin ventana</span>'
+                :'<span class="ism-badge ism-badge--ok">En rango</span>';
+      const srcB=d.src==='mes'?'<span class="ism-badge ism-badge--nd">Mes</span>'
+                :d.src==='movil'?'<span class="ism-badge ism-badge--ok" style="background:var(--ism-green-10)">Móvil</span>':'—';
+      return `<tr class="${d.vpDia>0?'ism-table__row--critical':''}">
+        <td class="tabular">${d.fechaStr}</td><td class="is-numeric">${+d.fechaStr.slice(8,10)}</td>
+        <td class="is-numeric">${fNum(d.vol)}</td>
+        <td>${srcB}</td><td class="is-numeric">${d.nWin??'—'}</td>
+        <td class="is-numeric">${d.prom!=null?fNum(d.prom):'—'}</td>
+        <td class="is-numeric">${d.sig!=null?fNum(d.sig):'—'}</td>
+        <td class="is-numeric">${d.lci!=null?fNum(d.lci):'—'}</td>
+        <td>${estB}</td>
+        <td class="is-numeric">${d.vpDia>0?fNum(d.vpDia):'—'}</td>
+        <td class="is-numeric">${hasInv&&d.stock!=null?fNum(d.stock):'—'}</td>
+        <td class="is-numeric">${so!=null&&so>0?fNum(so):(so===0?'0.0':'—')}</td>
+        <td class="is-numeric">${c!=null?fNum(c,1):'—'}</td>
+        <td>${c==null?'<span style="color:var(--ism-ink-300)">—</span>':(bajo?'<span class="ism-badge ism-badge--critical">Riesgo</span>':'<span class="ism-badge ism-badge--ok">OK</span>')}</td></tr>`;
+    }).join(''));
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISTA: FICHA SKU
+   ════════════════════════════════════════════════════════════ */
+function initSKUSelector(){
+  const skus=[...new Map(ENG.rows.map(r=>[r.sku,r.descSKU])).entries()].sort((a,b)=>a[1].localeCompare(b[1],'es'));
+  const sel=document.getElementById('s-sku');
+  sel.innerHTML=skus.map(([s,d])=>`<option value="${esc(s)}">${esc(s)} · ${esc(d)}</option>`).join('');
+  sel.onchange=renderSKU;
+}
+function pickWorstSKU(){
+  const agg=new Map();
+  for(const r of ENG.rows){ if(r.sinInv||r.flagVP) continue;
+    let a=agg.get(r.sku); if(!a){a={vt:0,so:0};agg.set(r.sku,a);}
+    a.vt+=r.vt; a.so+=r.soL; }
+  const best=[...agg.entries()].filter(([,a])=>a.vt>0).map(([s,a])=>[s,a.so/a.vt]).sort((a,b)=>b[1]-a[1])[0];
+  if(best){ document.getElementById('s-sku').value=best[0]; renderSKU(); }
+}
+function renderSKU(){
+  const sku=document.getElementById('s-sku').value; if(!sku) return;
+  const rows=ENG.rows.filter(r=>r.sku===sku);
+  if(!rows.length) return;
+  const r0=rows[0];
+  document.getElementById('s-ident').innerHTML=
+    `<strong>${esc(sku)} · ${esc(r0.descSKU)}</strong> — ${esc(r0.cat)} · ${esc(r0.marca)} · ${esc(r0.fmt)} ml · ${esc(r0.sabor)} · ${esc(r0.envase)} · presente en <strong>${new Set(rows.map(r=>r.cd)).size}</strong> CDs`;
+
+  const vt=rows.reduce((s,r)=>s+r.vt,0);
+  const vp=aggVP(rows), so=aggSO(rows);
+  const cobD=ENG.cobDias.filter(d=>d.sku===sku);
+  const cob=aggCob(cobD), is=aggIS(cobD);
+  const crit=rows.filter(r=>!r.sinInv&&!r.flagVP&&r.pctSO>=CFG.thCrit).length;
+  document.getElementById('kpi-sku').innerHTML=[
+    kpiTile({lbl:'Venta total (L)',val:fInt(vt),sub:'Todos los CDs y meses',tone:'neutral'}),
+    kpiTile({lbl:'%VP Potencial',val:fPct(vp),sub:'Agregado del SKU',tone:toneOf(vp),meta:metaBlock(vp,CFG.metaVP,true)}),
+    kpiTile({lbl:'%SO Potencial',val:fPct(so),sub:'Meses con Inv.Diario',tone:toneOf(so),meta:metaBlock(so,CFG.metaSO,true)}),
+    kpiTile({lbl:'Cobertura promedio',val:cob!=null?fNum(cob,1)+' d':'—',sub:instockName()+': '+fPct(is),
+             tone:cob==null?'neutral':(cob>=CFG.metaCob?'good':cob>=CFG.instockDias?'warn':'bad')}),
+    kpiTile({lbl:'Meses × CD críticos',val:fInt(crit),sub:`%SO ≥ ${CFG.thCrit}%`,tone:crit>0?'bad':'good'}),
+  ].join('');
+
+  const ms=RAW.meses;
+  const vpM=ms.map(m=>aggVP(rows.filter(r=>r.mes===m)));
+  const soM=ms.map(m=>RAW.mesesConInv.has(m)?aggSO(rows.filter(r=>r.mes===m)):null);
+  const vtM=ms.map(m=>r1(rows.filter(r=>r.mes===m).reduce((s,r)=>s+r.vt,0)));
+  mkChart('ch-s-tend',{data:{labels:ms.map(m=>MES_S[m]),datasets:[
+      {type:'bar',label:'Venta (L)',data:vtM,backgroundColor:'rgba(0,149,59,.28)',borderRadius:3,yAxisID:'y1',order:3},
+      {type:'line',label:'%VP',data:vpM,borderColor:CO.blue,tension:.35,pointRadius:4,fill:false,yAxisID:'y'},
+      {type:'line',label:'%SO',data:soM,borderColor:CO.red,tension:.35,pointRadius:4,fill:false,spanGaps:false,yAxisID:'y'},
+    ]},options:baseOpts({interaction:{mode:'index',intersect:false},
+      scales:{y:{position:'left',min:0,grid:{color:gridColor()},ticks:{font:axisFont(),color:tickColor(),callback:v=>v+'%'}},
+              y1:{position:'right',min:0,grid:{display:false},ticks:{font:axisFont(),color:tickColor()}},
+              x:{grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}}})});
+
+  const cds=[...new Set(rows.map(r=>r.cd))].sort();
+  const vpC=cds.map(c=>aggVP(rows.filter(r=>r.cd===c)));
+  const soC=cds.map(c=>aggSO(rows.filter(r=>r.cd===c)));
+  mkChart('ch-s-cd',{type:'bar',data:{labels:cds.map(c=>c+' · '+(RAW.maestro.cd.get(c)||'')),datasets:[
+      {label:'%VP',data:vpC,backgroundColor:CO.blue,borderRadius:3},
+      {label:'%SO',data:soC,backgroundColor:CO.red,borderRadius:3},
+    ]},options:baseOpts({indexAxis:'y',
+      scales:{x:{min:0,grid:{color:gridColor()},ticks:{font:axisFont(),color:tickColor(),callback:v=>v+'%'}},
+              y:{grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}}})});
+
+  const cells=[];
+  const mtx=cds.map(cd=>({cd,row:ms.map(m=>{const r=rows.find(x=>x.cd===cd&&x.mes===m);
+    const v=(r&&!r.sinInv&&!r.flagVP)?r.pctSO:null;cells.push(v);return v;})}));
+  const maxM=Math.max(...cells.filter(v=>v!=null),1);
+  tbl('tbl-s-matriz',['CD','Centro',...ms.map(m=>MES_S[m])],
+    mtx.map(x=>`<tr><td class="tabular"><strong>${esc(x.cd)}</strong></td><td>${esc(RAW.maestro.cd.get(x.cd)||'')}</td>${x.row.map(v=>heatCell(v,maxM)).join('')}</tr>`).join(''));
+
+  tbl('tbl-s-detalle',['Mes','CD','Venta (L)','N Días','Base','Prom (L)','σ (L)','LCI (L)','VP (L)','%VP','Est.','SO (L)','%SO','Est.','Cob (d)','InStock'],
+    [...rows].sort((a,b)=>a.mes-b.mes||a.cd.localeCompare(b.cd)).map(r=>`<tr class="${r.estSO==='Crítico'?'ism-table__row--critical':r.estSO==='Alerta'?'ism-table__row--warning':''}">
+      <td>${MES_S[r.mes]}</td><td class="tabular">${esc(r.cd)}</td>
+      <td class="is-numeric">${fInt(r.vt)}</td><td class="is-numeric">${r.nDias}</td>
+      <td style="font-size:var(--text-xs)">${esc(r.base||'')}</td>
+      <td class="is-numeric">${fNum(r.prom)}</td><td class="is-numeric">${fNum(r.sig)}</td><td class="is-numeric">${fNum(r.lci)}</td>
+      <td class="is-numeric">${fNum(r.vpL)}</td><td class="is-numeric">${fPct(r.pctVP)}</td><td>${badge(r.estVP)}</td>
+      <td class="is-numeric">${r.sinInv?'—':fNum(r.soL)}</td><td class="is-numeric">${r.sinInv?'—':fPct(r.pctSO)}</td><td>${badge(r.estSO)}</td>
+      <td class="is-numeric">${r.cobProm!=null?fNum(r.cobProm,1):'—'}</td>
+      <td class="is-numeric">${r.pctIS!=null?fPct(r.pctIS):'—'}</td></tr>`).join(''));
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISTA: ANÁLISIS DE VENTAS  (única con filtro de Canal)
+   ════════════════════════════════════════════════════════════ */
+function renderVentas(){
+  metaLine('meta-ventas');
+  const rows=fVentaRows();
+  const vt=rows.reduce((s,r)=>s+r.vol,0), fc=rows.reduce((s,r)=>s+r.fact,0);
+  const nSKU=new Set(rows.map(r=>r.sku)).size, nCD=new Set(rows.map(r=>r.cd)).size;
+  const dias=new Set(rows.map(r=>r.fechaStr)).size;
+  // Desglose por tipo de movimiento sobre la selección actual
+  const volVenta=rows.filter(r=>r.tipo==='Venta').reduce((s,r)=>s+r.vol,0);
+  const volBonif=vt-volVenta;
+  const pctBonif=vt>0?r2(volBonif/vt*100):null;
+  const tipoTxt=F.tipo.length?F.tipo.join(' + '):'Venta + Bonificación';
+  document.getElementById('kpi-ventas').innerHTML=[
+    kpiTile({lbl:'Volumen (L)',val:fInt(vt),sub:tipoTxt,tone:'neutral',
+             ytd:periodLabel(),ytdLbl:'Período'}),
+    kpiTile({lbl:'Facturación',val:fInt(fc),sub:'Suma del período',tone:'neutral'}),
+    kpiTile({lbl:'% Bonificación',val:fPct(pctBonif),sub:`${fInt(volBonif)} L de ${fInt(vt)} L`,tone:'neutral',
+             ytd:fInt(volVenta),ytdLbl:'Venta (L)'}),
+    kpiTile({lbl:'Venta diaria promedio',val:dias?fInt(vt/dias):'—',
+             sub:`${dias} días · ${nSKU} SKUs · ${nCD} CDs`,tone:'neutral'}),
+  ].join('');
+
+  // Tendencia: volumen apilado por tipo de movimiento + facturación
+  const ms=RAW.meses;
+  const base=RAW.venta.filter(r=>inSel(F.tipo,r.tipo)&&inSel(F.canal,r.canal)&&dimOK(r));
+  const vM=ms.map(m=>r1(base.filter(r=>r.mes===m&&r.tipo==='Venta').reduce((s,r)=>s+r.vol,0)));
+  const bM=ms.map(m=>r1(base.filter(r=>r.mes===m&&r.tipo!=='Venta').reduce((s,r)=>s+r.vol,0)));
+  const facM=ms.map(m=>r1(base.filter(r=>r.mes===m).reduce((s,r)=>s+r.fact,0)));
+  mkChart('ch-v-tend',{data:{labels:ms.map(m=>MES_S[m]),datasets:[
+      {type:'bar',label:'Venta (L)',data:vM,backgroundColor:CO.green,borderRadius:3,yAxisID:'y',stack:'v'},
+      {type:'bar',label:'Bonificación (L)',data:bM,backgroundColor:CO.yellowL,borderRadius:3,yAxisID:'y',stack:'v'},
+      {type:'line',label:'Facturación',data:facM,borderColor:CO.orange,tension:.35,pointRadius:4,fill:false,yAxisID:'y1'},
+    ]},options:baseOpts({interaction:{mode:'index',intersect:false},
+      scales:{y:{position:'left',min:0,stacked:true,grid:{color:gridColor()},ticks:{font:axisFont(),color:tickColor()}},
+              y1:{position:'right',min:0,grid:{display:false},ticks:{font:axisFont(),color:tickColor()}},
+              x:{stacked:true,grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}}})});
+
+  const canales=[...new Set(rows.map(r=>r.canal))].filter(Boolean).sort();
+  const cvol=canales.map(c=>r1(rows.filter(r=>r.canal===c).reduce((s,r)=>s+r.vol,0)));
+  const pal=[CO.green,CO.blue,CO.yellowL,CO.orange,CO.cyan,CO.salmon,CO.red,'#7C3AED','#0f766e'];
+  mkChart('ch-v-canal',{type:'bar',data:{labels:canales.map(c=>RAW.maestro.canal.get(c)||c),
+      datasets:[{data:cvol,backgroundColor:canales.map((_,i)=>pal[i%pal.length]),borderRadius:4}]},
+    options:baseOpts({indexAxis:'y',plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>fInt(c.parsed.x)+' L ('+(vt>0?(c.parsed.x/vt*100).toFixed(1):'0')+'%)'}}},
+      scales:{x:{min:0,grid:{color:gridColor()},ticks:{font:axisFont(),color:tickColor()}},
+              y:{grid:{display:false},ticks:{font:axisFont(),color:tickColor()}}}})});
+
+  const cats=[...new Set(rows.map(r=>r.cat))].sort();
+  const catV=cats.map(c=>r1(rows.filter(r=>r.cat===c).reduce((s,r)=>s+r.vol,0)));
+  mkChart('ch-v-cat',{type:'bar',data:{labels:cats,datasets:[{data:catV,backgroundColor:cats.map((_,i)=>pal[i%pal.length]),borderRadius:4}]},
+    options:baseOpts({plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fInt(c.parsed.y)+' L'}}}})});
+
+  const cds=[...new Set(rows.map(r=>r.cd))].sort();
+  const cdV=cds.map(c=>r1(rows.filter(r=>r.cd===c).reduce((s,r)=>s+r.vol,0)));
+  mkChart('ch-v-cd',{type:'bar',data:{labels:cds.map(c=>RAW.maestro.cd.get(c)||c),
+      datasets:[{data:cdV,backgroundColor:CO.green,borderRadius:4}]},
+    options:baseOpts({plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>fInt(c.parsed.y)+' L'}}}})});
+
+  const agg=new Map();
+  for(const r of rows){let a=agg.get(r.sku);
+    if(!a){a={sku:r.sku,desc:r.descSKU,cat:r.cat,marca:r.marca,fmt:r.fmt,envase:r.envase,vol:0,fact:0,vta:0,bon:0};agg.set(r.sku,a);}
+    a.vol+=r.vol; a.fact+=r.fact;
+    if(r.tipo==='Venta') a.vta+=r.vol; else a.bon+=r.vol;}
+  const top=[...agg.values()].sort((a,b)=>b.vol-a.vol).slice(0,30);
+  const maxV=top.length?top[0].vol:1;
+  tbl('tbl-v-top',['#','SKU','Descripción','Categoría','Marca','Formato','Envase','Total (L)','Venta (L)','Bonif. (L)','% Bonif.','% Part.','','Facturación'],
+    top.map((a,i)=>`<tr>
+      <td class="is-numeric">${i+1}</td><td class="tabular"><strong>${esc(a.sku)}</strong></td>
+      <td style="max-width:230px;overflow:hidden;text-overflow:ellipsis">${esc(a.desc)}</td>
+      <td>${esc(a.cat)}</td><td>${esc(a.marca)}</td><td class="is-numeric">${esc(a.fmt)} ml</td><td>${esc(a.envase)}</td>
+      <td class="is-numeric"><strong>${fInt(a.vol)}</strong></td>
+      <td class="is-numeric">${fInt(a.vta)}</td><td class="is-numeric">${fInt(a.bon)}</td>
+      <td class="is-numeric">${a.vol>0?(a.bon/a.vol*100).toFixed(1)+'%':'—'}</td>
+      <td class="is-numeric">${vt>0?(a.vol/vt*100).toFixed(2)+'%':'—'}</td>
+      <td style="width:80px">${bar(a.vol,maxV,CO.green)}</td>
+      <td class="is-numeric">${fInt(a.fact)}</td></tr>`).join(''));
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISTA: EXPORTAR
+   ════════════════════════════════════════════════════════════ */
+function renderExport(){
+  const cur=fRows();
+  metaLine('meta-export',`<strong>${cur.length.toLocaleString()}</strong> filas se exportarán`);
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISTA: CONFIGURACIÓN
+   ════════════════════════════════════════════════════════════ */
+function renderSettings(){
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v;};
+  set('cfg-k',CFG.k); set('cfg-mindias',CFG.minDias);
+  set('cfg-meta-vp',CFG.metaVP); set('cfg-meta-so',CFG.metaSO);
+  set('cfg-meta-instock',CFG.metaInstock); set('cfg-meta-cob',CFG.metaCob);
+  set('cfg-instock-dias',CFG.instockDias); set('cfg-cob-cap',CFG.cobCap);
+  set('cfg-th-crit',CFG.thCrit); set('cfg-th-alert',CFG.thAlert); set('cfg-th-insuf',CFG.thInsuf);
+  set('cfg-dedup',CFG.dedup);
+  set('cfg-ventana',CFG.ventana); set('cfg-minventana',CFG.minVentana);
+  const lv=document.getElementById('lbl-ventana'), ls=document.getElementById('lbl-semanas');
+  if(lv) lv.textContent=CFG.ventana; if(ls) ls.textContent=(CFG.ventana/7);
+  const vd=document.getElementById('ventana-diag');
+  if(vd){
+    if(!dataLoaded) vd.textContent='Carga un archivo para ver el diagnóstico.';
+    else{
+      const d=ENG.diag||{};
+      vd.textContent=
+        'Ventana: '+CFG.ventana+' días calendario ('+(CFG.ventana/7)+' semanas)\n'+
+        'Mínimo de días con venta: '+CFG.minVentana+'\n\n'+
+        'Días evaluados con ventana: '+(d.evalMov||0).toLocaleString()+'\n'+
+        'Descartados por mínimo:     '+(d.skipMov||0).toLocaleString()+'  ('+(d.pctSkip||0).toFixed(1)+'%)'+
+        ((d.pctSkip||0)>10?'\n\n⚠ Más del 10% de los días queda sin evaluar.\n   Sube la ventana o baja el mínimo.':'');
+    }
+  }
+  const dg=document.getElementById('dedup-diag');
+  if(dg){
+    if(!dataLoaded) dg.textContent='Carga un archivo para ver el diagnóstico.';
+    else if(!RAW.dupKeys) dg.textContent='✓ Sin duplicados.\n'+RAW.nI.toLocaleString()+' llaves Fecha×CD×SKU únicas.';
+    else dg.textContent=
+      '⚠ '+RAW.dupKeys.toLocaleString()+' llaves duplicadas\n'+
+      '   '+RAW.dupRows.toLocaleString()+' registros excedentes\n'+
+      '   '+RAW.dupFechas.length+' fechas afectadas\n'+
+      '   Regla activa: '+DEDUP_LBL[CFG.dedup]+'\n\n'+
+      'Fechas: '+RAW.dupFechas.slice(0,8).join(', ')+(RAW.dupFechas.length>8?' …':'');
+  }
+  document.getElementById('lbl-k').textContent=Number(CFG.k).toFixed(1);
+}
+document.getElementById('cfg-k').addEventListener('input',e=>{
+  document.getElementById('lbl-k').textContent=Number(e.target.value).toFixed(1);});
+document.getElementById('cfg-ventana').addEventListener('input',e=>{
+  const v=+e.target.value;
+  document.getElementById('lbl-ventana').textContent=v;
+  document.getElementById('lbl-semanas').textContent=v/7;});
+document.getElementById('cfg-mindias').addEventListener('input',e=>{
+  document.getElementById('cfg-th-insuf').value=e.target.value;});
+document.getElementById('cfg-th-insuf').addEventListener('input',e=>{
+  document.getElementById('cfg-mindias').value=e.target.value;});
+
+function applyConfig(){
+  const num=(id,d)=>{const v=parseFloat(document.getElementById(id).value);return isNaN(v)?d:v;};
+  const nc={
+    k:num('cfg-k',1), minDias:Math.max(2,Math.round(num('cfg-mindias',5))),
+    metaVP:num('cfg-meta-vp',5), metaSO:num('cfg-meta-so',2),
+    metaInstock:num('cfg-meta-instock',10), metaCob:num('cfg-meta-cob',7),
+    instockDias:Math.max(1,Math.round(num('cfg-instock-dias',3))),
+    cobCap:Math.max(10,Math.round(num('cfg-cob-cap',60))),
+    thCrit:num('cfg-th-crit',15), thAlert:num('cfg-th-alert',5),
+    thInsuf:Math.max(2,Math.round(num('cfg-th-insuf',5))),
+    dedup:document.getElementById('cfg-dedup').value,
+    ventana:Math.max(7,Math.min(42,Math.round(num('cfg-ventana',28)/7)*7)),
+    minVentana:Math.max(2,Math.round(num('cfg-minventana',3))),
+  };
+  const st=document.getElementById('cfg-status');
+  if(nc.thAlert>=nc.thCrit){ st.style.color='var(--ism-red-on-surface)';
+    st.textContent='⚠ El umbral de Alerta debe ser menor que el Crítico.'; return; }
+  nc.minDias=nc.thInsuf;
+  const dedupChanged=(nc.dedup!==CFG.dedup);
+  CFG={...CFG,...nc};
+  try{localStorage.setItem('ism-vpso-cfg',JSON.stringify(CFG));}catch(e){}
+  st.style.color='var(--ism-green-on-surface)';
+  if(dataLoaded){
+    if(dedupChanged) redoDedup();
+    runEngine();
+    rebuildFilterBars(); renderSettings();
+    st.textContent=`✓ Recalculado · ventana ${CFG.ventana}d · k = ${CFG.k.toFixed(1)} · ${ENG.rows.length.toLocaleString()} combinatorias · ${(ENG.diag.pctSkip||0).toFixed(1)}% de días sin ventana válida`;
+  } else { st.textContent='✓ Parámetros guardados. Se aplicarán al cargar el archivo.'; }
+  refreshDynLabels(); renderLogic();
+  setTimeout(()=>{st.textContent='';},6000);
+}
+function resetConfig(){
+  CFG={...DEFAULTS};
+  try{localStorage.setItem('ism-vpso-cfg',JSON.stringify(CFG));}catch(e){}
+  renderSettings(); refreshDynLabels();
+  if(dataLoaded){ runEngine();
+    rebuildFilterBars(); }
+  renderLogic();
+  const st=document.getElementById('cfg-status');
+  st.style.color='var(--ism-ink-500)'; st.textContent='↺ Valores por defecto restaurados';
+  setTimeout(()=>{st.textContent='';},5000);
+}
+
+/* ════════════════════════════════════════════════════════════
+   VISTA: LÓGICA DE ANÁLISIS
+   ════════════════════════════════════════════════════════════ */
+function renderLogic(){
+  const K=CFG.k.toFixed(1);
+  const items=[
+    {t:'1 · Fuentes de datos y llaves de cruce',h:`
+      <p>El archivo debe contener tres hojas. Todo el procesamiento ocurre en el navegador — ningún dato se envía a un servidor.</p>
+      <div class="ism-formula">Maestro     → dimensiones por Código SKU, Código CD y Código Canal
+Venta       → movimientos diarios (Venta + Bonificación) en Volumen Litros
+Inv.Diario  → stock disponible por CD × SKU × Fecha</div>
+      <p><strong>Maestro es la fuente única de dimensiones.</strong> Categoría, Marca, Formato, Sabor y Envase se toman de ahí y no de las columnas de Venta, porque Venta trae etiquetas con prefijos y sufijos heterogéneos y carece de Envase. Los SKU duplicados en Maestro se deduplican conservando la primera aparición.</p>
+      <p>Inv.Diario se lee por nombre de columna y, si no existe, por posición: SKUCODE (índice 4), Fecha (17), Stock Disponible en Litros (18), Código CD (19).</p>`},
+    {t:'2 · %Venta Perdida Potencial — ventana móvil',h:`
+      <p>Cada día se compara contra su propia historia reciente, no contra el promedio del mes al que pertenece. La ventana toma los <strong>${CFG.ventana} días calendario anteriores</strong> al día evaluado, sin incluirlo, y promedia <strong>solo los días con venta</strong> dentro de esa ventana.</p>
+      <div class="ism-formula">Para cada día d de una combinatoria CD × SKU:
+
+  Ventana(d) = días calendario [d − ${CFG.ventana} , d − 1]
+  Muestra    = { Volumen_j : j ∈ Ventana(d) , Volumen_j > 0 }
+  n          = |Muestra|
+
+  Si n &lt; ${CFG.minVentana}  →  el día no se evalúa (sin ventana válida)
+
+  Promedio(d) = mean(Muestra)
+  σ(d)        = std(Muestra, ddof = 1)      ← muestral
+  LCI(d)      = max(0, Promedio(d) − ${CFG.k.toFixed(1)}·σ(d))
+  LCS(d)      = Promedio(d) + ${CFG.k.toFixed(1)}·σ(d)
+
+  Si 0 &lt; Volumen_d &lt; LCI(d):
+      VP_día = max(0, Promedio(d) − Volumen_d)
+
+VP_mes = Σ VP_día  (días del mes)
+%VP    = VP_mes / Venta_Total_mes × 100</div>
+      <p><strong>El día evaluado no entra en su propia ventana.</strong> Si entrara, una caída fuerte se autojustificaría bajando el promedio contra el que se compara.</p>
+      <p><strong>LCI y LCS ya no son constantes mensuales.</strong> Cada día tiene su propio par de límites, así que en Análisis Diario la banda de control se dibuja como curva y no como dos líneas rectas.</p>
+      <p><strong>La ventana cruza meses.</strong> Un día de marzo usa histórico de febrero. La estadística ya no se reinicia en cada cierre.</p>
+      <p>El paso del parámetro es de <strong>7 días</strong> para que cada día de la semana entre en la ventana el mismo número de veces. La demanda tiene estacionalidad semanal marcada, y una ventana de 30 días (4 semanas + 2 días) sobrepondera dos días de la semana sin aportar información nueva.</p>
+      <p>σ es <strong>muestral</strong> (ddof = 1) y no poblacional: los N días son una muestra de un proceso de demanda que sigue corriendo, no el universo completo. Como la muestra tiene tamaño variable (solo los días con venta), la corrección muestral se ajusta al n real de cada día. La poblacional subestimaría σ justo donde hay menos información, elevando el LCI e inflando el %VP.</p>`},
+    {t:'2b · Primer mes — regla de arranque',h:`
+      <p>El primer mes con venta de cada combinatoria CD × SKU no tiene histórico previo suficiente para construir una ventana. Para ese mes se usa la estadística del <strong>mes completo</strong>, calculada sobre sus días activos, exactamente como funcionaba el motor antes.</p>
+      <div class="ism-formula">Si mes(d) == primer mes con venta de la combinatoria:
+    Muestra  = días con venta de TODO ese mes
+    Si |Muestra| &lt; ${CFG.minDias} → "Datos insuficientes", VP = 0
+    Promedio y σ = estadística del mes completo
+    (el mismo par se aplica a todos los días de ese mes)
+
+Desde el segundo mes en adelante → ventana móvil de ${CFG.ventana} días</div>
+      <p>La regla es <strong>fija</strong>: todo el primer mes usa la estadística mensual, aunque a mitad de mes ya hubiera histórico suficiente para una ventana. Esto mantiene el criterio homogéneo dentro del mes y evita que el mismo mes mezcle dos bases de cálculo distintas.</p>
+      <p>Es una regla por combinatoria, no por dataset: un SKU que arranca en mayo usa mayo completo como base y ventana móvil desde junio.</p>
+      <p>En el detalle diario cada día indica su base con una etiqueta — <strong>Mes</strong> o <strong>Móvil</strong> — y la columna <strong>n</strong> muestra cuántos días con venta alimentaron esa estadística. En la tabla mensual la columna <strong>Base</strong> resume si el mes se calculó con mes completo, ventana móvil o una mezcla.</p>`},
+    {t:'3 · %Stock-Out Potencial',h:`
+      <p>El %SO es el subconjunto del %VP donde el inventario físico del día confirma que el quiebre fue por falta de producto.</p>
+      <div class="ism-formula">Si el mes NO tiene registros en Inv.Diario:
+    %SO = None, flag "Sin datos de inventario"  → no se calcula ni se asume
+
+Solo sobre días donde VP_día &gt; 0 y el mes tiene cobertura:
+    Stock_día = Inv.Diario[CD, SKU, Fecha]
+                sin registro dentro del período → Stock_día = 0
+    SO_día    = max(0, VP_día − Stock_día)
+
+SO_mes = Σ SO_día
+%SO    = min(SO_mes / Venta_Total_mes × 100, %VP)</div>
+      <p>El <em>clip</em> contra %VP garantiza la relación estructural <strong>%SO ≤ %VP</strong>. El gap entre ambos es venta perdida que el inventario no explica: ruta no visitada, cliente sin pedido, problema de preventa. En distribución FMCG es comportamiento esperado, no un error de cálculo.</p>`},
+    {t:'4 · Cobertura (días de inventario)',h:`
+      <p>Mide cuántos días de venta soporta el stock disponible. El denominador es el <strong>promedio móvil del propio día</strong>, el mismo que alimenta el LCI, de modo que cobertura y venta perdida se leen sobre la misma base.</p>
+      <div class="ism-formula">Cobertura(d) = Stock(d) / Promedio_móvil(d)
+
+donde Promedio_móvil(d) es el promedio de los días con venta
+dentro de los ${CFG.ventana} días calendario anteriores a d
+(o la estadística del mes completo, si d cae en el primer mes)</div>
+      <p><strong>Agregación horizontal</strong> (de día a mes, misma combinatoria): promedio simple de las coberturas diarias. No se acumula, porque sumar días de cobertura no tiene significado físico.</p>
+      <div class="ism-formula">Cobertura_mes = mean(Cobertura(d))   ← promedio simple</div>
+      <p><strong>Agregación vertical</strong> (de SKU a CD, categoría o total): se acumulan numerador y denominador antes de dividir, y luego se promedia entre días.</p>
+      <div class="ism-formula">Cobertura_grupo(d) = Σ Stock(d) / Σ Promedio_móvil(d)
+Cobertura_grupo    = mean sobre los días del período</div>
+      <p>Solo se evalúan los días con <strong>registro real</strong> en Inv.Diario y con promedio móvil válido. Un día sin registro no se cuenta como cobertura cero: se excluye, porque sin dato no hay medición. Sin denominador válido tampoco hay cobertura definida.</p>
+      <p>Consecuencia de usar el promedio móvil: la cobertura de un mismo nivel de stock cambia si la demanda reciente cambió. Un stock de 1,000 L cubre 10 días si la venta reciente es 100 L/día y 5 días si subió a 200 L/día. Eso es lo correcto operativamente, pero hace la serie más volátil que con un promedio mensual fijo.</p>`},
+    {t:`5 · ${instockName()}`,h:`
+      <p>Mide la exposición al quiebre: qué proporción de los días-combinatoria evaluados tuvo una cobertura por debajo del umbral.</p>
+      <div class="ism-formula">${instockName()} = días-combinatoria con Cobertura &lt; ${CFG.instockDias}
+                 ─────────────────────────────────────────── × 100
+                 total de días-combinatoria del período</div>
+      <p>El conteo es <strong>día a día</strong>. Para una vista mensual se acumula: se suman todos los días-combinatoria bajo el umbral en el mes y se dividen entre el total de días-combinatoria evaluados en ese mes. Una combinatoria que estuvo 4 días bajo umbral en un mes de 30 días aporta 4 al numerador, no 1.</p>
+      <p class="ism-alert ism-alert--warning" style="margin-top:10px">⚠ Tal como está definido, este indicador mide <strong>riesgo</strong>: un valor menor es mejor. La meta configurada actúa como techo, no como piso.</p>`},
+    {t:'6 · Semáforo y clasificación de SKUs',h:`
+      <p>Los umbrales se aplican sobre %SO en meses con inventario y sobre %VP cuando no lo hay.</p>
+      <div class="ism-formula">Crítico  →  ≥ ${CFG.thCrit}%      (Rojo ISM  #EE3124)
+Alerta   →  ≥ ${CFG.thAlert}% y &lt; ${CFG.thCrit}%   (Amarillo  #FFBC36)
+OK       →  &lt; ${CFG.thAlert}%      (Verde ISM #00953B)
+Insuf.   →  &lt; ${CFG.minDias} días activos en el mes</div>
+      <p>En las tarjetas KPI el valor principal corresponde al período filtrado (o al último mes si no hay filtro). El valor YTD de abajo cuenta <strong>combinatorias CD×SKU distintas</strong> que estuvieron en ese estado en algún mes del año — responde "cuántos SKUs debo atender", no cuántas veces ocurrió.</p>`},
+    {t:'7 · Filtro de Canal — limitación metodológica',h:`
+      <p><strong>Inv.Diario no tiene dimensión de canal.</strong> El stock registrado es físico del centro de distribución y no está asignado a ningún canal de venta.</p>
+      <p>Si el filtro de canal se aplicara a los indicadores de quiebre, el resultado sería un artefacto: al reducir la base de venta a un solo canal, <code>VP_día</code> cae, pero el stock del día sigue siendo el total del CD. Como <code>SO_día = max(0, VP_día − Stock_día)</code>, el %SO colapsaría hacia cero en cualquier vista filtrada por canal.</p>
+      <p>Por eso el filtro de Canal está deshabilitado en todas las vistas de indicadores y habilitado únicamente en <strong>Análisis de Ventas</strong>, donde solo se agregan volúmenes y facturación.</p>`},
+    {t:'8 · Calidad de datos — duplicados en Inv.Diario',h:`
+      <p>Inv.Diario puede contener más de un registro para la misma llave <strong>Fecha × CD × SKU</strong>. Ocurre cuando el snapshot de inventario se extrae dos veces el mismo día: ambos registros tienen el mismo centro y el mismo SKU, pero distinto nivel de stock.</p>
+      <div class="ism-formula">Ejemplo real detectado
+  Fecha 2026-05-06 · CD C104 (Mazatenango) · SKU 10290
+    registro 1 →  1,570 unidades  ·   6,594.0 L
+    registro 2 → 11,713 unidades  ·  49,194.6 L</div>
+      <p><strong>Sumarlos sería un error.</strong> Si son dos lecturas del mismo stock físico, la suma genera inventario que nunca existió, y como <code>SO_día = max(0, VP_día − Stock_día)</code>, un stock inflado hace desaparecer quiebres reales: el %SO queda artificialmente bajo.</p>
+      <p>La regla de deduplicación es configurable. El valor por defecto es <strong>Máximo</strong>: da el beneficio de la duda al inventario, de modo que todo quiebre que el motor sí detecta es robusto — no proviene de una lectura de stock subestimada. Esto convierte al %SO en una cota inferior conservadora, que es lo apropiado para un indicador que dispara acción operativa.</p>
+      <table class="ism-table" style="margin-top:8px">
+        <thead><tr><th>Regla</th><th>Efecto sobre el %SO</th><th>Cuándo usarla</th></tr></thead><tbody>
+        <tr><td><strong>Máximo</strong> (default)</td><td>Conservador — reporta menos quiebres, todos robustos</td><td>Duplicados por doble extracción del snapshot</td></tr>
+        <tr><td>Último registro</td><td>Depende del orden de filas del archivo</td><td>Cuando el último registro es el snapshot definitivo</td></tr>
+        <tr><td>Promedio</td><td>Intermedio</td><td>Lecturas en momentos distintos del día</td></tr>
+        <tr><td>Mínimo</td><td>Agresivo — reporta más quiebres</td><td>Análisis de peor escenario</td></tr>
+        <tr><td>Suma</td><td>Infla el stock y subestima el quiebre</td><td><strong>Solo</strong> si son bodegas físicas distintas del mismo CD</td></tr>
+        </tbody></table>
+      <p style="margin-top:10px">Cambiar la regla en Configuración re-deduplica el inventario y recalcula todo el motor, sin necesidad de volver a cargar el archivo. La diferencia entre reglas es una buena medida de cuán sensible es el resultado a este problema de origen.</p>`},
+    {t:'9 · Decisiones de diseño fijadas',h:`
+      <table class="ism-table" style="margin-top:6px">
+        <thead><tr><th>Decisión</th><th>Criterio</th></tr></thead>
+        <tbody>
+        <tr><td>Unidad de medida</td><td>Volumen Litros en todo el cálculo</td></tr>
+        <tr><td>Bonificación</td><td>Incluida en venta diaria y en Venta Total</td></tr>
+        <tr><td>Días con venta = 0</td><td>Excluidos del cálculo de Promedio y σ</td></tr>
+        <tr><td>Desviación estándar</td><td>Muestral (ddof = 1)</td></tr>
+        <tr><td>LCI negativo</td><td>Truncado a 0</td></tr>
+        <tr><td>Ventana estadística</td><td>Móvil de ${CFG.ventana} días calendario previos, sin incluir el día evaluado</td></tr>
+        <tr><td>Composición de la ventana</td><td>Días calendario; el promedio se toma solo sobre los que tienen venta</td></tr>
+        <tr><td>Paso del parámetro</td><td>7 días — mantiene balanceados los días de la semana</td></tr>
+        <tr><td>Cruce de meses</td><td>Permitido — la estadística no se reinicia en el cierre</td></tr>
+        <tr><td>Primer mes</td><td>Estadística del mes completo (regla fija, por combinatoria)</td></tr>
+        <tr><td>Mínimo días activos primer mes</td><td>${CFG.minDias} — por debajo, flag "Datos insuficientes" y VP = 0</td></tr>
+        <tr><td>Mínimo días con venta en ventana</td><td>${CFG.minVentana} — por debajo, el día no se evalúa</td></tr>
+        <tr><td>Estacionalidad semanal</td><td>No se corrige — cada día se compara contra el promedio móvil de los días previos, sin distinguir día de la semana</td></tr>
+        <tr><td>Mes sin Inv.Diario</td><td>%SO = N/A — no se calcula ni se asume valor alguno</td></tr>
+        <tr><td>Registro faltante en mes cubierto</td><td>Stock = 0 — ausencia dentro del período equivale a quiebre</td></tr>
+        <tr><td>Gap %VP − %SO</td><td>Comportamiento esperado en FMCG, no es un error</td></tr>
+        <tr><td>Cobertura sin denominador</td><td>Excluida — sin promedio válido no hay cobertura definida</td></tr>
+        </tbody></table>`},
+    {t:'10 · Parámetros vigentes en esta sesión',h:`
+      <table class="ism-table" style="margin-top:6px">
+        <thead><tr><th>Parámetro</th><th>Valor</th></tr></thead><tbody>
+        <tr><td>Ventana móvil</td><td class="is-numeric tabular">${CFG.ventana} días (${CFG.ventana/7} semanas)</td></tr>
+        <tr><td>Mínimo días con venta en ventana</td><td class="is-numeric tabular">${CFG.minVentana}</td></tr>
+        <tr><td>Desviaciones estándar (k)</td><td class="is-numeric tabular">${K}</td></tr>
+        <tr><td>Desviación estándar</td><td class="tabular">Muestral (ddof = 1)</td></tr>
+        <tr><td>Mínimo días activos primer mes</td><td class="is-numeric tabular">${CFG.minDias}</td></tr>
+        <tr><td>Meta %VP Potencial (techo)</td><td class="is-numeric tabular">${CFG.metaVP}%</td></tr>
+        <tr><td>Meta %SO Potencial (techo)</td><td class="is-numeric tabular">${CFG.metaSO}%</td></tr>
+        <tr><td>Meta ${instockName()} (techo)</td><td class="is-numeric tabular">${CFG.metaInstock}%</td></tr>
+        <tr><td>Meta Cobertura (piso)</td><td class="is-numeric tabular">${CFG.metaCob} días</td></tr>
+        <tr><td>Umbral de cobertura InStock</td><td class="is-numeric tabular">${CFG.instockDias} días</td></tr>
+        <tr><td>Umbral Crítico</td><td class="is-numeric tabular">≥ ${CFG.thCrit}%</td></tr>
+        <tr><td>Umbral Alerta</td><td class="is-numeric tabular">≥ ${CFG.thAlert}%</td></tr>
+        <tr><td>Regla de deduplicación Inv.Diario</td><td class="tabular">${DEDUP_LBL[CFG.dedup]}</td></tr>
+        </tbody></table>`},
+  ];
+  document.getElementById('logic-acc').innerHTML=items.map((it,i)=>`
+    <div class="ism-logic-accordion__item">
+      <button class="ism-logic-accordion__trigger" onclick="toggleAcc(${i})">
+        <span>${it.t}</span><span id="acc-ico-${i}">${i===0?'−':'+'}</span></button>
+      <div class="ism-logic-accordion__panel${i===0?' is-open':''}" id="acc-p-${i}">${it.h}</div>
+    </div>`).join('');
+}
+function toggleAcc(i){
+  const p=document.getElementById('acc-p-'+i), ic=document.getElementById('acc-ico-'+i);
+  const open=p.classList.toggle('is-open'); ic.textContent=open?'−':'+';
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESET
+   ════════════════════════════════════════════════════════════ */
+function resetTool(){
+  Object.keys(CH).forEach(destroyChart);
+  RAW={venta:[],inv:[],maestro:{sku:new Map(),cd:new Map(),canal:new Map()},meses:[],mesesConInv:new Set(),nV:0,nI:0,fname:''};
+  ENG={rows:[],dias:[],cobDias:[]};
+  F={mes:[],tipo:[],canal:[],cd:[],cat:[],fmt:[],sabor:[],envase:[]};
+  dataLoaded=false; stopMsgRotation();
+  document.querySelectorAll('.nav-locked').forEach(b=>b.disabled=true);
+  document.getElementById('header-meta').style.display='none';
+  go('upload');
+}
+renderLogic(); renderSettings(); refreshDynLabels();
+</script>
+
+<script>
+'use strict';
+/* ════════════════════════════════════════════════════════════
+   EXPORTACIÓN A EXCEL — ExcelJS con formato ISM
+   Paleta ARGB (Manual de Identidad Visual ISM-SCM v1.3)
+   ════════════════════════════════════════════════════════════ */
+const XC={
+  green:'FF00953B', greenDark:'FF006B2B', green10:'FFE8F5EE',
+  red:'FFEE3124', white:'FFFFFFFF', black:'FF302A1B',
+  okBg:'FFE8F5EE', okTx:'FF004D1E',
+  wnBg:'FFFFF8E1', wnTx:'FF7A5A00',
+  crBg:'FFFDEDEC', crTx:'FF9B1A10',
+  ndBg:'FFF3F4F6', ndTx:'FF374151',
+  border:'FFE5E7EB', band:'FFF9FAFB',
+  ink500:'FF6B7280', ink700:'FF374151',
+};
+const FNT='Work Sans';
+const NF={int:'#,##0', dec:'#,##0.0', pct:'0.00"%"', dias:'#,##0.0', txt:'@'};
+
+const thin=c=>({style:'thin',color:{argb:c||XC.border}});
+const boxAll=c=>({top:thin(c),left:thin(c),bottom:thin(c),right:thin(c)});
+
+/* Estilo de cabecera: verde ISM, texto blanco, congelada */
+function styleHeader(ws,ncols,row){
+  const r=ws.getRow(row||1);
+  r.height=30;
+  for(let c=1;c<=ncols;c++){
+    const cell=r.getCell(c);
+    cell.font={name:FNT,size:9,bold:true,color:{argb:XC.white}};
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:XC.green}};
+    cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};
+    cell.border=boxAll(XC.greenDark);
+  }
+}
+/* Devuelve el relleno de semáforo según valor y umbrales */
+function semFill(v){
+  if(v===null||v===undefined||v==='—'||isNaN(v)) return {bg:XC.ndBg,tx:XC.ndTx};
+  if(v>=CFG.thCrit)  return {bg:XC.crBg,tx:XC.crTx};
+  if(v>=CFG.thAlert) return {bg:XC.wnBg,tx:XC.wnTx};
+  return {bg:XC.okBg,tx:XC.okTx};
+}
+/* Aplica formato a un bloque de datos */
+function styleBody(ws,cols,firstRow,lastRow){
+  for(let ri=firstRow;ri<=lastRow;ri++){
+    const row=ws.getRow(ri);
+    row.height=17;
+    const banded=((ri-firstRow)%2===1);
+    cols.forEach((cfg,idx)=>{
+      const cell=row.getCell(idx+1);
+      cell.font={name:FNT,size:9,color:{argb:XC.black}};
+      cell.border=boxAll();
+      cell.alignment={vertical:'middle',horizontal:cfg.align||(cfg.num?'right':'left')};
+      if(cfg.fmt) cell.numFmt=cfg.fmt;
+      let fill=banded?XC.band:XC.white;
+      let font=null;
+      if(cfg.sem){                                  // columna con semáforo
+        const v=(typeof cell.value==='number')?cell.value:null;
+        const s=semFill(v);
+        fill=s.bg; font={name:FNT,size:9,bold:true,color:{argb:s.tx}};
+      } else if(cfg.estado){                        // columna de estado textual
+        const t=String(cell.value||'');
+        const s=t==='Crítico'?{bg:XC.crBg,tx:XC.crTx}
+               :t==='Alerta' ?{bg:XC.wnBg,tx:XC.wnTx}
+               :t==='OK'     ?{bg:XC.okBg,tx:XC.okTx}
+               :{bg:XC.ndBg,tx:XC.ndTx};
+            fill=s.bg; font={name:FNT,size:9,bold:true,color:{argb:s.tx}};
+            cell.alignment={vertical:'middle',horizontal:'center'};
+      } else if(cfg.strong){
+        font={name:FNT,size:9,bold:true,color:{argb:XC.black}};
+      }
+      cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:fill}};
+      if(font) cell.font=font;
+    });
+  }
+}
+/* Construye una hoja completa a partir de definición de columnas y filas */
+function buildSheet(wb,name,cols,rows,opts){
+  opts=opts||{};
+  const ws=wb.addWorksheet(name,{
+    views:[{state:'frozen',xSplit:opts.freezeCols||0,ySplit:1,showGridLines:false}],
+    pageSetup:{orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,
+               margins:{left:.3,right:.3,top:.4,bottom:.4,header:.2,footer:.2}}
+  });
+  ws.columns=cols.map(c=>({header:c.h,width:c.w||14}));
+  rows.forEach(r=>ws.addRow(r));
+  styleHeader(ws,cols.length,1);
+  if(rows.length) styleBody(ws,cols,2,rows.length+1);
+  if(rows.length) ws.autoFilter={from:{row:1,column:1},to:{row:rows.length+1,column:cols.length}};
+  return ws;
+}
+
+/* ── Hoja de portada / parámetros ─────────────────────────── */
+function buildParamSheet(wb){
+  const ws=wb.addWorksheet('Parámetros',{views:[{showGridLines:false}],
+    pageSetup:{orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0}});
+  ws.columns=[{width:3},{width:40},{width:64}];
+
+  let r=1;
+  const title=(txt)=>{
+    ws.mergeCells(r,2,r,3);
+    const c=ws.getCell(r,2);
+    c.value=txt;
+    c.font={name:FNT,size:15,bold:true,color:{argb:XC.white}};
+    c.fill={type:'pattern',pattern:'solid',fgColor:{argb:XC.green}};
+    c.alignment={vertical:'middle',horizontal:'left',indent:1};
+    ws.getRow(r).height=34; r++;
+  };
+  const section=(txt)=>{
+    r++;
+    ws.mergeCells(r,2,r,3);
+    const c=ws.getCell(r,2);
+    c.value=txt;
+    c.font={name:FNT,size:10,bold:true,color:{argb:XC.okTx}};
+    c.fill={type:'pattern',pattern:'solid',fgColor:{argb:XC.green10}};
+    c.alignment={vertical:'middle',horizontal:'left',indent:1};
+    c.border={bottom:thin(XC.green)};
+    ws.getRow(r).height=22; r++;
+  };
+  const kv=(k,v,strong)=>{
+    const a=ws.getCell(r,2), b=ws.getCell(r,3);
+    a.value=k; b.value=v;
+    a.font={name:FNT,size:9,color:{argb:XC.ink700}};
+    b.font={name:FNT,size:9,bold:!!strong,color:{argb:XC.black}};
+    a.alignment={vertical:'middle',indent:1};
+    b.alignment={vertical:'middle',horizontal:'left',indent:1,wrapText:true};
+    a.border={bottom:thin()}; b.border={bottom:thin()};
+    ws.getRow(r).height=16; r++;
+  };
+  const note=(txt)=>{
+    ws.mergeCells(r,2,r,3);
+    const c=ws.getCell(r,2);
+    c.value=txt;
+    c.font={name:FNT,size:8.5,italic:true,color:{argb:XC.ink500}};
+    c.alignment={vertical:'top',horizontal:'left',indent:1,wrapText:true};
+    ws.getRow(r).height=30; r++;
+  };
+
+  title('Venta Perdida y Stock-Out Potencial · ISM Supply Chain');
+  r++;
+  kv('Archivo fuente',RAW.fname,true);
+  kv('Generado',new Date().toLocaleString('es-GT'));
+  kv('Período exportado',periodLabel(),true);
+  kv('Filtros aplicados',activeFilterText());
+
+  section('VENTANA MÓVIL');
+  kv('Ventana',CFG.ventana+' días calendario ('+(CFG.ventana/7)+' semanas)',true);
+  kv('Composición','Días calendario previos; el promedio toma solo los días con venta');
+  kv('Día evaluado','No se incluye en su propia ventana');
+  kv('Mínimo días con venta en ventana',CFG.minVentana);
+  kv('Días sin ventana válida',(ENG.diag&&ENG.diag.skipMov||0)+' de '+(ENG.diag&&ENG.diag.evalMov||0)+'  ('+((ENG.diag&&ENG.diag.pctSkip)||0).toFixed(1)+'%)');
+  kv('Primer mes','Estadística del mes completo — regla fija por combinatoria CD×SKU');
+  kv('Mínimo días activos primer mes',CFG.minDias);
+  note('El paso del parámetro es de 7 días para que cada día de la semana entre en la ventana el mismo número de veces. La ventana cruza meses: la estadística no se reinicia en el cierre.');
+
+  section('SENSIBILIDAD DEL CÁLCULO');
+  kv('Desviaciones estándar (k)',CFG.k,true);
+  kv('Desviación estándar','Muestral (ddof = 1)');
+  kv('Límite de Control Inferior','LCI(d) = max(0, Promedio_móvil(d) − '+CFG.k+'·σ_móvil(d))');
+  kv('Límite de Control Superior','LCS(d) = Promedio_móvil(d) + '+CFG.k+'·σ_móvil(d)');
+  note('Un k menor eleva el LCI y clasifica más días como atípicos. Un k mayor lo restringe a caídas más severas. LCI y LCS son un valor por día, no una constante mensual.');
+
+  section('METAS');
+  kv('%VP Potencial (techo)',CFG.metaVP+'%');
+  kv('%SO Potencial (techo)',CFG.metaSO+'%');
+  kv(instockName()+' (techo)',CFG.metaInstock+'%');
+  kv('Cobertura (piso)',CFG.metaCob+' días');
+
+  section('UMBRALES DE CLASIFICACIÓN');
+  kv('Crítico','≥ '+CFG.thCrit+'%');
+  kv('Alerta','≥ '+CFG.thAlert+'% y < '+CFG.thCrit+'%');
+  kv('OK','< '+CFG.thAlert+'%');
+  kv('Umbral de cobertura '+instockName(),CFG.instockDias+' días',true);
+
+  section('COBERTURA DE DATOS');
+  kv('Meses en Venta',RAW.meses.map(m=>MES_FULL[m]).join(', '));
+  kv('Meses con Inv.Diario',[...RAW.mesesConInv].sort((a,b)=>a-b).map(m=>MES_FULL[m]).join(', ')||'ninguno');
+  kv('Meses sin Inv.Diario',RAW.meses.filter(m=>!RAW.mesesConInv.has(m)).map(m=>MES_FULL[m]).join(', ')||'ninguno');
+  kv('Registros de venta',RAW.nV);
+  kv('Registros de inventario',RAW.nI);
+
+  section('CALIDAD DE DATOS — Inv.Diario');
+  kv('Llaves Fecha×CD×SKU duplicadas',RAW.dupKeys||0,(RAW.dupKeys>0));
+  kv('Registros excedentes',RAW.dupRows||0);
+  kv('Fechas afectadas',(RAW.dupFechas||[]).length);
+  kv('Regla de deduplicación',DEDUP_LBL[CFG.dedup],true);
+  if(RAW.dupKeys) note('Sumar los duplicados generaría inventario inexistente y subestimaría el %SO. La regla activa determina qué lectura de stock se usa cuando hay más de un registro para la misma llave.');
+
+  section('NOTAS METODOLÓGICAS');
+  kv('%SO ≤ %VP','Relación estructural garantizada por construcción.');
+  kv('Gap %VP − %SO','Venta perdida no explicada por inventario. Esperado en distribución FMCG.');
+  kv('Filtro de Canal','Inv.Diario no tiene dimensión de canal: %SO, Cobertura e '+instockName()+' no se segmentan por canal.');
+  kv('Mes sin Inv.Diario','%SO = N/A. No se calcula ni se asume valor alguno.');
+  kv('Estacionalidad semanal','No se corrige: cada día se compara contra el promedio móvil de los días previos.');
+  kv('Cobertura — denominador','Promedio móvil del propio día, el mismo que alimenta el LCI.');
+  kv('Cobertura — agregación horizontal','Promedio simple de las coberturas diarias.');
+  kv('Cobertura — agregación vertical','Σ stock diario / Σ venta promedio diaria, promediado por día.');
+  kv(instockName(),'Días-combinatoria con cobertura < '+CFG.instockDias+' días / total días-combinatoria.');
+
+  ws.getCell(r+1,2).value='ISM Supply Chain — Jefatura Corporativa (SC-CORP)';
+  ws.getCell(r+1,2).font={name:FNT,size:8,color:{argb:XC.ink500}};
+  return ws;
+}
+
+/* ── Descarga del workbook ────────────────────────────────── */
+async function saveWb(wb,filename){
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+}
+function exportBusy(on,msg){
+  document.querySelectorAll('#view-export .ism-btn').forEach(b=>b.disabled=on);
+  const el=document.getElementById('meta-export');
+  if(on&&el) el.innerHTML='<strong>⏳ '+esc(msg||'Generando archivo...')+'</strong>';
+  else if(el) renderExport();
+}
+
+/* ════════════════════════════════════════════════════════════
+   EXCEL COMPLETO — 5 hojas con formato
+   ════════════════════════════════════════════════════════════ */
+async function downloadExcel(){
+  if(!dataLoaded){alert('Carga primero un archivo.');return;}
+  exportBusy(true,'Generando Excel con formato...');
+  try{
+    await sleep(30);
+    const rows=fRows(), wb=new ExcelJS.Workbook();
+    wb.creator='ISM Supply Chain — SC-CORP';
+    wb.created=new Date();
+    const IS=instockName();
+
+    buildParamSheet(wb);
+
+    /* ── Hoja: Resumen por CD ── */
+    const cds=[...new Set(rows.map(r=>r.cd))].sort();
+    const ms=selMeses();
+    const c1=[
+      {h:'Mes',w:12},{h:'CD',w:9},{h:'Centro de Distribución',w:23},
+      {h:'Venta Total (L)',w:16,num:1,fmt:NF.dec},
+      {h:'VP (L)',w:13,num:1,fmt:NF.dec},
+      {h:'%VP',w:10,num:1,fmt:NF.pct,sem:1},
+      {h:'Estado VP',w:12,estado:1},
+      {h:'SO (L)',w:13,num:1,fmt:NF.dec},
+      {h:'%SO',w:10,num:1,fmt:NF.pct,sem:1},
+      {h:'Estado SO',w:14,estado:1},
+      {h:'Cobertura (días)',w:16,num:1,fmt:NF.dias},
+      {h:IS,w:13,num:1,fmt:NF.pct},
+      {h:'N SKUs',w:10,num:1,fmt:NF.int},
+      {h:'Críticos',w:10,num:1,fmt:NF.int,strong:1},
+      {h:'Alerta',w:10,num:1,fmt:NF.int},
+      {h:'Insuf.',w:10,num:1,fmt:NF.int},
+    ];
+    const d1=[];
+    for(const m of ms) for(const cd of cds){
+      const rs=rows.filter(r=>r.mes===m&&r.cd===cd); if(!rs.length) continue;
+      const c=countStates(rs), sinInv=!RAW.mesesConInv.has(m);
+      const skuSet=new Set(rs.map(r=>r.sku));
+      const cobD=ENG.cobDias.filter(d=>d.mes===m&&d.cd===cd&&skuSet.has(d.sku));
+      d1.push([MES_FULL[m],cd,RAW.maestro.cd.get(cd)||'',
+        r1(rs.reduce((s,r)=>s+r.vt,0)), r1(rs.reduce((s,r)=>s+r.vpL,0)),
+        aggVP(rs), sem(aggVP(rs)),
+        sinInv?null:r1(rs.reduce((s,r)=>s+r.soL,0)), sinInv?null:aggSO(rs),
+        sinInv?'Sin Inv.Diario':sem(aggSO(rs)),
+        cobD.length?aggCob(cobD):null, cobD.length?aggIS(cobD):null,
+        rs.length,c.crit,c.alert,c.insuf]);
+    }
+    buildSheet(wb,'Resumen por CD',c1,d1,{freezeCols:3});
+
+    /* ── Hoja: Detalle CD×SKU ── */
+    const c2=[
+      {h:'Mes',w:12},{h:'CD',w:8},{h:'Centro Distrib.',w:20},
+      {h:'Cód. SKU',w:11},{h:'Descripción SKU',w:38},
+      {h:'Categoría',w:14},{h:'Marca',w:13},{h:'Formato',w:10,num:1},
+      {h:'Sabor',w:15},{h:'Envase',w:10},
+      {h:'Venta Total (L)',w:15,num:1,fmt:NF.dec},
+      {h:'N Días',w:9,num:1,fmt:NF.int},
+      {h:'Base cálculo',w:14},
+      {h:'n medio ventana',w:16,num:1,fmt:NF.dec},
+      {h:'Días sin ventana',w:17,num:1,fmt:NF.int},
+      {h:'Promedio medio (L)',w:18,num:1,fmt:NF.dec},
+      {h:'Sigma media (L)',w:16,num:1,fmt:NF.dec},
+      {h:'LCI medio (L)',w:15,num:1,fmt:NF.dec},
+      {h:'LCS medio (L)',w:15,num:1,fmt:NF.dec},
+      {h:'N Días VP',w:11,num:1,fmt:NF.int},
+      {h:'VP (L)',w:13,num:1,fmt:NF.dec},
+      {h:'%VP',w:10,num:1,fmt:NF.pct,sem:1},
+      {h:'Estado VP',w:12,estado:1},
+      {h:'N Días SO',w:11,num:1,fmt:NF.int},
+      {h:'SO (L)',w:13,num:1,fmt:NF.dec},
+      {h:'%SO',w:10,num:1,fmt:NF.pct,sem:1},
+      {h:'Estado SO',w:14,estado:1},
+      {h:'Cobertura (días)',w:16,num:1,fmt:NF.dias},
+      {h:IS,w:13,num:1,fmt:NF.pct},
+      {h:'Días Inv.',w:11,num:1,fmt:NF.int},
+      {h:'Días bajo umbral',w:17,num:1,fmt:NF.int},
+      {h:'Flag VP',w:19},{h:'Flag SO',w:22},
+    ];
+    const d2=rows.map(r=>[MES_FULL[r.mes],r.cd,r.descCD,r.sku,r.descSKU,r.cat,r.marca,
+      isNaN(+r.fmt)?r.fmt:+r.fmt, r.sabor,r.envase,
+      r.vt,r.nDias,r.base,r.nWinProm,r.nSinStat,r.prom,r.sig,r.lci,r.lcs,
+      r.nVP,r.vpL,r.pctVP,r.estVP,
+      r.sinInv?null:r.nSO, r.sinInv?null:r.soL, r.sinInv?null:r.pctSO, r.estSO,
+      r.cobProm,r.pctIS,r.nDiasInv,r.nBajo,
+      r.flagVP||'', r.sinInv?'Sin datos de inventario':'']);
+    buildSheet(wb,'Detalle CD×SKU',c2,d2,{freezeCols:5});
+
+    /* ── Hoja: Top Críticos ── */
+    const top=rows.filter(r=>!r.sinInv&&!r.flagVP&&r.pctSO>=CFG.thCrit).sort((a,b)=>b.pctSO-a.pctSO);
+    const c3=[
+      {h:'#',w:6,num:1,fmt:NF.int},
+      {h:'Mes',w:12},{h:'CD',w:8},{h:'Centro Distrib.',w:20},
+      {h:'Cód. SKU',w:11},{h:'Descripción SKU',w:38},
+      {h:'Categoría',w:14},{h:'Marca',w:13},{h:'Formato',w:10,num:1},
+      {h:'Venta Total (L)',w:15,num:1,fmt:NF.dec},
+      {h:'VP (L)',w:13,num:1,fmt:NF.dec},
+      {h:'%VP',w:10,num:1,fmt:NF.pct,sem:1},
+      {h:'SO (L)',w:13,num:1,fmt:NF.dec},
+      {h:'%SO',w:10,num:1,fmt:NF.pct,sem:1},
+      {h:'Días SO',w:10,num:1,fmt:NF.int},
+      {h:'Cobertura (días)',w:16,num:1,fmt:NF.dias},
+      {h:IS,w:13,num:1,fmt:NF.pct},
+    ];
+    const d3=top.map((r,i)=>[i+1,MES_FULL[r.mes],r.cd,r.descCD,r.sku,r.descSKU,r.cat,r.marca,
+      isNaN(+r.fmt)?r.fmt:+r.fmt,r.vt,r.vpL,r.pctVP,r.soL,r.pctSO,r.nSO,r.cobProm,r.pctIS]);
+    buildSheet(wb,'Top Críticos',c3,d3,{freezeCols:6});
+
+    /* ── Hoja: Cobertura ── */
+    const keys=new Set(rows.map(r=>r.cd+'|'+r.sku));
+    const agg=new Map();
+    for(const d of ENG.cobDias){
+      if(!mesSel(d.mes)) continue;
+      if(!keys.has(d.cd+'|'+d.sku)) continue;
+      const k=d.mes+'|'+d.cd+'|'+d.sku;
+      let a=agg.get(k);
+      if(!a){a={mes:d.mes,cd:d.cd,sku:d.sku,n:0,bajo:0,sum:0,sumStock:0,min:Infinity};agg.set(k,a);}
+      a.n++; a.sum+=d.cob; a.sumStock+=d.stock; a.min=Math.min(a.min,d.cob);
+      if(d.bajo)a.bajo++;
+    }
+    const c4=[
+      {h:'Mes',w:12},{h:'CD',w:8},{h:'Centro Distrib.',w:20},
+      {h:'Cód. SKU',w:11},{h:'Descripción SKU',w:38},{h:'Categoría',w:14},
+      {h:'Días evaluados',w:15,num:1,fmt:NF.int},
+      {h:'Cobertura prom. (días)',w:21,num:1,fmt:NF.dias},
+      {h:'Cobertura mín. (días)',w:20,num:1,fmt:NF.dias},
+      {h:'Umbral (días)',w:14,num:1,fmt:NF.int},
+      {h:'Días bajo umbral',w:17,num:1,fmt:NF.int},
+      {h:IS,w:13,num:1,fmt:NF.pct},
+      {h:'Stock promedio (L)',w:18,num:1,fmt:NF.dec},
+      {h:'Estado',w:12,estado:1},
+    ];
+    const d4=[...agg.values()].sort((a,b)=>a.mes-b.mes||b.bajo-a.bajo).map(a=>{
+      const r=rows.find(x=>x.cd===a.cd&&x.sku===a.sku&&x.mes===a.mes)||{};
+      const is=r2(a.bajo/a.n*100);
+      return [MES_FULL[a.mes],a.cd,r.descCD||'',a.sku,r.descSKU||'',r.cat||'',
+        a.n,a.sum/a.n,a.min,CFG.instockDias,a.bajo,is,a.sumStock/a.n,
+        is<=CFG.metaInstock?'OK':is<=CFG.metaInstock*2?'Alerta':'Crítico'];
+    });
+    buildSheet(wb,'Cobertura',c4,d4,{freezeCols:6});
+
+    await saveWb(wb,`VP_SO_Potencial_${new Date().toISOString().slice(0,10)}.xlsx`);
+  }catch(e){ console.error(e); alert('Error al generar el Excel: '+(e.message||e)); }
+  finally{ exportBusy(false); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   EXCEL — DETALLE DIARIO DE COBERTURA
+   ════════════════════════════════════════════════════════════ */
+async function downloadCobXlsx(){
+  if(!dataLoaded){alert('Carga primero un archivo.');return;}
+  const d=fCobDias();
+  if(!d.length){alert('No hay datos de cobertura para los filtros aplicados.');return;}
+  exportBusy(true,'Generando detalle diario...');
+  try{
+    await sleep(30);
+    const wb=new ExcelJS.Workbook();
+    wb.creator='ISM Supply Chain — SC-CORP';
+    const meta=new Map(ENG.rows.map(r=>[r.cd+'|'+r.sku,r]));
+    const cols=[
+      {h:'Fecha',w:13},{h:'Mes',w:12},{h:'CD',w:8},{h:'Centro Distrib.',w:20},
+      {h:'Cód. SKU',w:11},{h:'Descripción SKU',w:38},{h:'Categoría',w:14},
+      {h:'Stock (L)',w:14,num:1,fmt:NF.dec},
+      {h:'Venta prom. diaria (L)',w:21,num:1,fmt:NF.dec},
+      {h:'Cobertura (días)',w:16,num:1,fmt:'#,##0.00'},
+      {h:'Umbral (días)',w:14,num:1,fmt:NF.int},
+      {h:'Bajo umbral',w:13,estado:1},
+    ];
+    const rows=d.sort((a,b)=>a.fechaStr.localeCompare(b.fechaStr)||a.cd.localeCompare(b.cd))
+      .map(x=>{ const m=meta.get(x.cd+'|'+x.sku)||{};
+        return [x.fechaStr,MES_FULL[x.mes],x.cd,m.descCD||'',x.sku,m.descSKU||'',m.cat||'',
+                x.stock,x.prom,x.cob,CFG.instockDias,x.bajo?'Crítico':'OK']; });
+    buildSheet(wb,'Cobertura diaria',cols,rows,{freezeCols:6});
+    await saveWb(wb,`Cobertura_Diaria_${new Date().toISOString().slice(0,10)}.xlsx`);
+  }catch(e){ console.error(e); alert('Error al generar el archivo: '+(e.message||e)); }
+  finally{ exportBusy(false); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   CSV — para integración con Power BI u otros sistemas
+   ════════════════════════════════════════════════════════════ */
+function csvEsc(v){const s=String(v??'');return /[",;\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+function dlCSV(name,head,rows){
+  const csv=[head.join(','),...rows.map(r=>r.map(csvEsc).join(','))].join('\r\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1200);
+}
+function downloadCSV(){
+  if(!dataLoaded){alert('Carga primero un archivo.');return;}
+  const rows=fRows();
+  dlCSV(`VP_SO_Detalle_${new Date().toISOString().slice(0,10)}.csv`,
+    ['Mes','CD','Descripcion CD','SKU','Descripcion SKU','Categoria','Marca','Formato','Sabor','Envase',
+     'Venta Total L','N Dias','Base calculo','n medio ventana','Dias sin ventana','Promedio medio L','Sigma media L','LCI medio L','LCS medio L','N Dias VP','VP L','pct VP','Estado VP',
+     'N Dias SO','SO L','pct SO','Estado SO','Cobertura dias','pct InStock','Umbral dias','Dias Inv','Dias bajo umbral','Flag VP','Flag SO'],
+    rows.map(r=>[MES_FULL[r.mes],r.cd,r.descCD,r.sku,r.descSKU,r.cat,r.marca,r.fmt,r.sabor,r.envase,
+      r.vt,r.nDias,r.base,r.nWinProm??'',r.nSinStat,r.prom??'',r.sig??'',r.lci??'',r.lcs??'',r.nVP,r.vpL,r.pctVP,r.estVP,
+      r.sinInv?'':r.nSO, r.sinInv?'':r.soL, r.sinInv?'':r.pctSO, r.estSO,
+      r.cobProm??'', r.pctIS??'', CFG.instockDias, r.nDiasInv, r.nBajo,
+      r.flagVP||'', r.sinInv?'Sin datos de inventario':'']));
+}
+</script>
+</body>
+</html>
