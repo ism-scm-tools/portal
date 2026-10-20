@@ -845,6 +845,11 @@ td.mat-desc{max-width:280px; overflow:hidden; text-overflow:ellipsis; white-spac
 }
 
 /* ---------- Custom inmovilizado definition control ---------- */
+.inmov-grp{margin-top:12px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--bg-2);}
+.inmov-grp-title{font-weight:700; font-size:12.5px; color:var(--text); margin-bottom:6px;}
+.inmov-grp-sub{font-size:11px; color:var(--text-dim); margin:8px 0 5px;}
+#inmovDefGroups{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+@media (max-width:900px){ #inmovDefGroups{grid-template-columns:1fr;} }
 .inmov-def-row{
   margin-top:14px; padding-top:12px; border-top:1px solid var(--border);
 }
@@ -1068,15 +1073,26 @@ header.top{border-bottom:none;}
       <div class="inmov-def-row">
         <label class="inmov-def-toggle">
           <input type="checkbox" id="customInmovToggle" checked />
-          <span>Elegir manualmente qué tramos de antigüedad de consumo cuentan como "Inmovilizado" (activo por defecto, preseleccionado en "+3 años sin consumo" — equivalente a la definición estándar del negocio)</span>
+          <span>Ajustar la definición de "Inmovilizado" por grupo de material (activo por defecto, preseleccionado en el estándar de la política de bajas: <b>Repuestos +3 años</b> sin consumo y <b>resto de materiales +1 año</b> sin consumo)</span>
         </label>
-        <div class="chip-set" id="customInmovChips"></div>
+        <div id="inmovDefGroups">
+          <div class="inmov-grp">
+            <div class="inmov-grp-title">Repuestos</div>
+            <div class="inmov-grp-sub">Tramos que cuentan como "Inmovilizado"</div>
+            <div class="chip-set" id="customInmovChips_rep"></div>
+            <div class="inmov-grp-sub">Antigüedad mínima desde su 1ª compra</div>
+            <div class="chip-set" id="filterNuevos_rep"></div>
+          </div>
+          <div class="inmov-grp">
+            <div class="inmov-grp-title">Resto de materiales <span style="font-weight:400;color:var(--text-dim)">(consumibles, herramientas, materias auxiliares, etc.)</span></div>
+            <div class="inmov-grp-sub">Tramos que cuentan como "Inmovilizado"</div>
+            <div class="chip-set" id="customInmovChips_resto"></div>
+            <div class="inmov-grp-sub">Antigüedad mínima desde su 1ª compra</div>
+            <div class="chip-set" id="filterNuevos_resto"></div>
+          </div>
+        </div>
         <div class="inmov-def-note" id="customInmovNote"></div>
-        <label class="inmov-def-toggle" style="margin-top:12px;">
-          <span>Antigüedad mínima para poder ser "Inmovilizado" (días desde su 1ª compra)</span>
-        </label>
-        <div class="chip-set" id="filterNuevos"></div>
-        <div class="inmov-def-note">Un material nunca cuenta como Inmovilizado si su primera compra en el país fue hace menos de este umbral — aunque tenga alta cobertura o cero consumo, es normal que un material recién comprado aún no rote. La primera compra es el primer ingreso más antiguo del material entre los centros del país desde ene-2023; si no hay ningún ingreso conocido (stock que ya existía antes), se trata como antiguo.</div>
+        <div class="inmov-def-note">La antigüedad mínima evita marcar como Inmovilizado un material recién comprado que aún no tuvo tiempo de rotar. La primera compra es el ingreso (101) más antiguo del material entre los centros del país desde ene-2023; si no hay ningún ingreso conocido (stock que ya existía antes), se trata como antiguo.</div>
       </div>
     </div>
   </div>
@@ -1253,7 +1269,7 @@ header.top{border-bottom:none;}
       <details>
         <summary>Inmovilizados — qué cuenta y cómo se define</summary>
         <div class="ism-logic-body">
-          <div><b>Dos condiciones, ambas deben cumplirse:</b> un material-centro es "Inmovilizado" cuando (1) su tramo de antigüedad de consumo está entre los marcados en el control debajo del gráfico "Distribución de antigüedad de consumo" (vista Total) — por defecto "+3 años sin consumo" — <b>Y</b> (2) su antigüedad desde la primera compra en el país (el ingreso más antiguo del material entre los centros del país) es mayor o igual al umbral configurado en "Antigüedad mínima para poder ser Inmovilizado" (por defecto 1080 días). Ambos controles están en Filtros avanzados y son ajustables en cualquier momento, sin recargar el archivo.</div>
+          <div><b>Estándar de la política de bajas (por grupo de material):</b> un material-centro es "Inmovilizado" cuando cumple <b>las dos condiciones</b> de su grupo: <b>Repuestos</b> — (1) +3 años sin consumo real (201/202 + 261/262) <b>Y</b> (2) 1080 días o más desde su primera compra en el país; <b>resto de materiales</b> (consumibles, herramientas, materias auxiliares, material publicitario, etc.) — (1) +1 año sin consumo real <b>Y</b> (2) 360 días o más desde su primera compra. La diferencia responde a la naturaleza del stock: un repuesto es respaldo ante fallas y rota poco por diseño, mientras que el resto de materiales debería rotar dentro del año. La primera compra es el ingreso más antiguo del material entre los centros del país. Ambas condiciones son ajustables por grupo en Filtros avanzados, sin recargar el archivo, y se aplican a todos los cortes (gráfica principal y Variaciones).</div>
           <div><b>Sin consumo registrado ≠ "+3 años" automáticamente:</b> cuando un material no tiene ningún consumo real (201/202 + 261/262) en el país en el periodo cargado, su tramo se acota por la antigüedad real desde su primera compra en el país (el ingreso más antiguo del material entre los centros del país), en vez de asumir la máxima antigüedad — así un material de, por ejemplo, 7 meses sin consumo cae en "+6 meses sin consumo", no en "+3 años sin consumo" solo por no tener fecha de consumo. Un material solo cae en "+3 años sin consumo" si su antigüedad real ya supera ese umbral, o si tampoco tenemos fecha de primera compra registrada (stock que ya existía antes de enero de 2023, cuando empieza el historial cargado).</div>
           <div><b>"Compra reciente, sin consumo aún" es distinto de "Con consumo real (&lt;6 meses)":</b> un material de menos de 6 meses de antigüedad que nunca ha consumido no es lo mismo que uno que sí tuvo una salida real hace poco — el primero simplemente no ha tenido tiempo de rotar, el segundo ya demostró movimiento. Por eso son dos tramos separados, aunque ambos comparten el mismo umbral de 6 meses.</div>
           <div>Estos materiales se separan de la vista "Inventario Total" (a través de la definición activa) para que los KPIs y gráficos que ve el Directorio puedan aislar el inventario que no rota, sin que distorsione la cobertura agregada del negocio.</div>
@@ -1492,8 +1508,9 @@ function __initDashboardApp(){
     clasificaciones: new Set(),
     buckets: new Set(),
     customInmovOn: true,
-    customInmovBuckets: new Set(['a3']),
-    hideNewerThan: 1080, // antigüedad mínima (días desde 1ª compra) para poder calificar como "Inmovilizado"; ya no excluye filas de las vistas
+    // Definición de "Inmovilizado" por grupo (estándar de la política de bajas): tramos de antigüedad de consumo
+    // + antigüedad mínima desde la 1ª compra en el país. Repuestos: +3 años / 1080d · Resto: +1 año / 360d.
+    inmovDef: {rep:{buckets:new Set(['a3']), min:1080}, resto:{buckets:new Set(['a1','a2','a3']), min:360}},
     search: '',
     diasWindow: 1080,
     families: new Set(FAMILIES),
@@ -1506,6 +1523,19 @@ function __initDashboardApp(){
     advancedFiltersOpen: false
   };
 
+  const INMOV_STD = {rep:{buckets:['a3'], min:1080}, resto:{buckets:['a1','a2','a3'], min:360}};
+  const INMOV_GROUPS = [{key:'rep', label:'Repuestos'}, {key:'resto', label:'Resto'}];
+  const grpOf = d => d.tipo_desc === 'Repuestos' ? 'rep' : 'resto';
+  function defOf(g){ return state.customInmovOn ? state.inmovDef[g] : {buckets:new Set(INMOV_STD[g].buckets), min:INMOV_STD[g].min}; }
+  function minCompraOf(d){ return defOf(grpOf(d)).min; }
+  function resetInmovDef(){
+    state.inmovDef = {rep:{buckets:new Set(INMOV_STD.rep.buckets), min:INMOV_STD.rep.min}, resto:{buckets:new Set(INMOV_STD.resto.buckets), min:INMOV_STD.resto.min}};
+  }
+  function isInmovStd(){
+    if (!state.customInmovOn) return true;
+    return INMOV_GROUPS.every(({key}) => { const d = state.inmovDef[key], st = INMOV_STD[key];
+      return d.min === st.min && d.buckets.size === st.buckets.length && st.buckets.every(b => d.buckets.has(b)); });
+  }
   const allPaises = META.paises.slice().sort((a,b)=> {
     const va = DATA.filter(d=>d.pais===a).reduce((s,d)=>s+d.valor_usd,0);
     const vb = DATA.filter(d=>d.pais===b).reduce((s,d)=>s+d.valor_usd,0);
@@ -1652,7 +1682,8 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
     const consumo_diario = diasElegibles>0 ? qtyPais/diasElegibles : 0;
     const sin_consumo = qtyPais <= 0;
     const cobertura_dias = (!sin_consumo && consumo_diario>0) ? d.stock_qty_total/consumo_diario : null;
-    const es_nuevo = state.hideNewerThan > 0 && d.dias_desde_primera != null && d.dias_desde_primera < state.hideNewerThan;
+    const minC = minCompraOf(d);
+    const es_nuevo = minC > 0 && d.dias_desde_primera != null && d.dias_desde_primera < minC;
     return Object.assign({}, d, { consumo_diario, sin_consumo, cobertura_dias, dias_elegibles: diasElegibles, es_nuevo });
   }
 
@@ -1673,7 +1704,15 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
     all.title = 'Ver todos los países habilitados'; all.addEventListener('click', () => { state.pais.clear(); renderAll(); });
     allPaises.forEach(p => {
       const n = mk(p, 'active', `<span class="flag-rect">${FLAG_SVG[p] || ''}</span><span class="lbl">${PAIS_SHORT[p] || p}</span><span class="val"></span>`);
-      n.addEventListener('click', () => toggleSet(state.pais, p, renderAll));
+      n.title = 'Clic: ver solo este país · Shift + clic: agregar o quitar países a la selección';
+      n.addEventListener('mousedown', e => { if (e.shiftKey) e.preventDefault(); }); // evita seleccionar texto con Shift
+      n.addEventListener('click', e => {
+        if (e.shiftKey){ toggleSet(state.pais, p, renderAll); return; }
+        const soloEste = state.pais.size === 1 && state.pais.has(p);
+        state.pais.clear();
+        if (!soloEste) state.pais.add(p); // clic sobre el único país ya seleccionado = volver a "Todos"
+        renderAll();
+      });
     });
     ALL_PAISES_PUBLIC.filter(p => !allPaises.includes(p)).forEach(p => {
       const n = mk(p, 'nodata', `<span class="flag-rect">${FLAG_SVG[p] || ''}</span><span class="lbl">${PAIS_SHORT[p] || p}</span><span class="tag-nodata">sin datos</span>`);
@@ -1823,15 +1862,17 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
     {n:720, label:'Mínimo 720d compra'},
     {n:1080, label:'Mínimo 1080d compra'}
   ];
-  const nuevosContainer = document.getElementById('filterNuevos');
-  nuevosOptions.forEach(o => {
-    const chip = document.createElement('button');
-    chip.className = 'chip' + (o.n===state.hideNewerThan ? ' active' : '');
-    chip.textContent = o.label;
-    chip.style.setProperty('--chip-color', 'var(--ism-green)');
-    chip.dataset.n = o.n;
-    chip.addEventListener('click', () => { state.hideNewerThan = o.n; renderAll(); });
-    nuevosContainer.appendChild(chip);
+  INMOV_GROUPS.forEach(({key}) => {
+    const box = document.getElementById('filterNuevos_' + key);
+    nuevosOptions.forEach(o => {
+      const chip = document.createElement('button');
+      chip.className = 'chip' + (o.n===state.inmovDef[key].min ? ' active' : '');
+      chip.textContent = o.label;
+      chip.style.setProperty('--chip-color', 'var(--ism-green)');
+      chip.dataset.n = o.n;
+      chip.addEventListener('click', () => { state.inmovDef[key].min = o.n; renderAll(); });
+      box.appendChild(chip);
+    });
   });
 
   // ---------- multi-select dropdown genérico (grupo / centro) ----------
@@ -1969,8 +2010,7 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
     state.almacenes.clear(); almSelLabels.clear();
     state.clasificaciones.clear();
     state.buckets.clear();
-    state.customInmovOn = true; state.customInmovBuckets = new Set(['a3']);
-    state.hideNewerThan = 1080;
+    state.customInmovOn = true; resetInmovDef();
     state.diasWindow = 1080; state.families = new Set(FAMILIES);
     inputSearch.value='';
     msTipo.refreshLabel(); msTipo.refreshOptions();
@@ -1979,11 +2019,10 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
     syncAlmacenFilter(); msAlmacen.refreshOptions();
     const cit = document.getElementById('customInmovToggle');
     if (cit){ cit.checked = true; }
-    const cic = document.getElementById('customInmovChips');
+    const cic = document.getElementById('inmovDefGroups');
     if (cic){ cic.style.display = ''; }
     const cin = document.getElementById('customInmovNote');
     if (cin){ cin.style.display = ''; }
-    document.querySelectorAll('#customInmovChips .chip').forEach(c => c.classList.toggle('active', state.customInmovBuckets.has(c.dataset.bucket)));
     state.varCorteAIdx = Math.max(0, SNAPSHOTS.length-2); state.varCorteBIdx = SNAPSHOTS.length-1;
     varCorteASel.value = state.varCorteAIdx; varCorteBSel.value = state.varCorteBIdx;
     state.heroFechas = new Set(SNAPSHOTS.slice(-5).map(s=>s.fecha)); state.heroFechas.add(ACTIVE.fecha);
@@ -2093,12 +2132,10 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
   // no tenemos fecha de primera compra, se asume que sí es lo bastante antiguo. Luego se evalúa
   // la definición estructural (por defecto) o la personalizada por tramos de antigüedad de consumo.
   function effectiveInmov(d){
-    const antiguedadOk = (d.dias_desde_primera == null) || (d.dias_desde_primera >= state.hideNewerThan);
+    const def = defOf(grpOf(d)); // Repuestos vs resto de materiales (estándar de la política de bajas)
+    const antiguedadOk = (d.dias_desde_primera == null) || (d.dias_desde_primera >= def.min);
     if (!antiguedadOk) return false;
-    if (state.customInmovOn && state.customInmovBuckets.size){
-      return state.customInmovBuckets.has(bucketOf(d).key);
-    }
-    return d.es_inmovilizado;
+    return def.buckets.has(bucketOf(d).key);
   }
 
   const BUCKET_DEFS = [
@@ -2143,15 +2180,18 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
   // Versión corta de la definición activa de "Inmovilizado", para mostrar debajo de la tarjeta
   // KPI "Valor Inmovilizado" en la vista Total (ej. "+1080d sin consumo y +1080d primera compra").
   const BUCKET_MIN_DAYS = {activo:0, nuevo:0, m6:180, a1:360, a2:720, a3:1080};
-  function inmovCoverageShortLabel(){
-    if (!state.customInmovOn || !state.customInmovBuckets.size) return 'sin consumo (estructural)';
-    const numericKeys = Array.from(state.customInmovBuckets).filter(k => k !== 'sin');
-    if (numericKeys.length === 0) return 'sin consumo';
-    const minDays = Math.min(...numericKeys.map(k => BUCKET_MIN_DAYS[k]));
-    return '+' + minDays + 'd sin consumo';
+  const fmtPeriodo = d => d >= 360 ? '+' + (d/360) + (d === 360 ? ' año' : ' años') : (d >= 180 ? '+' + (d/30) + ' meses' : 'con consumo reciente');
+  function grpCoverageShort(g){
+    const ks = Array.from(defOf(g).buckets);
+    if (!ks.length) return 'ninguno';
+    return fmtPeriodo(Math.min(...ks.map(k => BUCKET_MIN_DAYS[k])));
   }
   function inmovDefShortLabel(){
-    return inmovCoverageShortLabel() + ' y +' + state.hideNewerThan + 'd primera compra';
+    return 'Repuestos ' + grpCoverageShort('rep') + ' y resto ' + grpCoverageShort('resto') + ' sin consumo' + (isInmovStd() ? ' (estándar)' : ' (ajustado)');
+  }
+  function inmovDefLongLabel(){
+    const p = g => grpCoverageShort(g) + ' sin consumo y ' + defOf(g).min + 'd o más desde su 1ª compra';
+    return 'Repuestos: ' + p('rep') + ' · Resto de materiales: ' + p('resto');
   }
 
   function aggregateCoverage(enrichedLocal){
@@ -2162,20 +2202,23 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
 
   // ---------- control: definición personalizada de "Inmovilizado" ----------
   const customInmovToggle = document.getElementById('customInmovToggle');
-  const customInmovChipsBox = document.getElementById('customInmovChips');
+  const customInmovChipsBox = document.getElementById('inmovDefGroups');
   const customInmovNote = document.getElementById('customInmovNote');
 
-  BUCKET_DEFS.forEach(b => {
-    const chip = document.createElement('button');
-    chip.className = 'chip' + (state.customInmovBuckets.has(b.key) ? ' active' : '');
-    chip.textContent = b.label;
-    chip.style.setProperty('--chip-color', BUCKET_VAR[b.key]);
-    chip.dataset.bucket = b.key;
-    chip.addEventListener('click', () => { toggleSet(state.customInmovBuckets, b.key, renderAll); });
-    customInmovChipsBox.appendChild(chip);
+  INMOV_GROUPS.forEach(({key}) => {
+    const box = document.getElementById('customInmovChips_' + key);
+    BUCKET_DEFS.forEach(b => {
+      const chip = document.createElement('button');
+      chip.className = 'chip' + (state.inmovDef[key].buckets.has(b.key) ? ' active' : '');
+      chip.textContent = b.label;
+      chip.style.setProperty('--chip-color', BUCKET_VAR[b.key]);
+      chip.dataset.bucket = b.key;
+      chip.addEventListener('click', () => { toggleSet(state.inmovDef[key].buckets, b.key, renderAll); });
+      box.appendChild(chip);
+    });
   });
 
-  customInmovNote.textContent = 'Con esta opción activa, "Inmovilizado" es cualquier material-centro cuyo tiempo transcurrido desde su último consumo real caiga en los tramos marcados arriba. Si la desactivas, se usa la misma regla pero fija (sin consumo real hace más de 1080 días, o ningún registro en el periodo cargado), sin opción de ajuste. Esta definición también se aplica a las pestañas de Histórico — cada corte guardado se recalcula con la definición y filtros que tengas activos en este momento, así que los valores de Histórico pueden moverse si cambias esta configuración.';
+  customInmovNote.textContent = 'Con esta opción activa puedes ajustar, para Repuestos y para el resto de materiales por separado, qué tramos de tiempo sin consumo real cuentan como "Inmovilizado" y la antigüedad mínima desde la 1ª compra. Si la desactivas, se aplica el estándar fijo de la política de bajas (Repuestos +3 años sin consumo y 1080 días desde su 1ª compra; resto +1 año sin consumo y 360 días). La definición se aplica a todos los cortes, a la gráfica principal y a Variaciones.';
 
   customInmovToggle.addEventListener('change', () => {
     state.customInmovOn = customInmovToggle.checked;
@@ -2648,7 +2691,7 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
       kpis = [
         {label:'Inventario Total Valorizado', value: fmtUSD(total), sub: nCombos.toLocaleString('es-PE') + ' combinaciones material-centro', cls:''},
         {label:'Cobertura Agregada', value: covAgg===null ? '—' : fmtNum(covAgg,1)+' días', sub:'Stock valorizado \u00f7 consumo valorizado diario', cls: covAgg===null ? '' : (covAgg<180 || covAgg>1080 ? 'alert' : 'good')},
-        {label:'Valor Inmovilizado', value: fmtUSD(inmovVal), sub: pctInmov.toFixed(1)+'% del total · ' + inmovDefShortLabel(), cls: pctInmov>15 ? 'alert' : ''},
+        {label:'Inmovilizado', value: fmtUSD(inmovVal) + ' · ' + pctInmov.toFixed(1) + '%', noShrink:true, sub: inmovDefShortLabel(), cls: pctInmov>15 ? 'alert' : ''},
         {label:'SKUs Únicos', value: nSku.toLocaleString('es-PE'), sub: allCentros.length + (allCentros.length === 1 ? ' centro con stock' : ' centros con stock'), cls:''}
       ];
     } else {
@@ -2657,17 +2700,13 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
       const pct = totalTodo>0 ? totalInmov/totalTodo*100 : 0;
       const nSku = new Set(rowsTable.map(d=>d.material)).size;
       const nCombos = rowsTable.length;
-      const defLabel = (state.customInmovOn && state.customInmovBuckets.size)
-        ? Array.from(state.customInmovBuckets).map(k=>BUCKET_DEFS.find(b=>b.key===k).label).join(' + ')
-        : 'Sin consumo hace +1080 días';
-      const defSub = (state.customInmovOn && state.customInmovBuckets.size)
-        ? 'tramos de antigüedad de consumo · ajustable en Filtros avanzados'
-        : '201/202 + 261/262 · según fecha del último consumo real (no depende del "Periodo de consumo" elegido)';
+      const defLabel = 'Rep. ' + grpCoverageShort('rep') + ' · Resto ' + grpCoverageShort('resto');
+      const defSub = (isInmovStd() ? 'estándar política de bajas' : 'ajustada en Filtros avanzados') + ' · sin consumo real (201/202 + 261/262)';
       kpis = [
         {label:'Valor Inmovilizado', value: fmtUSD(totalInmov), sub: nCombos.toLocaleString('es-PE') + ' combinaciones material-centro', cls:'alert'},
         {label:'% del Inventario Total', value: pct.toFixed(1)+'%', sub:'sobre activo + inmovilizado (según filtros)', cls: pct>15 ? 'alert' : ''},
-        {label:'SKUs Inmovilizados', value: nSku.toLocaleString('es-PE'), sub: state.customInmovOn ? 'según la definición vigente (ver Filtros avanzados)' : 'sin consumo real (201/202 + 261/262) hace más de 1080 días, o nunca', cls:''},
-        {label:'Definición', value: defLabel, sub: defSub + ' · + ' + state.hideNewerThan + 'd desde 1ª compra', cls: state.customInmovOn ? 'alert' : ''}
+        {label:'SKUs Inmovilizados', value: nSku.toLocaleString('es-PE'), sub: 'según la definición vigente (ver Filtros avanzados)', cls:''},
+        {label:'Definición', value: defLabel, sub: defSub + ' · mín. 1ª compra ' + defOf('rep').min + 'd / ' + defOf('resto').min + 'd', cls:'alert'}
       ];
     }
 
@@ -2685,7 +2724,7 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
       const el = document.createElement('div');
       el.className = 'kpi ' + k.cls;
       el.innerHTML = `<div class="k-label">${k.label}</div><div class="k-value">${k.value}</div><div class="k-sub">${k.sub}</div>${k.delta ? '<div class="k-delta ' + k.delta.cls + '">' + k.delta.text + '</div>' : ''}`;
-      if (String(k.value).length > 16) el.querySelector('.k-value').style.fontSize = '13px';
+      if (!k.noShrink && String(k.value).length > 16) el.querySelector('.k-value').style.fontSize = '13px';
       row.appendChild(el);
     });
   }
@@ -2727,7 +2766,8 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
       // primera compra del material en el país = la MÁS antigua entre sus centros; si algún centro no tiene ingreso
       // registrado en el horizonte cargado, la antigüedad es mayor a ese horizonte (null)
       const dias_desde_primera = agg._dias.some(v => v == null) ? null : Math.max(...agg._dias);
-      const es_nuevo = state.hideNewerThan > 0 && dias_desde_primera != null && dias_desde_primera < state.hideNewerThan;
+      const minC = minCompraOf(agg);
+      const es_nuevo = minC > 0 && dias_desde_primera != null && dias_desde_primera < minC;
       out.push(Object.assign({}, agg, { cobertura_dias, n_centros: agg._centros.size, dias_desde_primera, es_nuevo }));
     });
     return out;
@@ -2815,9 +2855,11 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
     document.querySelectorAll('#filterPais .chip').forEach(c => c.classList.toggle('active', state.pais.has(c.dataset.val)));
     document.querySelectorAll('#filterMeses .chip').forEach(c => c.classList.toggle('active', Number(c.dataset.n)===state.diasWindow));
     document.querySelectorAll('#filterFamilias .chip').forEach(c => c.classList.toggle('active', state.families.has(c.dataset.fam)));
-    document.querySelectorAll('#filterNuevos .chip').forEach(c => c.classList.toggle('active', Number(c.dataset.n)===state.hideNewerThan));
+    INMOV_GROUPS.forEach(({key}) => {
+      document.querySelectorAll('#filterNuevos_' + key + ' .chip').forEach(c => c.classList.toggle('active', Number(c.dataset.n)===state.inmovDef[key].min));
+      document.querySelectorAll('#customInmovChips_' + key + ' .chip').forEach(c => c.classList.toggle('active', state.inmovDef[key].buckets.has(c.dataset.bucket)));
+    });
     document.querySelectorAll('#filterClasificacion .chip').forEach(c => c.classList.toggle('active', state.clasificaciones.has(c.dataset.clave)));
-    document.querySelectorAll('#customInmovChips .chip').forEach(c => c.classList.toggle('active', state.customInmovBuckets.has(c.dataset.bucket)));
     document.querySelectorAll('.route-node:not(.nodata)').forEach(n => {
       const p = n.dataset.pais, noneSelected = state.pais.size === 0;
       if (p === '__all'){ n.classList.toggle('active', noneSelected); return; }
@@ -2830,10 +2872,9 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
   }
 
   function inmovNoteText(){
-    const porDefecto = state.customInmovOn && state.customInmovBuckets.size === 1 && state.customInmovBuckets.has('a3') && state.hideNewerThan === 1080;
-    if (porDefecto) return 'Inmovilizado = material con +3 años sin consumo real y con 1080 días o más desde su primera compra en el país · ajustable en Filtros avanzados';
-    const tramos = (state.customInmovOn && state.customInmovBuckets.size) ? BUCKET_DEFS.filter(b=>state.customInmovBuckets.has(b.key)).map(b=>b.label).join(' + ') : '+3 años sin consumo';
-    return 'Definición ajustada en Filtros avanzados: ' + tramos + ' · y ' + state.hideNewerThan + ' días o más desde su primera compra en el país';
+    if (isInmovStd()) return 'Inmovilizado (estándar política de bajas): Repuestos +3 años sin consumo y 1080d desde su 1ª compra · resto de materiales +1 año sin consumo y 360d · ajustable en Filtros avanzados';
+    const tx = g => { const ks = BUCKET_DEFS.filter(b => defOf(g).buckets.has(b.key)).map(b => b.label); return (ks.length ? ks.join(' / ') : 'ningún tramo') + ' · ' + defOf(g).min + 'd o más desde su 1ª compra'; };
+    return 'Definición ajustada en Filtros avanzados — Repuestos: ' + tx('rep') + ' | Resto: ' + tx('resto');
   }
   function updateTitles(){
     const isTotal = state.view === 'total';
@@ -2965,7 +3006,7 @@ const fmt2 = v => (Math.round((v + Number.EPSILON) * 100) / 100).toFixed(2);
   function filtersSig(){
     const s = x => Array.from(x).sort().join(',');
     return [s(state.tipo), s(state.grupos), s(state.centros), s(state.almacenes), state.search, s(state.clasificaciones), state.diasWindow, s(state.families),
-            state.customInmovOn, s(state.customInmovBuckets), state.hideNewerThan].join('|');
+            state.customInmovOn, s(state.inmovDef.rep.buckets), state.inmovDef.rep.min, s(state.inmovDef.resto.buckets), state.inmovDef.resto.min].join('|');
   }
   function cachedPmMap(snap, weights){
     const key = snap.fecha + '|' + state.diasWindow + '|' + Array.from(state.families).sort().join(',');
