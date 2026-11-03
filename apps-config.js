@@ -139,4 +139,13 @@ const ISM_APPS = [
     estado: "nuevo",
     url: "apps/vp-so-potencial/index.html",
   },
+  {
+    nombre: "Política DDMRP",
+    categoria: "Planeamiento",
+    proceso: "Planeamiento de Inventarios de PT",
+    sensibilidad: "media",
+    paises: ["PE", "RD", "HT", "GT"],
+    estado: "nuevo",
+    url: "apps/politica-ddmrp/index.html",
+  },
 ];
