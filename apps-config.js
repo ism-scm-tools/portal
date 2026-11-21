@@ -149,12 +149,12 @@ const ISM_APPS = [
     url: "apps/politica-ddmrp/index.html",
   },
   {
-    nombre: "Red Logística",
-    categoria: "Gestión Logística",
-    proceso: "Gestión Logística",
+    nombre: "Supply Chain Network",
+    categoria: "Supply Chain",
+    proceso: "Supply Chain",
     sensibilidad: "media",
     paises: ["PE", "RD", "HT", "GT", "BR"],
     estado: "nuevo",
-    url: "apps/red-logistica/index.html",
+    url: "apps/supplychain-network/index.html",
   },
 ];
