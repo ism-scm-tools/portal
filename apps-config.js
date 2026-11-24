@@ -157,4 +157,13 @@ const ISM_APPS = [
     estado: "nuevo",
     url: "apps/supplychain-network/index.html",
   },
+  {
+    nombre: "Programación de Abastecimiento PT",
+    categoria: "Programación",
+    proceso: "Inventarios PT",
+    sensibilidad: "media",
+    paises: ["PE", "RD", "HT", "GT", "BR"],
+    estado: "nuevo",
+    url: "apps/prog-inventariopt/index.html",
+  },
 ];
